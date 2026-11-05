@@ -8,7 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#1b1730;--panel:#2a2347ee;--line:#5b4d8a;--txt:#f4efff;--dim:#b8add6;--acc:#ffd43b}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+canvas#c,#pad,#abtn,#pickb{touch-action:none}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:'Jua',system-ui,sans-serif;overflow:hidden;user-select:none}
 canvas#c{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block}
 .hidden{display:none!important}

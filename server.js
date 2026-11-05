@@ -93,10 +93,13 @@ const MON = [
   ['gymking', '헬창골렘', 'golem', '#f783ac', 9000, 62, 6000, 1500, 17, '황금덤벨', 1], ['protein', '프로틴대왕', 'blob', '#a0522d', 8000, 58, 5600, 1400, 16, '대왕프로틴', 1],
   ['skullboss', '해골기사단장', 'skull', '#dee2e6', 15000, 95, 11000, 2500, 20, '기사단장의뼈', 1], ['papermaster', '결재왕 서류귀신', 'paper', '#fff3bf', 14000, 90, 10500, 2400, 21, '최종결재도장', 1],
   ['hyunchang', '천현창', 'human', '#ff8cc6', 16000, 70, 11500, 2600, 21, '천현창의 손거울', 1], ['dohyun', '김도현', 'human', '#ffe066', 16000, 66, 11500, 2600, 21, '도리스타 별조각', 1],
+  ['hwiseok', '박휘석', 'human', '#c92a2a', 52000, 160, 40000, 9000, 31, '박휘석의 볼펜', 1],
+  ['grandma', '김포최명순', 'human', '#b197fc', 20000, 72, 13500, 3000, 22, '최명순의 마이크', 1],
   ['queenspider', '여왕거미', 'spider', '#862e9c', 25000, 120, 18000, 4000, 25, '여왕거미줄', 1], ['crystalking', '수정왕', 'golem', '#3bc9db', 26000, 115, 19000, 4200, 24, '왕수정', 1],
   ['dragonboss', '원종의 용', 'dragon', '#2f9e44', 48000, 170, 38000, 8000, 30, '용의심장', 1], ['lich', '리치왕', 'skull', '#9775fa', 60000, 190, 46000, 10000, 33, '리치의 왕관', 1]
 ].map((a, i) => ({ idx: i, id: a[0], n: a[1], s: a[2], c: a[3], hp: a[4], atk: a[5], xp: a[6], g: a[7], lv: a[8], mat: a[9], boss: a[10] || 0 }));
 const MI = {}; MON.forEach(m => MI[m.id] = m);
+const tp0 = o => MON[o.t];
 // 보스 스킬 (주변 범위 공격, stun/slow 가능)
 const BSK = {
   kingslime: { n: '점프 착지', r: 2, m: 1.5, c: '#7ed957' }, bunnyking: { n: '당근 폭격', r: 2.5, m: 1.4, c: '#ff922b' },
@@ -104,6 +107,8 @@ const BSK = {
   gymking: { n: '데드리프트 쾅', r: 2.5, m: 1.8, c: '#f783ac', stun: 1000 }, protein: { n: '프로틴 폭발', r: 3, m: 1.5, c: '#c08552' },
   skullboss: { n: '뼈 회오리', r: 3, m: 1.6, c: '#dee2e6' }, papermaster: { n: '반려 도장', r: 3, m: 1.6, c: '#e03131', stun: 1000 },
   hyunchang: { n: '잘생김 광선', r: 3.5, m: 1.7, c: '#ff8cc6', stun: 1200, fx: 'charm' }, dohyun: { n: '도리스타', r: 3.5, m: 1.3, c: '#ffe066', stun: 2200, fx: 'doristar' },
+  hwiseok: { n: '엑소시즘 볼펜 찌르기', r: 2.8, m: 1.5, c: '#4c6ef5', stun: 1200, fx: 'pen', cd: [4000, 6000] },
+  grandma: { n: '마이크 샤우팅', r: 3.8, m: 1.15, c: '#ff6b6b', stun: 1600, fx: 'mic', cd: [3200, 4800] },
   queenspider: { n: '거미줄 감옥', r: 3, m: 1.5, c: '#862e9c', slow: 4000 }, crystalking: { n: '수정 파편', r: 3, m: 1.7, c: '#3bc9db' },
   dragonboss: { n: '용의 숨결', r: 3.5, m: 1.8, c: '#ff6b6b' }, lich: { n: '죽음의 저주', r: 4, m: 1.8, c: '#9775fa', slow: 4000 }
 };
@@ -111,6 +116,32 @@ for (const k in BSK) MI[k].sk = BSK[k];
 MI.hyunchang.twin = 'dohyun'; MI.dohyun.twin = 'hyunchang';
 MI.hyunchang.look = { ar: [3, 5], he: [4, 5], w: [7, 5, 12] }; MI.dohyun.look = { ar: [2, 5], he: [3, 5], w: [4, 5, 12] };
 MI.hyunchang.novar = MI.dohyun.novar = 1;
+MI.hyunchang.look.shades = MI.dohyun.look.shades = 1;
+// 박휘석: 하복 입은 중학생 드라큘라. 볼펜으로 엑소시스트처럼 찍음. 정석환(jsh) 직업에게 데미지 2.5배
+Object.assign(MI.hwiseok, {
+  novar: 1, hate: 'jsh', hateMul: 2.5, drain: .3,
+  look: { skin: '#f1f3f5', hair: '#111', cardigan: '#f8f9fa', tie: '#1c3d7a', cape: ['#111', '#c92a2a'], fangs: 1, redeyes: 1, ws: 'pen', w: [0, 5, 0], pants: '#1c3d7a' },
+  spawnMsg: '🧛 [{map}]에 하복 입은 드라큘라 박휘석이 볼펜을 딸깍이며 나타났다! 정석환은 도망쳐!!',
+  talk: ['볼펜은 칼보다 강하다…!', '수행평가보다 무서운 게 뭔지 알려주지.', '크큭… 하복 단추는 끝까지 잠그는 게 예의다.', '악령 퇴치! 딸깍딸깍!',
+    '정석환… 네놈의 정스카니즘 댄스, 오늘로 봉인이다!', '피… 아니, 잉크가 모자라…', '담임쌤한테 이르기 전에 꺼져라.', '십자가 대신 볼펜 뚜껑이다!',
+    '석식 먹기 전에 끝내주지.', '흡혈은 하지만 급식은 남기지 않는다.', '0.5mm의 심판을 받아라.', '야자 째고 퇴마하러 왔다.'],
+  stunTalk: ['딸깍! 퇴마!!', '엑소시즘 필기체 찌르기!!', '모나미의 이름으로!!'],
+  hateTalk: ['정석환 발견!! 볼펜 연타!!!', '거기 정석환! 춤추지 마!!', '정석환은 특별히 두 배로 찍어주지!'],
+  deathLine: '크윽… 내일 1교시… 수학인데…'
+});
+// 김포최명순: 무서운 할머니 (시청 과장 st.) - 잔소리가 끝이 없음
+Object.assign(MI.grandma, {
+  novar: 1, look: { ar: [2, 4], w: [0, 4, 0], ws: 'mic', hair: '#dee2e6', perm: 1, glasses: 1, cardigan: '#9c36b5', grandma: 1 },
+  spawnMsg: '🎤 [{map}]에 무서운 김포최명순 할머니가 마이크를 들고 나타났다! 다들 자리로!!',
+  talk: ['주임! 이거 결재 누가 이렇게 올렸어!', '내가 몇 번을 말했어? 보고는 두괄식으로 하라고!', '지금 몇 시야? 9시 출근이 9시 도착이야?!',
+    '이거 오타 봐라, 오타! 시민들이 보면 뭐라고 하겠어!', '엑셀 수식 또 깨졌잖아! 값 붙여넣기 하랬지!', '회의 자료 10부 뽑으랬는데 왜 9부야!',
+    '내가 젊었을 땐 말이야~ 야근이 기본이었어!', '민원 전화 또 돌렸어? 응대 매뉴얼 다시 읽어!', '공문 글자 크기 15포인트로 맞추랬지!',
+    '어디서 말대꾸야! 마이크 켜!', '점심 먹고 왔으면 일을 해야지 왜 졸아!', '이 보고서 다시 써와. 처음부터!',
+    '주무관한테 미루지 말고 네가 해!', '연가? 이 시국에 연가를 쓴다고?', '도장 삐뚤게 찍지 말랬지!', '메신저 답장이 왜 이렇게 늦어!',
+    '복사기 종이 걸린 거 누가 그냥 두고 갔어!', '내 말 듣고 있어? 메모 안 해?', '결론부터 말해, 결론부터!', '그래서 예산은 어디서 나오는데!'],
+  stunTalk: ['정신 차려!!!', '똑바로 서!!', '마이크 테스트! 하나 둘! 셋!!', '전원 집합!!!'],
+  deathLine: '…오늘은 이만 봐준다. 내일 아침 8시까지 보고서 올려.'
+});
 const VAR = [{ p: '붉은', c: '#ff5252' }, { p: '푸른', c: '#4dabf7' }, { p: '황금', c: '#ffd43b' }, { p: '그림자', c: '#495057' }, { p: '분홍', c: '#f783ac' }, { p: '무지개', c: 'rainbow' }];
 
 const { JOBS, TIER1_LV } = require('./jobs');
@@ -196,6 +227,12 @@ function mk(id, o) {
   if (o.spawn) clear(o.spawn.x, o.spawn.y, 3);
   const safes = (o.safes || []).map(z => z.all ? { x0: 0, y0: 0, x1: w - 1, y1: h - 1, all: 1, label: z.label } : z);
   for (const z of safes) if (!z.all) { for (let y = z.y0; y <= z.y1; y++) for (let x = z.x0; x <= z.x1; x++) if (x > 0 && y > 0 && x < w - 1 && y < h - 1) t[y][x] = '.'; if (z.f) { t[z.y0][z.x0] = 'Y'; t[z.y0][z.x1] = 'Y'; } }
+  // 안전지대에서 반드시 걸어 나갈 수 있게 길 뚫기
+  for (const z of safes) if (!z.all) {
+    const cy = (z.y0 + z.y1) >> 1, cx = (z.x0 + z.x1) >> 1, open = (x, y) => { if (x > 0 && y > 0 && x < w - 1 && y < h - 1 && t[y][x] !== 'Y') t[y][x] = '.'; };
+    if (z.f) { for (let x = z.x0 - 1; x <= z.x1 + 1; x++) { open(x, z.y0 - 1); open(x, z.y1 + 1); } for (let y = z.y0 - 1; y <= z.y1 + 1; y++) { open(z.x0 - 1, y); open(z.x1 + 1, y); } }
+    else for (let x = z.x1 + 1; x <= z.x1 + 8; x++) for (let y = cy - 1; y <= cy + 1; y++) open(x, y);
+  }
   for (const n of o.npcs || []) t[n.y][n.x] = 'N';
   for (const n of o.npcs || []) { clear(n.x, n.y, 1); t[n.y][n.x] = 'N'; }
   const m = { npcs: (o.npcs || []).map(n => ({ id: n.id, x: n.x, y: n.y })), id, name: o.name, w, h, theme, t, portals: o.portals, safes, sl: o.sl || '', pool: o.pool || [], cnt: o.cnt || 0, boss: o.boss || null, mobs: [], ground: [], spawn: o.spawn || { x: 2, y: 15 }, lvr: o.lvr, regen: o.regen || 1 };
@@ -233,7 +270,7 @@ mk('gym', {
 mk('hall', {
   name: '부천시청', w: 50, h: 30, theme: 'hall', seed: 88, dens: .08, lvr: '15~21', npcs: [{ id: 'secretary', x: 4, y: 13 }], safes: SZ(15), spawn: { x: 4, y: 15 },
   portals: [{ x: 0, y: 15, to: 'gym', tx: 41, ty: 15 }, { x: 49, y: 15, to: 'cave1', tx: 2, ty: 15 }],
-  pool: ['skull', 'spider', 'paper', 'stamp', 'minwon', 'clipbat'], cnt: 42, boss: ['hyunchang', 'hyunchang', 'skullboss', 'papermaster']
+  pool: ['skull', 'spider', 'paper', 'stamp', 'minwon', 'clipbat'], cnt: 42, boss: ['hyunchang', 'hyunchang', 'grandma', 'grandma', 'skullboss', 'papermaster']
 });
 mk('cave1', {
   name: '춘의동굴', w: 50, h: 30, theme: 'cave', seed: 21, dens: .14, lvr: '17~24', npcs: [{ id: 'miner', x: 4, y: 13 }], safes: SZ(15), spawn: { x: 4, y: 15 },
@@ -243,7 +280,7 @@ mk('cave1', {
 mk('cave2', {
   name: '원종 지하던전', w: 50, h: 30, theme: 'cave', seed: 33, dens: .15, lvr: '25+', npcs: [{ id: 'fortune', x: 4, y: 13 }], safes: SZ(15), spawn: { x: 4, y: 15 },
   portals: [{ x: 0, y: 15, to: 'cave1', tx: 47, ty: 15 }],
-  pool: ['imp', 'shadow', 'dragonling', 'lavagolem', 'darkknight', 'mimic'], cnt: 40, boss: ['dragonboss', 'lich']
+  pool: ['imp', 'shadow', 'dragonling', 'lavagolem', 'darkknight', 'mimic'], cnt: 40, boss: ['dragonboss', 'lich', 'hwiseok', 'hwiseok']
 });
 const inSafe = (m, x, y) => m.safes.some(z => x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1);
 const walk = (m, x, y) => x >= 0 && y >= 0 && x < m.w && y < m.h && m.t[y][x] === '.';
@@ -272,7 +309,7 @@ function spawnBoss(m, id, near) {
   m.mobs.push(o);
   const nm = (v == null ? '' : VAR[v].p + ' ') + t.n;
   if (t.twin && !near?.twin) { spawnBoss(m, t.twin, { x, y, twin: 1 }); announce(`📢 [${m.name}]에 잘생긴 쌍둥이 보스 ${t.n} & ${MI[t.twin].n}이(가) 나타났다! ✨`); }
-  else if (!near?.twin) announce(`📢 [${m.name}]에 ${nm}이(가) 나타났다!`);
+  else if (!near?.twin) announce(t.spawnMsg ? t.spawnMsg.replace('{map}', m.name) : `📢 [${m.name}]에 ${nm}이(가) 나타났다!`);
   return o;
 }
 Object.values(MAPS).forEach(m => { if (m.pool.length) for (let i = 0; i < m.cnt; i++)spawnMob(m); });
@@ -450,6 +487,7 @@ function killMob(p, mo) {
     add(mkScroll('enh', R(3, 6))); add(mkScroll('ward', R(1, 2))); add(mkPot('hp', R(5, 10))); add(stackItem('mat', tp.mat, tp.mat, R(2, 4)));
     if (Math.random() < 0.05) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
     xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`);
+    if (tp.deathLine) { bc(m.id, { t: 'mtalk', id: mo.id, m: tp.deathLine, loud: 1, x: mo.x, y: mo.y, n: tp.n }); announce(`🎤 ${tp.n}: "${tp.deathLine}"`); }
     sendAll({ t: 'kill', a: who(p), boss: (mo.v == null ? '' : VAR[mo.v].p + ' ') + tp.n, map: m.name });
   } else {
     if (Math.random() < 0.12) add(mkPot('hp', 1)); if (Math.random() < 0.06) add(mkPot('mp', 1));
@@ -489,7 +527,7 @@ function castSkill(p, i) {
     const l = enemiesOf(p).filter(e => dist(p, e.o) <= s.r + 0.42).slice(0, 10); use(); fx({ k: 'ring', x: p.x, y: p.y, r: s.r }); l.forEach(e => hit(p, e, s.m, s));
   } else if (s.k === 'shot' || s.k === 'multi') {
     const e = nearest(p, s.range); if (!e) return say(p, 'sys', '대상이 없어요'); use(); face(p, e.o);
-    const n = s.n || 1; for (let k = 0; k < n; k++)setTimeout(() => { if (p.dead || e.o.dead) return; fx({ k: s.range > 2 ? 'proj' : 'slash', x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, big: 1 }); hit(p, e, s.m, s); }, k * 220);
+    const n = s.hits || 1; for (let k = 0; k < n; k++)setTimeout(() => { if (p.dead || e.o.dead) return; fx({ k: s.range > 2 ? 'proj' : 'slash', x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, big: 1 }); hit(p, e, s.m, s); }, k * 220);
   } else if (s.k === 'aoeT') {
     const e = nearest(p, s.range); if (!e) return say(p, 'sys', '대상이 없어요'); use(); face(p, e.o);
     fx({ k: 'proj', x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, big: 1 });
@@ -768,21 +806,23 @@ function tick() {
       const o = m.mobs[i];
       if (o.dead) { if (o.temp) { m.mobs.splice(i, 1); continue; } if (!o.boss && t > o.respawn) spawnMob(m, o); continue; }
       if (o.boss && t > o.until) { m.mobs.splice(i, 1); continue; }
+      if (tp0(o).talk && t > (o.talkAt || 0) && players.size) { o.talkAt = t + R(2600, 4200); bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp0(o).talk) }); }
       if (t < (o.stun || 0)) continue;
       const slowM = t < (o.slow || 0) ? 2.2 : 1;
       const tp = MON[o.t]; let tg = null, bd = 1e9;
-      for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y)) { const d = dist(o, q); if (d < bd && d <= (o.tgt === q.id ? 9 : 5)) { bd = d; tg = q; } }
+      for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y)) { const d = dist(o, q), dd = tp.hate && q.job === tp.hate ? d - 4 : d; if (d <= (o.tgt === q.id || (tp.hate && q.job === tp.hate) ? 9 : 5) && dd < (tg ? (tp.hate && tg.job === tp.hate ? bd - 4 : bd) : 1e9)) { bd = d; tg = q; } }
       if (tg) {
         if (o.boss && tp.sk && t > o.skAt && bd <= tp.sk.r + 0.5) {
-          const k = tp.sk; o.skAt = t + R(6000, 9000);
+          const k = tp.sk; o.skAt = t + (k.cd ? R(k.cd[0], k.cd[1]) : R(6000, 9000));
+          if (tp.stunTalk) { bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp.stunTalk), loud: 1 }); o.talkAt = t + 2500; }
           bc(m.id, { t: 'fx', k: 'ring', x: o.x, y: o.y, r: k.r, c: k.c, f: k.fx, n: k.n, mi: o.id });
           for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y) && dist(o, q) <= k.r + 0.42) {
             if (k.stun) { q.stun = t + k.stun; } if (k.slow) q.bf.spd = [0.45, t + k.slow];
-            damagePlayer(q, Math.max(1, Math.round(tp.atk * k.m * (0.85 + Math.random() * 0.3) - defOf(q) * 0.5)), null);
+            damagePlayer(q, Math.max(1, Math.round((tp.atk * k.m * (0.85 + Math.random() * 0.3) - defOf(q) * 0.5) * (tp.hate && q.job === tp.hate ? tp.hateMul : 1))), null);
           }
           continue;
         }
-        if (bd <= 1.42) { if (t > o.atkAt) { o.atkAt = t + (o.boss ? 900 : 1200); const dmg = Math.max(1, Math.round(tp.atk * (0.8 + Math.random() * 0.4) - defOf(tg) * 0.5)); damagePlayer(tg, dmg, null); bc(m.id, { t: 'fx', k: 'bite', x: tg.x, y: tg.y, c: '#ff6b6b' }); } }
+        if (bd <= 1.42) { if (t > o.atkAt) { o.atkAt = t + (o.boss ? 900 : 1200); const hm = tp.hate && tg.job === tp.hate ? tp.hateMul : 1; const dmg = Math.max(1, Math.round((tp.atk * (0.8 + Math.random() * 0.4) - defOf(tg) * 0.5) * hm)); damagePlayer(tg, dmg, null); if (tp.drain) o.hp = Math.min(o.mhp, o.hp + Math.round(dmg * tp.drain)); if (hm > 1 && tp.hateTalk && Math.random() < .35) bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp.hateTalk), loud: 1 }); bc(m.id, { t: 'fx', k: 'bite', x: tg.x, y: tg.y, c: '#ff6b6b' }); } }
         else if (t > o.mvAt) { o.mvAt = t + (o.boss ? 320 : 480) * slowM; const dx = tg.x - o.x, dy = tg.y - o.y; const o1 = Math.abs(dx) > Math.abs(dy) ? [[Math.sign(dx), 0], [0, Math.sign(dy)]] : [[0, Math.sign(dy)], [Math.sign(dx), 0]]; for (const [a, b] of o1) { if (!a && !b) continue; const nx = o.x + a, ny = o.y + b; if (walk(m, nx, ny) && !occ(m, nx, ny, o) && !inSafe(m, nx, ny)) { o.x = nx; o.y = ny; break; } } }
       } else if (t > o.mvAt && Math.random() < 0.04) {
         o.mvAt = t + 600; const d = R(0, 3); let nx = o.x + DX[d], ny = o.y + DY[d]; if (Math.abs(nx - o.hx) > 8 || Math.abs(ny - o.hy) > 8) { nx = o.x + Math.sign(o.hx - o.x); ny = o.y; }
