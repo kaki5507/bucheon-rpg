@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bucheon-rpg
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL   # Neon/Supabase 무료 Postgres 주소 (없으면 재시작 때 데이터 초기화)
+        sync: false
+      - key: ADMIN_NAME     # 관리자 캐릭터 이름 (선택)
+        sync: false

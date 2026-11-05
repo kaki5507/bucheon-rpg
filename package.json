@@ -1,0 +1,9 @@
+{
+  "name": "bucheon-rpg",
+  "version": "1.0.0",
+  "description": "부천 동네 진영전 멀티플레이 RPG",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.19.2", "pg": "^8.12.0", "ws": "^8.17.1" }
+}

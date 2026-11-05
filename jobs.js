@@ -1,0 +1,78 @@
+// 직업 데이터. 처음엔 초보자 → 레벨 10에 1차 직업(사람 이름) 선택. 2~4차는 추후 추가.
+// 스킬 종류: aoe(내 주변) shot(단일) multi(연타) aoeT(대상 위치 폭발) dash(돌진)
+//          abuff(범위 아군 회복+버프) sbuff(자기 버프/회복, selfstun 가능) adebuff(범위 적 둔화 + 자기 가속)
+// 옵션: stun(ms) slow(ms) heal(비율) atk/def/spd(배율) dur(ms) fx(이펙트 이름)
+const TIER1_LV = 10;
+const JOBS = {
+  novice: {
+    n: '초보자', icon: '🌱', hp: 1, atk: 1, mp: 1, w: 0, tier: 0, d: '레벨 10이 되면 1차 직업을 고를 수 있어요',
+    sk: [{ n: '주먹질', lv: 1, mp: 3, cd: 900, k: 'shot', range: 1.5, m: 1.5, c: '#ffffff', d: '있는 힘껏 한 대!' }]
+  },
+  bmoon: {
+    n: '박병문', icon: '👊', hp: 1.25, atk: 1.15, mp: 1, w: 2, tier: 1, d: '핵주먹 한 방! 근접 파괴력 최강',
+    sk: [{ n: '핵주먹', lv: 10, mp: 10, cd: 3000, k: 'shot', range: 1.5, m: 3.2, stun: 900, fx: 'nuke', c: '#ff5252', d: '핵폭발급 주먹 (짧은 기절)' },
+    { n: '연타', lv: 15, mp: 14, cd: 5000, k: 'multi', range: 1.5, n: 3, m: 1.3, c: '#ffa94d', d: '주먹 3연타' },
+    { n: '분노의 일격', lv: 20, mp: 25, cd: 9000, k: 'aoe', r: 2.2, m: 3, c: '#e03131', d: '주변을 박살내는 일격' }]
+  },
+  ytj: {
+    n: '윤태정', icon: '😤', hp: 1.1, atk: 1.15, mp: 1, w: 6, tier: 1, d: '턱을 노리는 근접 스턴 전문가',
+    sk: [{ n: '턱공격', lv: 10, mp: 10, cd: 4000, k: 'shot', range: 1.5, m: 3.5, stun: 1600, fx: 'jaw', c: '#ffe066', d: '턱을 정확히 타격! (기절)' },
+    { n: '박치기', lv: 15, mp: 12, cd: 4000, k: 'aoe', r: 1.6, m: 1.8, c: '#ff922b', d: '주변 박치기' },
+    { n: '턱 폭풍', lv: 20, mp: 24, cd: 8000, k: 'multi', range: 1.5, n: 4, m: 1.3, c: '#fcc419', d: '턱만 4연타' }]
+  },
+  lsh: {
+    n: '이소현', icon: '💃', hp: 1, atk: 0.9, mp: 1.6, w: 4, tier: 1, d: '아이돌 댄스로 아군을 치유하고 강화해요',
+    sk: [{ n: '니온앤니온', lv: 10, mp: 28, cd: 15000, k: 'abuff', r: 5, heal: 0.3, atk: 1.3, spd: 1.2, dur: 10000, fx: 'dance', c: '#ff8cc6', d: '범위 아군 회복 + 공격/이속 버프 (아이돌 댄스)' },
+    { n: '응원 박수', lv: 15, mp: 18, cd: 6000, k: 'abuff', r: 5, heal: 0.35, dur: 1, fx: 'heal', c: '#69db7c', d: '범위 아군 회복' },
+    { n: '앵콜 무대', lv: 20, mp: 45, cd: 25000, k: 'abuff', r: 6, heal: 0.5, atk: 1.4, def: 1.3, dur: 12000, fx: 'dance', c: '#da77f2', d: '범위 대회복 + 공/방 버프' }]
+  },
+  ljh: {
+    n: '이종혁', icon: '🎮', hp: 1, atk: 1, mp: 1.4, w: 3, tier: 1, d: '팀을 캐리하는 응원 버퍼',
+    sk: [{ n: '티~원', lv: 10, mp: 30, cd: 20000, k: 'abuff', r: 6, atk: 1.6, dur: 12000, fx: 't1', c: '#ff3b3b', d: '범위 아군 공격력 대폭 증가 (T1 로고 연출)' },
+    { n: '키보드 던지기', lv: 15, mp: 10, cd: 3000, k: 'shot', range: 5, m: 1.8, c: '#adb5bd', d: '화가 나서 던져요' },
+    { n: '캐리', lv: 20, mp: 35, cd: 25000, k: 'sbuff', atk: 2, spd: 1.3, dur: 8000, fx: 'buff', c: '#ffd43b', d: '8초간 내 공격력 2배' }]
+  },
+  lgt: {
+    n: '이규태', icon: '🚙', hp: 1.1, atk: 1.05, mp: 1, w: 7, tier: 1, d: '운전병! 이동속도와 돌진이 특기',
+    sk: [{ n: '운전병', lv: 10, mp: 12, cd: 12000, k: 'sbuff', spd: 2.2, dur: 10000, fx: 'speed', c: '#74c0fc', d: '10초간 이동속도 대폭 증가' },
+    { n: '급발진', lv: 15, mp: 14, cd: 5000, k: 'dash', dist: 6, m: 2.2, c: '#ffd43b', d: '앞으로 급발진!' },
+    { n: '로드킬', lv: 20, mp: 28, cd: 10000, k: 'dash', dist: 8, m: 3.6, c: '#ff6b6b', d: '길게 돌진하며 쾅' }]
+  },
+  kdh: {
+    n: '김도현', icon: '🌟', hp: 1, atk: 1.05, mp: 1.3, w: 4, tier: 1, d: '도리스타! 범위 기절의 지배자',
+    sk: [{ n: '도리스타', lv: 10, mp: 25, cd: 12000, k: 'aoe', r: 3, m: 1.2, stun: 2200, fx: 'doristar', c: '#ffe066', d: '범위 스턴' },
+    { n: '손가락 튕기기', lv: 15, mp: 10, cd: 3000, k: 'shot', range: 5, m: 1.8, c: '#fff3bf', d: '핑!' },
+    { n: '도리 폭풍', lv: 20, mp: 35, cd: 12000, k: 'aoeT', range: 6, r: 3, m: 2.6, stun: 1400, c: '#f783ac', d: '대상 위치에 별 폭풍 + 스턴' }]
+  },
+  jsh: {
+    n: '정석환', icon: '🚛', hp: 1.4, atk: 1, mp: 1, w: 6, tier: 1, d: '정스카니즘 댄스로 체력을 채우는 탱커',
+    sk: [{ n: '정스카니즘 댄스', lv: 10, mp: 20, cd: 14000, k: 'sbuff', heal: 0.5, selfstun: 2000, fx: 'dance', c: '#74c0fc', d: '2초간 춤추며(기절) 체력 대량 회복' },
+    { n: '스카니아 박치기', lv: 15, mp: 14, cd: 5000, k: 'dash', dist: 3, m: 2.1, c: '#4dabf7', d: '트럭처럼 들이받기' },
+    { n: '트럭 돌진', lv: 20, mp: 28, cd: 10000, k: 'dash', dist: 6, m: 3.2, stun: 800, c: '#1c7ed6', d: '길게 돌진 + 짧은 기절' }]
+  },
+  jyh: {
+    n: '지영훈', icon: '🏋️', hp: 1.3, atk: 1.1, mp: 1, w: 7, tier: 1, d: '헬스! 쿨타임 없는 회복',
+    sk: [{ n: '헬스', lv: 10, mp: 4, cd: 0, k: 'sbuff', heal: 0.08, fx: 'heal', c: '#69db7c', d: '쿨타임 없음! 체력 회복' },
+    { n: '단백질 쉐이크', lv: 15, mp: 20, cd: 15000, k: 'sbuff', heal: 0.4, def: 1.5, dur: 8000, fx: 'buff', c: '#ffffff', d: '체력 회복 + 방어 증가' },
+    { n: '데드리프트', lv: 20, mp: 26, cd: 8000, k: 'aoe', r: 2, m: 2.8, c: '#868e96', d: '묵직한 범위 공격' }]
+  },
+  ljw: {
+    n: '이진우', icon: '🐌', hp: 1, atk: 1.05, mp: 1.2, w: 3, tier: 1, d: '어~승현! 적은 느리게, 나는 빠르게',
+    sk: [{ n: '어~승현', lv: 10, mp: 18, cd: 12000, k: 'adebuff', r: 5, slow: 6000, spd: 1.8, dur: 6000, fx: 'slowfield', c: '#b197fc', d: '범위 적 이동속도 하향, 나는 가속' },
+    { n: '발차기', lv: 15, mp: 10, cd: 3000, k: 'shot', range: 1.5, m: 2.2, c: '#ffffff', d: '빠른 발차기' },
+    { n: '질주', lv: 20, mp: 20, cd: 15000, k: 'sbuff', spd: 2.5, dur: 8000, fx: 'speed', c: '#74c0fc', d: '8초간 초고속' }]
+  },
+  kbj: {
+    n: '김병준', icon: '🤿', hp: 1.1, atk: 1, mp: 1.3, w: 5, tier: 1, d: '해녀 스킬로 이것저것 다 버프!',
+    sk: [{ n: '해녀', lv: 10, mp: 28, cd: 18000, k: 'abuff', r: 5, heal: 0.2, atk: 1.25, def: 1.25, spd: 1.3, dur: 10000, fx: 'buff', c: '#38d9a9', d: '범위 아군에게 회복+공격+방어+이속 버프' },
+    { n: '전복 투척', lv: 15, mp: 10, cd: 3000, k: 'shot', range: 5, m: 1.9, c: '#a9e34b', d: '싱싱한 전복 던지기' },
+    { n: '물질', lv: 20, mp: 32, cd: 10000, k: 'aoeT', range: 5, r: 3, m: 2.4, c: '#4dabf7', d: '파도 폭발' }]
+  },
+  kmj: {
+    n: '김명진', icon: '⚽', hp: 1.1, atk: 1.1, mp: 1, w: 7, tier: 1, d: '아스날 축구팀 소환! 근거리 축구공 난타',
+    sk: [{ n: '아스날 축구팀', lv: 10, mp: 22, cd: 8000, k: 'aoe', r: 2.6, m: 2.6, fx: 'football', c: '#ff5252', d: '축구팀이 나타나 공을 뻥뻥 (근거리 범위)' },
+    { n: '프리킥', lv: 15, mp: 12, cd: 4000, k: 'shot', range: 6, m: 2.2, c: '#ffffff', d: '프리킥 슛!' },
+    { n: '슈퍼골', lv: 20, mp: 35, cd: 11000, k: 'aoeT', range: 6, r: 3, m: 3, c: '#ffe066', d: '골대가 폭발하는 슈퍼골' }]
+  }
+};
+module.exports = { JOBS, TIER1_LV };

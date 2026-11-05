@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>부천의 나라</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1b1730;--panel:#2a2347ee;--line:#5b4d8a;--txt:#f4efff;--dim:#b8add6;--acc:#ffd43b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:'Jua',system-ui,sans-serif;overflow:hidden;user-select:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block}
+.hidden{display:none!important}
+button{font-family:inherit;font-size:14px;border:2px solid var(--line);background:#3b3163;color:var(--txt);border-radius:10px;padding:5px 10px;cursor:pointer}
+button:hover{background:#4c3f80}
+button.pri{background:#ffb703;color:#2a1c00;border-color:#ffd43b}
+button.red{background:#c92a2a;border-color:#ff6b6b}
+button:disabled{opacity:.45;cursor:default}
+input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:#14102a;color:var(--txt);outline:none}
+/* 로그인 */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#4a3a8a,#151025);z-index:50;padding:16px}
+#login .box{background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:22px;width:min(420px,100%);text-align:center}
+#login h1{margin:0 0 4px;font-size:38px;color:var(--acc);text-shadow:0 3px 0 #a0522d}
+#login p{color:var(--dim);margin:0 0 14px}
+#login input{width:100%;margin:5px 0}
+.facs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.facs div{border:2px solid var(--line);border-radius:10px;padding:8px 2px;cursor:pointer;font-size:15px}
+.facs div.on{border-color:#fff;transform:scale(1.06)}
+#lerr{color:#ff8787;min-height:20px;margin-top:6px}
+/* HUD */
+#hud{position:fixed;left:10px;top:10px;z-index:5;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:8px 10px;width:230px;font-size:13px}
+.bar{height:14px;background:#120e22;border-radius:7px;overflow:hidden;position:relative;margin:3px 0}
+.bar i{display:block;height:100%;transition:width .2s}
+.bar span{position:absolute;inset:0;text-align:center;font-size:11px;line-height:14px;text-shadow:0 1px 1px #000}
+#hpb i{background:linear-gradient(#ff8787,#e03131)} #mpb i{background:linear-gradient(#74c0fc,#1c7ed6)} #xpb i{background:linear-gradient(#ffe066,#f59f00)}
+#mapname{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 14px;font-size:16px;white-space:nowrap}
+#menu{position:fixed;right:10px;top:10px;z-index:5;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:50vw}
+#menu button{padding:4px 8px;font-size:13px}
+/* 스킬바 */
+#skills{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:5}
+.sk{width:54px;height:54px;border:2px solid var(--line);border-radius:12px;background:#2a2347;position:relative;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;line-height:1.05;cursor:pointer;overflow:hidden;padding:2px}
+.sk b{position:absolute;left:3px;top:1px;font-size:11px;color:var(--acc)}
+.sk .cdv{position:absolute;left:0;right:0;bottom:0;background:#000a;pointer-events:none}
+.sk.lock{opacity:.35}
+/* 채팅 */
+#chat{position:fixed;left:10px;bottom:10px;width:min(380px,calc(100vw - 20px));z-index:6}
+#log{height:170px;overflow-y:auto;background:#0d0a1ccc;border:2px solid var(--line);border-radius:12px 12px 0 0;padding:6px 8px;font-size:13px;line-height:1.35;user-select:text}
+#log div{word-break:break-all}
+#chatin{width:100%;border-radius:0 0 12px 12px;font-size:14px;padding:7px 9px}
+.c-sys{color:#ffe066}.c-loot{color:#8ce99a}.c-w{color:#f783ac}.c-all{color:#91a7ff}
+/* 패널 */
+.panel{position:fixed;z-index:20;background:var(--panel);border:3px solid var(--line);border-radius:16px;padding:12px;max-height:calc(100vh - 20px);overflow:auto;width:min(460px,calc(100vw - 20px));left:50%;top:50%;transform:translate(-50%,-50%)}
+.panel h3{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;font-size:20px}
+.panel h3 .x{padding:2px 9px}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.slot{aspect-ratio:1;border:2px solid #4a3f72;border-radius:8px;background:#1a1530;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slot canvas{width:100%;height:100%}
+.slot .q{position:absolute;right:2px;bottom:0;font-size:11px;text-shadow:0 1px 2px #000}
+.slot .pl{position:absolute;left:2px;top:0;font-size:10px;color:#ffe066;text-shadow:0 1px 2px #000}
+.slot.sel{outline:3px solid #fff}
+.slot.lk{opacity:.4}
+#tip{position:fixed;z-index:40;pointer-events:none;background:#120e22f2;border:2px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;max-width:240px}
+.acts{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.eqwrap{display:flex;gap:12px;align-items:center}
+.eqslots{display:flex;flex-direction:column;gap:6px;flex:1}
+.eqs{display:flex;align-items:center;gap:8px;border:2px solid #4a3f72;border-radius:10px;padding:4px 6px;cursor:pointer;min-height:48px}
+.eqs .slot{width:40px;flex:none}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #4a3f72;padding:7px 0}
+.small{font-size:12px;color:var(--dim)}
+.jobs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.job{border:2px solid var(--line);border-radius:12px;padding:8px;cursor:pointer}
+.job:hover{border-color:#fff}
+.job .ic{font-size:26px}
+/* 포커 */
+.cards{display:flex;gap:6px;justify-content:center;margin:10px 0}
+.card{width:56px;height:80px;background:#fff;color:#222;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;font-family:system-ui;font-weight:700;cursor:pointer;border:3px solid #ccc;transition:transform .15s}
+.card.red{color:#e03131}.card.sel{transform:translateY(-12px);border-color:#ffb703}
+.card.back{background:repeating-linear-gradient(45deg,#7048e8,#7048e8 6px,#5f3dc4 6px,#5f3dc4 12px);border-color:#fff}
+#ctx{position:fixed;z-index:30;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:45;font-size:26px;color:#fff;text-shadow:0 3px 0 #000;pointer-events:none;transition:opacity .4s}
+/* 모바일 */
+#pad{position:fixed;left:14px;bottom:200px;z-index:7;display:none}
+#pad button{position:absolute;width:52px;height:52px;font-size:20px;opacity:.75}
+#abtn{position:fixed;right:14px;bottom:80px;z-index:7;width:72px;height:72px;border-radius:50%;font-size:16px;display:none;opacity:.85}
+#potb{position:fixed;right:96px;bottom:80px;z-index:7;display:none;flex-direction:column;gap:6px}
+@media (pointer:coarse){
+ #pad,#abtn{display:block}#potb{display:flex}
+ #pad{left:12px;bottom:18px;width:156px;height:156px}
+ #abtn{right:14px;bottom:30px}#potb{right:96px;bottom:24px}
+ #hud{width:168px;font-size:11px;padding:6px 8px;left:6px;top:6px}
+ #menu{top:6px;right:6px;max-width:150px}#menu button{font-size:17px;padding:3px 7px}#menu button span{display:none}
+ #mapname{top:auto;bottom:182px;left:12px;transform:none;font-size:12px;padding:2px 8px}
+ #chat{top:134px;bottom:auto;left:6px;width:min(250px,64vw)}#log{height:72px;font-size:11px;background:#0d0a1c99}#chatin{font-size:13px;padding:5px 7px}
+ #skills{left:auto;right:8px;bottom:110px;transform:none;flex-wrap:wrap;justify-content:flex-end;width:170px}
+ .sk{width:50px;height:50px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="login">
+  <div class="box">
+    <h1>부천의 나라</h1>
+    <p>동네 진영 RPG · 이름과 비밀번호만 있으면 끝!</p>
+    <input id="lname" placeholder="이름 (2~8자)" maxlength="8" autocomplete="username">
+    <input id="lpw" type="password" placeholder="비밀번호" maxlength="30" autocomplete="current-password">
+    <div class="small" style="margin-top:8px">처음이면 진영(동네)을 골라주세요 · 기존 캐릭터는 그대로 접속</div>
+    <div class="facs" id="facs"></div>
+    <button class="pri" id="lgo" style="width:100%;font-size:18px;padding:9px">시작하기</button>
+    <div id="lerr"></div>
+  </div>
+</div>
+
+<div id="game" class="hidden">
+  <div id="hud">
+    <div id="hname" style="font-size:15px"></div>
+    <div class="bar" id="hpb"><i></i><span></span></div>
+    <div class="bar" id="mpb"><i></i><span></span></div>
+    <div class="bar" id="xpb"><i></i><span></span></div>
+    <div id="hgold" class="small"></div>
+  </div>
+  <div id="mapname"></div>
+  <div id="menu">
+    <button data-p="inv">🎒<span>가방(I)</span></button><button data-p="eq">🛡️<span>장비(E)</span></button><button data-p="quest">📜<span>퀘스트(Q)</span></button>
+    <button data-p="shop">🏪<span>상점(B)</span></button><button data-p="job">🌟<span>직업(J)</span></button><button data-p="help">❓<span>도움말</span></button>
+  </div>
+  <div id="skills"></div>
+  <div id="chat"><div id="log"></div><input id="chatin" placeholder="Enter: 채팅 · !전체채팅 · /w 이름 귓말" maxlength="80"></div>
+  <div id="pad">
+    <button data-d="3" style="left:52px;top:0">▲</button><button data-d="1" style="left:0;top:52px">◀</button>
+    <button data-d="2" style="left:104px;top:52px">▶</button><button data-d="0" style="left:52px;top:104px">▼</button>
+  </div>
+  <button id="abtn" class="pri">공격</button>
+  <div id="potb"><button data-pot="hp">❤️</button><button data-pot="mp">💙</button></div>
+</div>
+
+<div id="pinv" class="panel hidden"></div>
+<div id="peq" class="panel hidden"></div>
+<div id="pquest" class="panel hidden"></div>
+<div id="pshop" class="panel hidden"></div>
+<div id="pjob" class="panel hidden"></div>
+<div id="phelp" class="panel hidden"></div>
+<div id="ppk" class="panel hidden"></div>
+<div id="tip" class="hidden"></div>
+<div id="ctx" class="hidden"></div>
+<div id="toast"></div>
+<script src="game.js"></script>
+</body>
+</html>
