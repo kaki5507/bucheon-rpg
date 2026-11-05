@@ -78,6 +78,7 @@ function onMsg(m) {
     case 'jobpick': openPanel('job'); toast('🌟 1차 직업을 골라주세요!', '#ff8cff'); break;
     case 'stun': toast('💫 춤추는 중...', '#74c0fc'); break;
     case 'pk': onPoker(m); break;
+    case 'dlg': showDlg(m); break;
   }
 }
 function onState(m) {
@@ -123,11 +124,15 @@ function loadMap(m) {
     drawTile(g, m.rows[y][x], px, py, th, r);
   }
   if (th === 'hall') { g.fillStyle = '#c92a2a'; g.fillRect(0, (m.h / 2 | 0) * T + 4, m.w * T, T - 8); g.fillStyle = '#ffd43b'; g.fillRect(0, (m.h / 2 | 0) * T + 4, m.w * T, 2); g.fillRect(0, (m.h / 2 | 0) * T + T - 6, m.w * T, 2); }
-  if (m.safe) {
-    const s = m.safe, all = s.x0 === 0 && s.y0 === 0 && s.x1 === m.w - 1;
-    if (!all) { g.fillStyle = '#ffffff22'; g.fillRect(s.x0 * T, s.y0 * T, (s.x1 - s.x0 + 1) * T, (s.y1 - s.y0 + 1) * T); g.strokeStyle = '#ffffff99'; g.setLineDash([6, 5]); g.lineWidth = 2; g.strokeRect(s.x0 * T, s.y0 * T, (s.x1 - s.x0 + 1) * T, (s.y1 - s.y0 + 1) * T); g.setLineDash([]); }
-    g.font = '15px Jua'; g.textAlign = 'center'; const txt = m.sl || '🕊️ 안전지대 (PvP 불가)', tx = all ? m.w * T / 2 : (s.x0 + s.x1 + 1) / 2 * T, ty = all ? T * 1.7 : s.y0 * T + 18;
-    g.fillStyle = '#0006'; g.fillText(txt, tx + 1, ty + 1); g.fillStyle = '#fff'; g.fillText(txt, tx, ty);
+  for (const z of m.safes || []) {
+    if (!z.all) {
+      const fc = z.f && FACS[z.f] ? FACS[z.f][1] : '#ffffff';
+      g.fillStyle = fc + '33'; g.fillRect(z.x0 * T, z.y0 * T, (z.x1 - z.x0 + 1) * T, (z.y1 - z.y0 + 1) * T);
+      g.strokeStyle = fc + 'cc'; g.setLineDash([6, 5]); g.lineWidth = 2; g.strokeRect(z.x0 * T, z.y0 * T, (z.x1 - z.x0 + 1) * T, (z.y1 - z.y0 + 1) * T); g.setLineDash([]);
+    }
+    const all = z.all, txt = z.label || '🕊️ 안전지대', tx = all ? m.w * T / 2 : (z.x0 + z.x1 + 1) / 2 * T, ty = all ? T * 1.7 : z.y1 * T + 26;
+    g.font = '15px Jua'; g.textAlign = 'center'; g.fillStyle = '#0008'; g.fillText(txt, tx + 1, ty + 1); g.fillStyle = '#fff'; g.fillText(txt, tx, ty);
+    if (!all) { g.font = '10px Jua'; g.fillStyle = '#fffc'; g.fillText('PvP 불가', tx, ty + 13); }
   }
 }
 function drawTile(g, c, px, py, th, r) {
@@ -137,6 +142,7 @@ function drawTile(g, c, px, py, th, r) {
     case 'r': sh(); g.fillStyle = th === 'cave' ? '#8a7a80' : '#adb5bd'; g.beginPath(); g.ellipse(px + 16, py + 18, 12, 10, 0, 0, 7); g.fill(); g.fillStyle = '#fff6'; g.beginPath(); g.ellipse(px + 12, py + 14, 4, 3, 0, 0, 7); g.fill(); break;
     case 'w': g.fillStyle = '#4dabf7'; g.fillRect(px, py, T, T); g.fillStyle = '#a5d8ff'; g.fillRect(px + 5 + r * 10, py + 10, 8, 2); g.fillRect(px + 14, py + 22 - r * 6, 9, 2); break;
     case '#': g.fillStyle = '#3b2c35'; g.fillRect(px, py, T, T); g.fillStyle = '#4e3b47'; g.fillRect(px + 2, py + 2, T - 4, T - 10); g.fillStyle = '#2a1f26'; g.fillRect(px, py + T - 6, T, 6); break;
+    case 'Y': { sh(15); g.fillStyle = '#fff4e6'; g.fillRect(px + 4, py + 12, 24, 16); g.fillStyle = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#9c36b5'][(px / T * 7 + py / T) % 5 | 0]; g.beginPath(); g.moveTo(px, py + 14); g.lineTo(px + 16, py + 1); g.lineTo(px + 32, py + 14); g.fill(); g.fillStyle = '#8d5a3b'; g.fillRect(px + 13, py + 19, 7, 9); g.fillStyle = '#74c0fc'; g.fillRect(px + 6, py + 16, 5, 5); g.fillRect(px + 22, py + 16, 5, 5); break; }
     // 술집거리
     case 'B': { g.fillStyle = ['#5c3d6e', '#3d4f6e', '#6e3d48'][(px / T + py / T) % 3 | 0]; g.fillRect(px, py, T, T); g.fillStyle = r < .5 ? '#ffe066' : '#ffa8a8'; g.fillRect(px + 5, py + 6, 8, 8); g.fillRect(px + 19, py + 6, 8, 8); g.fillStyle = '#0004'; g.fillRect(px, py + T - 5, T, 5); break; }
     case 'p': sh(14); g.fillStyle = '#ff6b6b'; g.beginPath(); g.moveTo(px + 2, py + 12); g.lineTo(px + 16, py + 2); g.lineTo(px + 30, py + 12); g.fill(); g.fillStyle = '#fff'; for (let k = 0; k < 4; k++) g.fillRect(px + 4 + k * 7, py + 10, 3, 3); g.fillStyle = '#e03131'; g.fillRect(px + 6, py + 16, 20, 4); g.fillStyle = '#c92a2a'; g.fillRect(px + 8, py + 20, 2, 7); g.fillRect(px + 22, py + 20, 2, 7); g.fillStyle = '#69db7c'; g.fillRect(px + 13, py + 10, 3, 6); break;
@@ -414,14 +420,14 @@ addEventListener('keydown', e => {
     return;
   }
   if (k === 'Enter') { $('#chatin').focus(); e.preventDefault(); return; }
-  if (k === 'Escape') { closeAll(); return; }
+  if (k === 'Escape') { closeAll(); dlg = null; drawDlg(); return; }
   if (k in DIRK || k === ' ') e.preventDefault();
   keys.add(k.length === 1 ? k.toLowerCase() : k);
   const kl = k.toLowerCase();
   if ('1234'.includes(k)) send({ t: 'sk', i: +k - 1 });
   if (kl === 'i') togglePanel('inv'); if (kl === 'e') togglePanel('eq'); if (kl === 'q') togglePanel('quest');
   if (kl === 'b') togglePanel('shop'); if (kl === 'p' && ME.admin) togglePanel('adm'); if (kl === 'j') togglePanel('job'); if (kl === 'h') togglePanel('help');
-  if (kl === 'z') send({ t: 'potion', k: 'hp' }); if (kl === 'x') send({ t: 'potion', k: 'mp' });
+  if (kl === 'f') actionKey(); if (kl === 'z') send({ t: 'potion', k: 'hp' }); if (kl === 'x') send({ t: 'potion', k: 'mp' });
 });
 addEventListener('keyup', e => { keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key); });
 addEventListener('blur', () => keys.clear());
@@ -435,7 +441,7 @@ document.querySelectorAll('#pad button').forEach(b => {
 const ab = $('#abtn');
 ab.addEventListener('touchstart', e => { e.preventDefault(); padAtk = true; }); ab.addEventListener('touchend', e => { e.preventDefault(); padAtk = false; });
 ab.addEventListener('mousedown', () => padAtk = true); ab.addEventListener('mouseup', () => padAtk = false);
-document.querySelectorAll('#potb button').forEach(b => b.onclick = () => send({ t: 'potion', k: b.dataset.pot }));
+$('#pickb').onclick = () => actionKey();
 
 function me() { return ents.get('p' + myId); }
 function blockedAt(x, y) {
@@ -461,6 +467,8 @@ function inputTick(t) {
 cv.addEventListener('click', ev => {
   hideCtx(); const m = me(); if (!m) return;
   const wx = (ev.clientX - W / 2) / ZOOM + cam.x, wy = (ev.clientY - H / 2) / ZOOM + cam.y;
+  const npc = (MAP.npcs || []).find(n => Math.hypot(tc(n.x) - wx, tc(n.y) - 14 - wy) < 28);
+  if (npc) { if (Math.abs(npc.x - m.x) <= 2 && Math.abs(npc.y - m.y) <= 2) send({ t: 'npc', id: npc.id }); else toast(npc.n + '에게 더 가까이 가세요'); return; }
   let best = null, bd = 30;
   for (const e of ents.values()) if (e.kind === 'p' && e.i !== myId) { const d = Math.hypot(tc(e.rx) - wx, tc(e.ry) - 14 - wy); if (d < bd) { bd = d; best = e; } }
   if (!best) return;
@@ -495,9 +503,19 @@ function frame() {
     }
     // 바닥 아이템
     for (const gi of ground) {
-      const x = tc(gi[1]), y = tc(gi[2]) + Math.sin(t / 300 + gi[0]) * 2, rc = gi[3] ? D.RAR[gi[3]].c : '#fff';
-      ctx.save(); ctx.shadowColor = rc; ctx.shadowBlur = gi[3] >= 3 ? 12 : 4; ctx.fillStyle = rc; ctx.beginPath(); ctx.moveTo(x, y - 8); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 8); ctx.lineTo(x - 6, y); ctx.fill(); ctx.restore();
-      if (gi[3] >= 2 || Math.hypot(gi[1] - (m ? m.x : 0), gi[2] - (m ? m.y : 0)) < 3) { ctx.font = '10px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(gi[4], x + 1, y - 11); ctx.fillStyle = rc; ctx.fillText(gi[4], x, y - 12); }
+      const x = tc(gi[1]), y = tc(gi[2]) + Math.sin(t / 300 + gi[0]) * 2, rc = gi[6] === 1 ? '#ffd43b' : gi[3] ? D.RAR[gi[3]].c : '#fff', mine = !gi[5] || gi[5] === myId;
+      ctx.save(); ctx.globalAlpha = mine ? 1 : .45; ctx.shadowColor = rc; ctx.shadowBlur = gi[3] >= 3 ? 14 : 5;
+      if (gi[6] === 1) { ctx.fillStyle = '#fab005'; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.ellipse(x - 4 + k * 4, y + 3 - k * 3, 5, 3, 0, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.ellipse(x + 4, y - 3, 5, 3, 0, 0, 7); ctx.fill(); }
+      else if (gi[6] === 2) { ctx.fillStyle = '#5c3d2e'; rr(ctx, x - 8, y - 6, 16, 12, 3); ctx.fill(); ctx.fillStyle = rc; rr(ctx, x - 8, y - 6, 16, 4, 2); ctx.fill(); ctx.fillRect(x - 1.5, y - 3, 3, 5); }
+      else { ctx.fillStyle = rc; ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 7); ctx.lineTo(x - 5, y); ctx.fill(); }
+      ctx.restore();
+      if ((gi[6] === 2 && gi[3] >= 2) || (m && Math.abs(gi[1] - m.x) <= 1 && Math.abs(gi[2] - m.y) <= 1)) { ctx.font = '10px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(gi[4], x + 1, y - 11); ctx.fillStyle = rc; ctx.fillText(gi[4], x, y - 12); }
+    }
+    // NPC
+    for (const n of MAP.npcs || []) {
+      const x = tc(n.x), y = tc(n.y) + 12; drawChar(ctx, x, y, { n: n.n, d: 0, w: n.look.w, ar: n.look.ar, he: n.look.he }, t, false);
+      ctx.font = '11px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(n.n, x + 1, y + 14); ctx.fillStyle = '#8ce99a'; ctx.fillText(n.n, x, y + 13);
+      const mk = npcMark(n.id); if (mk) { const by = y - 56 + Math.sin(t / 200) * 3; ctx.font = 'bold 22px Jua'; ctx.lineWidth = 4; ctx.strokeStyle = '#000'; ctx.strokeText(mk, x, by); ctx.fillStyle = mk === '!' ? '#ffd43b' : '#69db7c'; ctx.fillText(mk, x, by); }
     }
     // 엔티티 (y 정렬)
     const list = [...ents.values()].sort((a, b) => a.ry - b.ry);
@@ -525,6 +543,7 @@ function frame() {
       }
     }
     drawFx(ctx, t);
+    if (m && ground.some(g => Math.abs(g[1] - m.x) <= 1 && Math.abs(g[2] - m.y) <= 1)) { const x = tc(m.rx), y = tc(m.ry) + 46; ctx.font = 'bold 12px Jua'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText('F / 줍기 버튼', x, y); ctx.fillStyle = '#ffe066'; ctx.fillText('F / 줍기 버튼', x, y); }
     // 스킬 외침
     for (let i = shouts.length - 1; i >= 0; i--) {
       const s = shouts[i], p = (t - s.t) / 1300; if (p >= 1) { shouts.splice(i, 1); continue; }
@@ -571,13 +590,17 @@ function updHud(m) {
   $('#hgold').textContent = `💰 ${m.gold.toLocaleString()}G` + (ME.atk ? ` · ⚔ ${ME.atk} · 🛡 ${ME.def}` : '');
 }
 let skKey = '';
+function updPots() { for (const k of ['hp', 'mp']) { const e = $('#pq' + k); if (e) { const n = (ME.inv.find(i => i.type === 'potion' && i.k === k) || { q: 0 }).q; e.textContent = n; e.parentElement.classList.toggle('lock', !n); } } }
 function buildSkills() {
-  const J = D.JOBS[ME.job]; const key = ME.job + ME.lv; if (key === skKey) return; skKey = key;
+  const J = D.JOBS[ME.job]; const key = ME.job + ME.lv; if (key === skKey) return updPots(); skKey = key;
   const sk = J.sk.slice(0, 4);
   $('#skills').innerHTML = sk.map((s, i) => `<div class="sk ${ME.lv < s.lv ? 'lock' : ''}" data-i="${i}" title="${esc(s.n)} (MP ${s.mp}, 쿨 ${s.cd / 1000}초, Lv${s.lv})\n${esc(s.d)}"><b>${i + 1}</b>${esc(s.n)}<div class="cdv"></div></div>`).join('')
-    + `<div class="sk" id="skatk" title="기본 공격 (Space)"><b>␣</b>공격</div>`;
+    + `<div class="sk" id="skatk" title="기본 공격 (Space)"><b>␣</b>공격</div>`
+    + `<div class="sk pot" data-pot="hp" title="HP포션 (Z)"><b>Z</b>❤️<span class="pq" id="pqhp">0</span></div><div class="sk pot" data-pot="mp" title="MP포션 (X)"><b>X</b>💙<span class="pq" id="pqmp">0</span></div>`;
+  document.querySelectorAll('.sk.pot').forEach(d => d.onclick = () => send({ t: 'potion', k: d.dataset.pot }));
   document.querySelectorAll('.sk[data-i]').forEach(d => d.onclick = () => send({ t: 'sk', i: +d.dataset.i }));
   $('#skatk').onclick = () => send({ t: 'atk' });
+  updPots();
 }
 function updSkillCd(t) {
   document.querySelectorAll('.sk[data-i]').forEach(d => { const c = cds[d.dataset.i], v = d.querySelector('.cdv'); v.style.height = c && t < c.e ? ((c.e - t) / (c.e - c.s) * 100) + '%' : '0'; });
@@ -676,21 +699,22 @@ function renderEq() {
   loop();
 }
 function renderQuest() {
-  const P = $('#pquest'); let h = head('📜 퀘스트');
-  const cnt = k => (ME.inv.find(i => i.type === 'mat' && i.k === k) || { q: 0 }).q;
-  for (const q of D.QUESTS) {
-    const active = q.id in ME.q, done = ME.qd[q.id], can = ME.lv >= q.lv;
-    if (done) continue;
-    const goal = q.kill ? `${q.kill === 'any' ? '아무 몬스터' : D.MON.find(m => m.id === q.kill)?.n || q.kill} 처치` : `${q.collect} 모으기`;
-    const prog = active ? (q.collect ? Math.min(q.cnt, cnt(q.collect)) : ME.q[q.id]) : 0;
-    const rw = `${q.scale ? '레벨×60' : q.exp} EXP · ${q.gold}G${q.scroll ? ' · 강화주문서 ' + q.scroll : ''}${q.equip ? ' · 장비 상자' : ''}`;
-    h += `<div class="row"><div><div>${esc(q.n)} <span class="small">Lv${q.lv}+</span></div><div class="small">${goal} ${active ? prog + '/' : ''}${q.cnt} · 보상: ${rw}</div></div>`;
-    h += active ? `<button class="pri" data-qt="${q.id}" ${prog >= q.cnt ? '' : 'disabled'}>완료</button>` : `<button data-qa="${q.id}" ${can ? '' : 'disabled'}>수락</button>`;
-    h += `</div>`;
+  const P = $('#pquest'); let h = head('📜 퀘스트 일지');
+  const where = id => `${D.NPCS[id].n} (${D.NPCS[id].map}${id === 'chief' ? ' · 내 마을' : ''})`;
+  const act = Object.keys(ME.q).map(k => D.QUESTS.find(q => q.id === +k)).filter(Boolean);
+  if (!act.length) h += `<p class="small">진행 중인 퀘스트가 없어요.</p>`;
+  for (const q of act) {
+    const goal = q.to ? `${where(q.to)}에게 가서 말 걸기` : q.kill ? `${q.kill === 'any' ? '아무 몬스터' : (D.MON.find(m => m.id === q.kill) || {}).n} 처치 ${qProg(q)}/${q.cnt}` : `${q.collect} 모으기 ${qProg(q)}/${q.cnt}`;
+    const done = !q.to && qProg(q) >= q.cnt;
+    h += `<div class="row"><div><div>${q.rep ? '🔁' : '⭐'} ${esc(q.n)}</div><div class="small">${esc(goal)}</div>${done ? `<div class="small" style="color:#69db7c">✅ 완료! ${esc(where(q.giver))}에게 보고하세요</div>` : ''}</div></div>`;
   }
+  const nx = D.QUESTS.find(q => !q.rep && qAvail(q)), lock = QCH().find(q => !ME.qd[q.id] && !(q.id in ME.q));
+  if (nx) h += `<div class="row"><div><div style="color:#ffd43b">❗ 새 이야기</div><div class="small">${esc(where(nx.giver))}에게 말을 걸어보세요 (머리 위 ! 표시)</div></div></div>`;
+  else if (lock && !act.some(q => !q.rep)) h += `<div class="row"><div class="small">다음 이야기는 Lv.${lock.lv}부터 (${esc(where(lock.giver))})</div></div>`;
+  else if (!lock) h += `<div class="row"><div class="small">🏆 모든 스토리를 끝냈어요!</div></div>`;
+  const done = QCH().filter(q => ME.qd[q.id]).length;
+  h += `<div class="small" style="margin-top:8px">스토리 진행 ${done}/${QCH().length} · 반복 퀘스트: 사우나 세신사 아저씨</div><div class="small">NPC를 터치하거나 옆에서 F키로 대화해요</div>`;
   P.innerHTML = h;
-  P.querySelectorAll('[data-qa]').forEach(b => b.onclick = () => send({ t: 'qa', id: +b.dataset.qa }));
-  P.querySelectorAll('[data-qt]').forEach(b => b.onclick = () => send({ t: 'qt', id: +b.dataset.qt }));
 }
 function renderShop() {
   const P = $('#pshop'); let h = head('🏪 동네 상점') + `<div class="small">💰 ${ME.gold.toLocaleString()}G · 팔기는 가방에서</div>`;
@@ -718,7 +742,7 @@ function renderJob() {
 }
 function renderHelp() {
   $('#phelp').innerHTML = head('❓ 도움말') + `<div class="small" style="font-size:14px;line-height:1.6;color:var(--txt)">
-  <b>조작</b>: 방향키/WASD 이동 · Space 공격 · 1~4 스킬 · Z/X 포션 · Enter 채팅<br>
+  <b>조작</b>: 방향키/WASD 이동 · Space 공격 · 1~4 스킬 · Z/X 포션 · <b>F 줍기/NPC 대화</b> · Enter 채팅<br><b>퀘스트</b>: 머리 위 <span style="color:#ffd43b">!</span> 표시 NPC에게 말 걸면 스토리 퀘스트, <span style="color:#69db7c">?</span>는 완료 보고<br><b>드랍</b>: 몬스터를 잡으면 바닥에 떨어져요. 20초 동안은 잡은 사람만 주울 수 있어요<br>
   <b>창</b>: I 가방 · E 장비 · Q 퀘스트 · B 상점 · J 직업 · Esc 닫기<br>
   <b>채팅</b>: 그냥 입력 = 같은 맵(말풍선) · <code>!내용</code> = 전체 · <code>/w 이름 내용</code> = 귓속말<br>
   <b>진영전</b>: 다른 동네 사람은 공격 가능! 죽으면 가방 아이템 1~3개를 떨어뜨려요(장착 장비는 안전). 마을 왼쪽 안전지대는 PvP 불가.<br>
@@ -728,7 +752,36 @@ function renderHelp() {
   <b>강화</b>: 무한 강화! +3부터 실패, +5부터 파괴 확률. 보호 주문서로 파괴 방지.<br>
   <b>보스</b>: 사냥터마다 약 1시간에 한 번 랜덤 색/장식의 보스가 등장해요.<br>
   <b>포커</b>: 다른 사람을 클릭 → 아이템 포커. 서로 아이템 하나씩 걸고 5장 드로우 포커 한 판!<br>
-  <b>맵</b>: 동네 마을(Lv1~6) → 상동역 술집거리(Lv8~13, 위쪽에 ♨️사우나 세이브존) → 디에이트 헬스장(Lv12~17) → 부천시청(Lv15~21, ✨쌍둥이 보스) → 춘의동굴(Lv17~24) → 원종 지하던전(Lv25+)</div>`;
+  <b>맵</b>: 부천 들판(5개 동네 마을이 위·대각선에 있고 마을 밖은 바로 사냥터 + 진영전, Lv1~7) → 상동역 술집거리(Lv8~13, 위쪽에 ♨️사우나 세이브존) → 디에이트 헬스장(Lv12~17) → 부천시청(Lv15~21, ✨쌍둥이 보스) → 춘의동굴(Lv17~24) → 원종 지하던전(Lv25+)</div>`;
+}
+
+/* ============ NPC / 퀘스트 ============ */
+const QCH = () => D.QUESTS.filter(q => !q.rep);
+function qAvail(q) { if (ME.qd[q.id] || (q.id in ME.q) || ME.lv < q.lv) return false; if (q.rep) return true; const c = QCH(), i = c.indexOf(q); return c.slice(0, i).every(x => ME.qd[x.id]); }
+function qProg(q) { return q.collect ? Math.min(q.cnt, (ME.inv.find(i => i.type === 'mat' && i.k === q.collect) || { q: 0 }).q) : (ME.q[q.id] || 0); }
+function npcMark(id) {
+  if (!ME || !D) return '';
+  for (const k in ME.q) { const q = D.QUESTS.find(x => x.id === +k); if (!q) continue; if (q.to === id) return '?'; if (q.giver === id && !q.to && qProg(q) >= q.cnt) return '?'; }
+  return D.QUESTS.some(q => q.giver === id && qAvail(q)) ? '!' : '';
+}
+function nearNpc() { const m = me(); if (!m || !MAP) return null; return (MAP.npcs || []).find(n => Math.abs(n.x - m.x) <= 2 && Math.abs(n.y - m.y) <= 2); }
+function actionKey() { const m = me(); if (!m) return; if (ground.some(g => Math.abs(g[1] - m.x) <= 1 && Math.abs(g[2] - m.y) <= 1)) return send({ t: 'pick' }); const n = nearNpc(); if (n) return send({ t: 'npc', id: n.id }); send({ t: 'pick' }); }
+let dlg = null;
+function showDlg(m) {
+  dlg = { m, i: 0 }; closeAll(); drawDlg();
+}
+function drawDlg() {
+  const P = $('#pdlg'); if (!dlg) { P.classList.add('hidden'); return; }
+  const { m, i } = dlg, last = i >= m.lines.length - 1;
+  P.classList.remove('hidden');
+  P.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start"><canvas id="dlgc" width="120" height="140" style="width:60px;height:70px;background:#1a1530;border-radius:10px;flex:none"></canvas><div style="flex:1"><div style="color:#8ce99a;font-size:16px">${esc(m.name)}</div><div style="font-size:15px;line-height:1.45;margin-top:4px;min-height:44px">${esc(m.lines[i] || '')}</div></div></div>
+  <div class="acts" style="justify-content:flex-end;margin-top:8px">${last ? (m.acts.length ? m.acts.map((a, k) => `<button data-k="${k}" class="${a.k === 'close' ? '' : 'pri'}">${esc(a.label)}</button>`).join('') : '<button data-k="x">닫기</button>') : '<button class="pri" data-k="n">▶ 다음</button>'}</div>`;
+  const g = $('#dlgc').getContext('2d'); g.setTransform(2.4, 0, 0, 2.4, 60, 125); drawChar(g, 0, 0, { n: m.name, d: 0, w: m.look.w, ar: m.look.ar, he: m.look.he }, now(), false, true);
+  P.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+    const k = b.dataset.k; if (k === 'n') { dlg.i++; return drawDlg(); } if (k === 'x') { dlg = null; return drawDlg(); }
+    const a = m.acts[+k]; dlg = null; drawDlg();
+    if (a.k === 'qa') send({ t: 'qa', id: a.id }); else if (a.k === 'qt') send({ t: 'qt', id: a.id }); else if (a.k === 'talk') send({ t: 'npc', id: m.npc });
+  });
 }
 
 /* ============ 관리자 ============ */
@@ -737,11 +790,12 @@ function renderAdm() {
   if (!ME.admin) return closeAll();
   const A = ME.admin, mapNm = id => (D.MAPLIST.find(m => m.id === id) || {}).n || id;
   let h = head('👑 관리자 모드');
-  h += `<div class="acts"><button data-a="god" class="${A.god ? 'pri' : ''}">🛡 무적 ${A.god ? 'ON' : 'OFF'}</button><button data-a="onehit" class="${A.onehit ? 'pri' : ''}">💥 한방 ${A.onehit ? 'ON' : 'OFF'}</button><button data-a="fast" class="${A.fast ? 'pri' : ''}">⚡ 초고속 ${A.fast ? 'ON' : 'OFF'}</button><button data-a="heal">❤️ 완전회복</button><button data-a="clear">🧹 맵 몬스터 제거</button></div>`;
+  h += `<div class="acts"><button data-a="god" class="${A.god ? 'pri' : ''}">🛡 무적 ${A.god ? 'ON' : 'OFF'}</button><button data-a="onehit" class="${A.onehit ? 'pri' : ''}">💥 한방 ${A.onehit ? 'ON' : 'OFF'}</button><button data-a="fast" class="${A.fast ? 'pri' : ''}">⚡ 초고속 ${A.fast ? 'ON' : 'OFF'}</button><button data-a="heal">❤️ 완전회복</button><button data-a="clear">🧹 맵 몬스터 제거</button><button data-a="kill">☠️ 주변 몬스터 처치</button><button data-a="pickall">🧲 맵 아이템 다 줍기</button></div>`;
   h += `<div class="small" style="margin-top:6px">무적 ON이면 피해 없음 + 스킬 쿨타임/MP 없음</div>`;
   h += `<h4 style="margin:12px 0 4px">👹 보스 소환 (내 옆에)</h4><div class="acts">${D.MON.filter(m => m.boss).map(m => `<button data-boss="${m.id}">${m.s === 'human' ? '✨' : ''}${esc(m.n)}</button>`).join('')}<button data-a="allboss" class="red">모든 사냥터 보스</button></div>`;
   h += `<h4 style="margin:12px 0 4px">🐾 몬스터 소환 (5마리, 죽으면 사라짐)</h4><select id="admmob" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a">${D.MON.filter(m => !m.boss).map(m => `<option value="${m.id}">${esc(m.n)} (Lv${m.lv})</option>`).join('')}</select> <button id="admmobgo">소환</button> <button id="admmat">재료 20개</button>`;
-  h += `<h4 style="margin:12px 0 4px">🗺️ 순간이동</h4><div class="acts">${D.MAPLIST.map(m => `<button data-go="${m.id}">${esc(m.n)}</button>`).join('')}</div>`;
+  h += `<h4 style="margin:12px 0 4px">🗺️ 순간이동</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-go="${k}" style="color:${c}">🏠${n}마을</button>`).join('')}${D.MAPLIST.filter(m => m.id !== 'bucheon').map(m => `<button data-go="${m.id}">${esc(m.n)}</button>`).join('')}</div>`;
+  h += `<h4 style="margin:12px 0 4px">📜 퀘스트 / NPC</h4><div class="acts"><button data-a="qnext">⏩ 현재 퀘스트 바로 달성</button><button data-a="qreset">🔄 퀘스트 초기화</button>${Object.entries(D.NPCS).map(([k, n]) => `<button data-npc="${k}">🧑 ${esc(n.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="99" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
   h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급</h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
@@ -750,6 +804,7 @@ function renderAdm() {
   P.querySelectorAll('[data-a]').forEach(b => b.onclick = () => adm({ op: b.dataset.a }));
   P.querySelectorAll('[data-boss]').forEach(b => b.onclick = () => adm({ op: 'boss', id: b.dataset.boss }));
   P.querySelectorAll('[data-go]').forEach(b => b.onclick = () => adm({ op: 'go', map: b.dataset.go }));
+  P.querySelectorAll('[data-npc]').forEach(b => b.onclick = () => adm({ op: 'tpnpc', id: b.dataset.npc }));
   P.querySelectorAll('[data-job]').forEach(b => b.onclick = () => adm({ op: 'job', job: b.dataset.job }));
   P.querySelectorAll('[data-fac]').forEach(b => b.onclick = () => adm({ op: 'faction', f: b.dataset.fac }));
   P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv }); sl.value = ''; });

@@ -43,6 +43,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 .sk b{position:absolute;left:3px;top:1px;font-size:11px;color:var(--acc)}
 .sk .cdv{position:absolute;left:0;right:0;bottom:0;background:#000a;pointer-events:none}
 .sk.lock{opacity:.35}
+.sk.pot{font-size:20px}.sk .pq{position:absolute;right:3px;bottom:1px;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
 /* 채팅 */
 #chat{position:fixed;left:10px;bottom:10px;width:min(380px,calc(100vw - 20px));z-index:6}
 #log{height:170px;overflow-y:auto;background:#0d0a1ccc;border:2px solid var(--line);border-radius:12px 12px 0 0;padding:6px 8px;font-size:13px;line-height:1.35;user-select:text}
@@ -93,7 +94,14 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
  #mapname{top:auto;bottom:182px;left:12px;transform:none;font-size:12px;padding:2px 8px}
  #chat{top:134px;bottom:auto;left:6px;width:min(250px,64vw)}#log{height:72px;font-size:11px;background:#0d0a1c99}#chatin{font-size:13px;padding:5px 7px}
  #skills{left:auto;right:8px;bottom:110px;transform:none;flex-wrap:wrap;justify-content:flex-end;width:170px}
- .sk{width:50px;height:50px;font-size:11px}
+ .sk{width:46px;height:46px;font-size:10px}.sk.pot{font-size:17px}
+ #skills{width:200px}
+ .panel{top:auto;bottom:0;transform:translateX(-50%);width:100vw;max-height:62vh;border-radius:16px 16px 0 0;padding:10px}
+ #pinv .grid{grid-template-columns:repeat(8,1fr);gap:3px;max-height:24vh;overflow-y:auto}
+ .slot{border-radius:6px}
+ #pinv .small{font-size:11px}
+ .panel h3{font-size:17px;margin-bottom:6px}
+ #pdlg{bottom:0!important}
 }
 </style>
 </head>
@@ -135,7 +143,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
     <button data-d="2" style="left:104px;top:52px">▶</button><button data-d="0" style="left:52px;top:104px">▼</button>
   </div>
   <button id="abtn" class="pri">공격</button>
-  <div id="potb"><button data-pot="hp">❤️</button><button data-pot="mp">💙</button></div>
+  <div id="potb"><button id="pickb">🫳줍기·대화</button></div>
 </div>
 
 <div id="pinv" class="panel hidden"></div>
@@ -145,6 +153,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 <div id="pjob" class="panel hidden"></div>
 <div id="phelp" class="panel hidden"></div>
 <div id="padm" class="panel hidden"></div>
+<div id="pdlg" class="panel hidden" style="top:auto;bottom:90px;transform:translateX(-50%);z-index:25"></div>
 <div id="ppk" class="panel hidden"></div>
 <div id="tip" class="hidden"></div>
 <div id="ctx" class="hidden"></div>
