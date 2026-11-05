@@ -19,8 +19,8 @@ button.red{background:#c92a2a;border-color:#ff6b6b}
 button:disabled{opacity:.45;cursor:default}
 input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:#14102a;color:var(--txt);outline:none}
 /* 로그인 */
-#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#4a3a8a,#151025);z-index:50;padding:16px}
-#login .box{background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:22px;width:min(420px,100%);text-align:center}
+#login{position:fixed;inset:0;display:flex;overflow-y:auto;background:radial-gradient(circle at 50% 30%,#4a3a8a,#151025);z-index:50;padding:16px}
+#login .box{margin:auto;background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:22px;width:min(420px,100%);text-align:center}
 #login h1{margin:0 0 4px;font-size:38px;color:var(--acc);text-shadow:0 3px 0 #a0522d}
 #login p{color:var(--dim);margin:0 0 14px}
 #login input{width:100%;margin:5px 0}
@@ -108,6 +108,8 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
     <input id="lpw" type="password" placeholder="비밀번호" maxlength="30" autocomplete="current-password">
     <div class="small" style="margin-top:8px">처음이면 진영(동네)을 골라주세요 · 기존 캐릭터는 그대로 접속</div>
     <div class="facs" id="facs"></div>
+    <canvas id="fprev" width="370" height="150" style="width:100%;max-width:370px;height:auto;background:#1a1530;border-radius:12px"></canvas>
+    <div id="fperk" class="small" style="margin:4px 0 10px;color:#ffe066">🔥 빨간 망토 · 공격력 +8%</div>
     <button class="pri" id="lgo" style="width:100%;font-size:18px;padding:9px">시작하기</button>
     <div id="lerr"></div>
   </div>
@@ -124,7 +126,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
   <div id="mapname"></div>
   <div id="menu">
     <button data-p="inv">🎒<span>가방(I)</span></button><button data-p="eq">🛡️<span>장비(E)</span></button><button data-p="quest">📜<span>퀘스트(Q)</span></button>
-    <button data-p="shop">🏪<span>상점(B)</span></button><button data-p="job">🌟<span>직업(J)</span></button><button data-p="help">❓<span>도움말</span></button>
+    <button data-p="shop">🏪<span>상점(B)</span></button><button data-p="job">🌟<span>직업(J)</span></button><button data-p="help">❓<span>도움말</span></button><button data-p="adm" id="admbtn" class="hidden" style="background:#7048e8">👑<span>관리자(P)</span></button>
   </div>
   <div id="skills"></div>
   <div id="chat"><div id="log"></div><input id="chatin" placeholder="Enter: 채팅 · !전체채팅 · /w 이름 귓말" maxlength="80"></div>
@@ -142,6 +144,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 <div id="pshop" class="panel hidden"></div>
 <div id="pjob" class="panel hidden"></div>
 <div id="phelp" class="panel hidden"></div>
+<div id="padm" class="panel hidden"></div>
 <div id="ppk" class="panel hidden"></div>
 <div id="tip" class="hidden"></div>
 <div id="ctx" class="hidden"></div>

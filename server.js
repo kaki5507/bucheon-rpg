@@ -3,7 +3,8 @@ const express = require('express'), http = require('http'), fs = require('fs'), 
 const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
-const ADMIN = process.env.ADMIN_NAME || '';
+const ADMIN = process.env.ADMIN_NAME || '관리자';
+const ADMIN_PW = process.env.ADMIN_PW || ''; // Render 환경변수에만 설정 (코드에 비밀번호 X)
 const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const now = () => Date.now();
@@ -27,8 +28,12 @@ async function dbInit() {
 
 /* ===================== 정적 데이터 ===================== */
 const FAC = {
-  sangdong: { n: '상동', c: '#ff6b6b' }, jungdong: { n: '중동', c: '#4dabf7' }, wonjong: { n: '원종', c: '#51cf66' },
-  yeokgok: { n: '역곡', c: '#ffd43b' }, sosa: { n: '소사', c: '#da77f2' }
+  // 진영 보너스: atk/def/hp/mp 배율, spd 이동속도, gold 골드 획득
+  sangdong: { n: '상동', c: '#ff6b6b', atk: 1.08, perk: '🔥 빨간 망토 · 공격력 +8%' },
+  jungdong: { n: '중동', c: '#4dabf7', def: 1.15, perk: '🎒 파란 백팩 · 방어력 +15%' },
+  wonjong: { n: '원종', c: '#51cf66', hp: 1.12, perk: '🌱 머리 새싹 · 최대 HP +12%' },
+  yeokgok: { n: '역곡', c: '#ffd43b', spd: 1.1, perk: '🎧 노란 헤드폰 · 이동속도 +10%' },
+  sosa: { n: '소사', c: '#da77f2', mp: 1.2, gold: 1.15, perk: '🐱 고양이귀 · MP +20%, 골드 +15%' }
 };
 const FK = Object.keys(FAC);
 const RAR = [{ n: '일반', c: '#d0d0d0', m: 1 }, { n: '고급', c: '#69db7c', m: 1.3 }, { n: '희귀', c: '#4dabf7', m: 1.7 },
@@ -51,23 +56,59 @@ const HID = {
   'helm|황금|4': '황금왕관', 'helm|별빛|3': '별빛 마법모자', 'helm|용|2': '용기사의 투구'
 };
 const MON = [
-  // id, 이름, 모양, 색, hp, atk, xp, 골드, lv, 재료
+  // id, 이름, 모양, 색, hp, atk, xp, 골드, lv, 재료, 보스
+  // 동네 마을 (Lv1~6)
   ['slime', '초록슬라임', 'blob', '#7ed957', 30, 5, 8, 6, 1, '슬라임젤리'], ['bunny', '토끼', 'bunny', '#ffffff', 38, 6, 10, 7, 2, '토끼발'],
   ['mush', '아기버섯', 'mush', '#ff8a65', 48, 7, 13, 9, 3, '버섯갓'], ['bee', '꿀벌', 'bee', '#ffd43b', 55, 8, 15, 10, 4, '꿀'],
   ['crab', '꽃게', 'crab', '#ff6b6b', 70, 9, 19, 12, 5, '게딱지'], ['cat', '길고양이', 'cat', '#adb5bd', 85, 11, 24, 14, 6, '고양이털'],
-  ['bat', '박쥐', 'bat', '#9775fa', 140, 16, 42, 25, 8, '박쥐날개'], ['ghost', '도깨비불', 'ghost', '#74c0fc', 170, 18, 50, 28, 9, '유령먼지'],
-  ['pumpkin', '호박귀신', 'pumpkin', '#ff922b', 210, 21, 60, 32, 10, '호박씨'], ['snake', '꼬마뱀', 'snake', '#94d82d', 240, 23, 68, 36, 11, '뱀허물'],
-  ['pmush', '독버섯', 'mush', '#be4bdb', 270, 26, 78, 40, 12, '독포자'], ['fox', '여우', 'fox', '#ffa94d', 300, 28, 90, 45, 13, '여우꼬리'],
+  ['pigeon', '비둘기', 'bird', '#a5b4c4', 75, 10, 21, 12, 5, '비둘기깃털'],
+  // 상동역 술집거리 (Lv8~13)
+  ['bat', '박쥐', 'bat', '#9775fa', 140, 16, 42, 25, 8, '박쥐날개'], ['beer', '맥주거품슬라임', 'blob', '#fcc419', 150, 16, 45, 26, 8, '맥주거품'],
+  ['ghost', '도깨비불', 'ghost', '#74c0fc', 170, 18, 50, 28, 9, '유령먼지'], ['soju', '소주병요정', 'bottle', '#69db7c', 185, 19, 54, 30, 9, '소주병뚜껑'],
+  ['skewer', '꼬치몬', 'skewer', '#e8590c', 205, 21, 60, 32, 10, '꼬치'], ['pumpkin', '호박귀신', 'pumpkin', '#ff922b', 210, 21, 60, 32, 10, '호박씨'],
+  ['golbaeng', '골뱅이', 'snail', '#e9c46a', 235, 23, 67, 35, 11, '골뱅이껍데기'], ['rat', '시궁쥐', 'rat', '#868e96', 250, 24, 72, 36, 12, '쥐꼬리'],
+  // 디에이트 헬스장 (Lv12~17)
+  ['snake', '꼬마뱀', 'snake', '#94d82d', 240, 23, 68, 36, 11, '뱀허물'], ['pmush', '독버섯', 'mush', '#be4bdb', 270, 26, 78, 40, 12, '독포자'],
+  ['fox', '여우', 'fox', '#ffa94d', 300, 28, 90, 45, 13, '여우꼬리'], ['dumbbell', '덤벨몬', 'dumbbell', '#868e96', 330, 31, 100, 48, 13, '덤벨원판'],
+  ['shake', '프로틴슬라임', 'blob', '#c08552', 360, 33, 110, 52, 14, '프로틴가루'], ['muscle', '근육토끼', 'bunny', '#ffc9c9', 420, 36, 125, 58, 15, '근육토끼발'],
+  ['kettle', '케틀벨몬', 'kettle', '#495057', 470, 40, 140, 62, 16, '케틀벨손잡이'],
+  // 부천시청 (Lv15~21)
   ['skull', '해골병사', 'skull', '#e9ecef', 520, 42, 160, 70, 15, '뼛조각'], ['spider', '거미', 'spider', '#495057', 580, 46, 190, 80, 16, '거미줄'],
+  ['paper', '서류귀신', 'paper', '#f8f9fa', 600, 46, 195, 82, 16, '결재서류'], ['stamp', '도장골렘', 'golem', '#e03131', 820, 52, 235, 95, 18, '인주'],
+  ['minwon', '민원요정', 'ghost', '#ffa8a8', 720, 54, 245, 98, 19, '민원접수증'], ['clipbat', '클립박쥐', 'bat', '#adb5bd', 760, 56, 255, 100, 20, '클립'],
+  // 춘의동굴 (Lv17~24)
   ['golem', '돌골렘', 'golem', '#868e96', 780, 50, 220, 90, 17, '마석'], ['iceblob', '얼음슬라임', 'blob', '#66d9e8', 640, 48, 200, 85, 18, '얼음조각'],
   ['fireblob', '불꽃슬라임', 'blob', '#ff6b6b', 700, 52, 230, 95, 19, '불꽃조각'], ['wisp', '불꽃정령', 'ghost', '#ff922b', 760, 55, 250, 100, 20, '정령의불씨'],
+  ['cavebat', '동굴박쥐', 'bat', '#5f3dc4', 900, 62, 300, 115, 22, '동굴박쥐이빨'], ['crystal', '수정골렘', 'golem', '#99e9f2', 1050, 66, 340, 125, 23, '수정조각'],
+  ['mole', '두더지', 'rat', '#8d5a3b', 980, 64, 320, 120, 22, '두더지발톱'],
+  // 원종 지하던전 (Lv25+)
   ['imp', '꼬마악마', 'imp', '#e03131', 1200, 78, 430, 160, 25, '악마뿔'], ['shadow', '그림자', 'ghost', '#495057', 1400, 85, 500, 180, 27, '그림자조각'],
   ['dragonling', '아기용', 'dragon', '#40c057', 1700, 92, 620, 220, 28, '용비늘'], ['lavagolem', '용암골렘', 'golem', '#e8590c', 2000, 100, 720, 250, 30, '용암석'],
-  // 보스
-  ['kingslime', '대왕슬라임', 'blob', '#7ed957', 1100, 16, 600, 300, 4, '왕젤리', 1], ['mushking', '버섯대왕', 'mush', '#e64980', 5200, 42, 3200, 900, 12, '대왕버섯', 1],
-  ['skullboss', '해골기사단장', 'skull', '#dee2e6', 15000, 95, 11000, 2500, 20, '기사단장의뼈', 1], ['dragonboss', '심곡의 용', 'dragon', '#2f9e44', 48000, 170, 38000, 8000, 30, '용의심장', 1]
+  ['darkknight', '흑기사', 'skull', '#343a40', 2300, 108, 820, 280, 32, '흑철조각'], ['mimic', '미믹상자', 'mimic', '#b5651d', 2100, 104, 900, 400, 31, '미믹의혀'],
+  // ===== 보스 =====
+  ['kingslime', '대왕슬라임', 'blob', '#7ed957', 1100, 16, 600, 300, 4, '왕젤리', 1], ['bunnyking', '대왕토끼', 'bunny', '#ffffff', 1500, 19, 800, 380, 5, '황금당근', 1],
+  ['mushking', '버섯대왕', 'mush', '#e64980', 5200, 42, 3200, 900, 12, '대왕버섯', 1], ['drunkwhale', '술고래', 'whale', '#4dabf7', 6000, 45, 3600, 1000, 12, '고래수염', 1],
+  ['gymking', '헬창골렘', 'golem', '#f783ac', 9000, 62, 6000, 1500, 17, '황금덤벨', 1], ['protein', '프로틴대왕', 'blob', '#a0522d', 8000, 58, 5600, 1400, 16, '대왕프로틴', 1],
+  ['skullboss', '해골기사단장', 'skull', '#dee2e6', 15000, 95, 11000, 2500, 20, '기사단장의뼈', 1], ['papermaster', '결재왕 서류귀신', 'paper', '#fff3bf', 14000, 90, 10500, 2400, 21, '최종결재도장', 1],
+  ['hyunchang', '천현창', 'human', '#ff8cc6', 16000, 70, 11500, 2600, 21, '천현창의 손거울', 1], ['dohyun', '김도현', 'human', '#ffe066', 16000, 66, 11500, 2600, 21, '도리스타 별조각', 1],
+  ['queenspider', '여왕거미', 'spider', '#862e9c', 25000, 120, 18000, 4000, 25, '여왕거미줄', 1], ['crystalking', '수정왕', 'golem', '#3bc9db', 26000, 115, 19000, 4200, 24, '왕수정', 1],
+  ['dragonboss', '원종의 용', 'dragon', '#2f9e44', 48000, 170, 38000, 8000, 30, '용의심장', 1], ['lich', '리치왕', 'skull', '#9775fa', 60000, 190, 46000, 10000, 33, '리치의 왕관', 1]
 ].map((a, i) => ({ idx: i, id: a[0], n: a[1], s: a[2], c: a[3], hp: a[4], atk: a[5], xp: a[6], g: a[7], lv: a[8], mat: a[9], boss: a[10] || 0 }));
 const MI = {}; MON.forEach(m => MI[m.id] = m);
+// 보스 스킬 (주변 범위 공격, stun/slow 가능)
+const BSK = {
+  kingslime: { n: '점프 착지', r: 2, m: 1.5, c: '#7ed957' }, bunnyking: { n: '당근 폭격', r: 2.5, m: 1.4, c: '#ff922b' },
+  mushking: { n: '독포자 살포', r: 3, m: 1.4, c: '#be4bdb', slow: 3000 }, drunkwhale: { n: '술 분수', r: 3, m: 1.5, c: '#4dabf7', slow: 3000 },
+  gymking: { n: '데드리프트 쾅', r: 2.5, m: 1.8, c: '#f783ac', stun: 1000 }, protein: { n: '프로틴 폭발', r: 3, m: 1.5, c: '#c08552' },
+  skullboss: { n: '뼈 회오리', r: 3, m: 1.6, c: '#dee2e6' }, papermaster: { n: '반려 도장', r: 3, m: 1.6, c: '#e03131', stun: 1000 },
+  hyunchang: { n: '잘생김 광선', r: 3.5, m: 1.7, c: '#ff8cc6', stun: 1200, fx: 'charm' }, dohyun: { n: '도리스타', r: 3.5, m: 1.3, c: '#ffe066', stun: 2200, fx: 'doristar' },
+  queenspider: { n: '거미줄 감옥', r: 3, m: 1.5, c: '#862e9c', slow: 4000 }, crystalking: { n: '수정 파편', r: 3, m: 1.7, c: '#3bc9db' },
+  dragonboss: { n: '용의 숨결', r: 3.5, m: 1.8, c: '#ff6b6b' }, lich: { n: '죽음의 저주', r: 4, m: 1.8, c: '#9775fa', slow: 4000 }
+};
+for (const k in BSK) MI[k].sk = BSK[k];
+MI.hyunchang.twin = 'dohyun'; MI.dohyun.twin = 'hyunchang';
+MI.hyunchang.look = { ar: [3, 5], he: [4, 5], w: [7, 5, 12] }; MI.dohyun.look = { ar: [2, 5], he: [3, 5], w: [4, 5, 12] };
+MI.hyunchang.novar = MI.dohyun.novar = 1;
 const VAR = [{ p: '붉은', c: '#ff5252' }, { p: '푸른', c: '#4dabf7' }, { p: '황금', c: '#ffd43b' }, { p: '그림자', c: '#495057' }, { p: '분홍', c: '#f783ac' }, { p: '무지개', c: 'rainbow' }];
 
 const { JOBS, TIER1_LV } = require('./jobs');
@@ -82,6 +123,13 @@ const QUESTS = [
   { id: 8, n: '뼈다귀 수집', lv: 15, collect: '뼛조각', cnt: 12, exp: 5500, gold: 2500, equip: 3 },
   { id: 9, n: '골렘 사냥', lv: 17, kill: 'golem', cnt: 20, exp: 9000, gold: 4000, scroll: 4 },
   { id: 10, n: '용비늘 수집', lv: 28, collect: '용비늘', cnt: 8, exp: 32000, gold: 12000, equip: 4 },
+  { id: 11, n: '빈 병 회수', lv: 8, collect: '소주병뚜껑', cnt: 10, exp: 1200, gold: 900, scroll: 2 },
+  { id: 12, n: '꼬치 배달', lv: 10, collect: '꼬치', cnt: 10, exp: 1700, gold: 1100, equip: 2 },
+  { id: 13, n: '덤벨 정리', lv: 13, kill: 'dumbbell', cnt: 20, exp: 3200, gold: 1800, scroll: 3 },
+  { id: 14, n: '근손실 방지', lv: 15, collect: '프로틴가루', cnt: 12, exp: 4500, gold: 2200, equip: 3 },
+  { id: 15, n: '민원 처리', lv: 18, kill: 'minwon', cnt: 25, exp: 9500, gold: 4500, scroll: 4 },
+  { id: 16, n: '수정 채굴', lv: 22, collect: '수정조각', cnt: 12, exp: 18000, gold: 7000, equip: 4 },
+  { id: 17, n: '흑기사 토벌', lv: 30, kill: 'darkknight', cnt: 30, exp: 50000, gold: 20000, scroll: 8 },
   { id: 100, n: '동네 청소 (반복)', lv: 1, kill: 'any', cnt: 30, exp: 0, gold: 300, rep: 1, scale: 1 }
 ];
 const SHOP = [{ k: 'enh', n: '강화 주문서', p: 400 }, { k: 'ward', n: '보호 주문서', p: 1500 }, { k: 'hp', n: 'HP포션', p: 40 }, { k: 'mp', n: 'MP포션', p: 40 }];
@@ -90,43 +138,67 @@ const need = lv => Math.floor(30 * Math.pow(lv, 1.7));
 /* ===================== 맵 ===================== */
 function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const MAPS = {};
+// 테마별: 테두리 문자, 장애물 [문자, 비율]
+const THEME = {
+  grass: { edge: 't', obs: [['t', .7], ['r', .18], ['w', .12]] },
+  cave: { edge: '#', obs: [['#', .75], ['r', .25]] },
+  street: { edge: 'B', obs: [['p', .45], ['b', .3], ['n', .25]] },   // 건물, 포장마차, 맥주박스, 네온간판
+  gym: { edge: 'G', obs: [['m', .5], ['d', .3], ['k', .2]] },          // 벽, 운동기구, 덤벨랙, 벤치
+  hall: { edge: 'H', obs: [['c', .35], ['f', .35], ['k', .3]] },        // 벽, 기둥, 화분, 책상
+  sauna: { edge: 'S', obs: [['h', .7], ['k', .3]] }                     // 벽, 온탕, 평상
+};
 function mk(id, o) {
-  const { w, h, theme, seed, dens } = o, rnd = mulberry(seed), t = [];
+  const { w, h, theme, seed, dens } = o, rnd = mulberry(seed), t = [], TH = THEME[theme];
   for (let y = 0; y < h; y++) {
     const row = [];
     for (let x = 0; x < w; x++) {
       let c = '.';
-      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) c = theme === 'cave' ? '#' : 't';
-      else if (rnd() < dens) { const q = rnd(); c = theme === 'cave' ? (q < .75 ? '#' : 'r') : (q < .7 ? 't' : q < .88 ? 'r' : 'w'); }
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) c = TH.edge;
+      else if (rnd() < dens) { let q = rnd(); c = TH.obs[TH.obs.length - 1][0]; for (const [ch, pr] of TH.obs) { if ((q -= pr) < 0) { c = ch; break; } } }
       row.push(c);
     }
     t.push(row);
   }
   const clear = (cx, cy, r) => { for (let y = cy - r; y <= cy + r; y++)for (let x = cx - r; x <= cx + r; x++)if (x > 0 && y > 0 && x < w - 1 && y < h - 1) t[y][x] = '.'; };
-  for (const p of o.portals) { t[p.y][p.x] = '.'; clear(p.x === 0 ? 2 : p.x === w - 1 ? w - 3 : p.x, p.y, 2); }
+  for (const p of o.portals) { t[p.y][p.x] = '.'; clear(p.x === 0 ? 2 : p.x === w - 1 ? w - 3 : p.x, p.y === 0 ? 2 : p.y === h - 1 ? h - 3 : p.y, 2); }
   if (o.spawn) clear(o.spawn.x, o.spawn.y, 3);
-  const m = { id, name: o.name, w, h, theme, t, portals: o.portals, safe: o.safe || null, pool: o.pool, cnt: o.cnt, boss: o.boss, mobs: [], ground: [], spawn: o.spawn || { x: 2, y: 15 }, bossAt: 0, lvr: o.lvr };
+  if (o.safe && o.safe.all) o.safe = { x0: 0, y0: 0, x1: w - 1, y1: h - 1, all: 1 };
+  const m = { id, name: o.name, w, h, theme, t, portals: o.portals, safe: o.safe || null, sl: o.sl || '', pool: o.pool || [], cnt: o.cnt || 0, boss: o.boss || null, mobs: [], ground: [], spawn: o.spawn || { x: 2, y: 15 }, lvr: o.lvr, regen: o.regen || 1 };
   MAPS[id] = m;
 }
 FK.forEach((f, i) => mk(f, {
   name: FAC[f].n + ' 마을', w: 40, h: 30, theme: 'grass', seed: 100 + i, dens: .07, lvr: '1~6',
-  portals: [{ x: 39, y: 15, to: 'wonmi', tx: 1, ty: 4 + i * 6 }], safe: { x0: 1, y0: 9, x1: 8, y1: 21 }, spawn: { x: 4, y: 15 },
-  pool: ['slime', 'bunny', 'mush', 'bee', 'crab', 'cat'], cnt: 26, boss: ['kingslime']
+  portals: [{ x: 39, y: 15, to: 'pub', tx: 1, ty: 4 + i * 6 }], safe: { x0: 1, y0: 9, x1: 8, y1: 21 }, spawn: { x: 4, y: 15 },
+  pool: ['slime', 'bunny', 'mush', 'bee', 'crab', 'cat', 'pigeon'], cnt: 26, boss: ['kingslime', 'bunnyking']
 }));
-mk('wonmi', {
-  name: '원미산', w: 50, h: 34, theme: 'forest', seed: 7, dens: .1, lvr: '8~14',
-  portals: [...FK.map((f, i) => ({ x: 0, y: 4 + i * 6, to: f, tx: 38, ty: 15 })), { x: 49, y: 17, to: 'cave1', tx: 1, ty: 15 }],
-  pool: ['bat', 'ghost', 'pumpkin', 'snake', 'pmush', 'fox', 'cat'], cnt: 48, boss: ['mushking']
+mk('pub', {
+  name: '상동역 술집거리', w: 50, h: 34, theme: 'street', seed: 7, dens: .08, lvr: '8~13',
+  portals: [...FK.map((f, i) => ({ x: 0, y: 4 + i * 6, to: f, tx: 38, ty: 15 })), { x: 49, y: 17, to: 'gym', tx: 1, ty: 15 }, { x: 25, y: 0, to: 'sauna', tx: 15, ty: 17 }],
+  pool: ['bat', 'beer', 'ghost', 'soju', 'skewer', 'pumpkin', 'golbaeng', 'rat'], cnt: 46, boss: ['mushking', 'drunkwhale']
+});
+mk('sauna', {
+  name: '♨️ 사우나 (세이브존)', w: 30, h: 20, theme: 'sauna', seed: 55, dens: .06, lvr: '휴식',
+  portals: [{ x: 15, y: 19, to: 'pub', tx: 25, ty: 2 }], safe: { all: 1 }, sl: '♨️ 세이브존 · PvP/몬스터 없음 · HP/MP 빠른 회복', spawn: { x: 15, y: 10 }, regen: 6
+});
+mk('gym', {
+  name: '디에이트 헬스장', w: 44, h: 30, theme: 'gym', seed: 77, dens: .09, lvr: '12~17',
+  portals: [{ x: 0, y: 15, to: 'pub', tx: 48, ty: 17 }, { x: 43, y: 15, to: 'hall', tx: 1, ty: 15 }],
+  pool: ['snake', 'pmush', 'fox', 'dumbbell', 'shake', 'muscle', 'kettle'], cnt: 40, boss: ['gymking', 'protein']
+});
+mk('hall', {
+  name: '부천시청', w: 50, h: 30, theme: 'hall', seed: 88, dens: .08, lvr: '15~21',
+  portals: [{ x: 0, y: 15, to: 'gym', tx: 42, ty: 15 }, { x: 49, y: 15, to: 'cave1', tx: 1, ty: 15 }],
+  pool: ['skull', 'spider', 'paper', 'stamp', 'minwon', 'clipbat'], cnt: 42, boss: ['hyunchang', 'hyunchang', 'skullboss', 'papermaster']
 });
 mk('cave1', {
-  name: '춘의 동굴', w: 50, h: 30, theme: 'cave', seed: 21, dens: .14, lvr: '15~20',
-  portals: [{ x: 0, y: 15, to: 'wonmi', tx: 48, ty: 17 }, { x: 49, y: 15, to: 'cave2', tx: 1, ty: 15 }],
-  pool: ['skull', 'spider', 'golem', 'iceblob', 'fireblob', 'wisp'], cnt: 42, boss: ['skullboss']
+  name: '춘의동굴', w: 50, h: 30, theme: 'cave', seed: 21, dens: .14, lvr: '17~24',
+  portals: [{ x: 0, y: 15, to: 'hall', tx: 48, ty: 15 }, { x: 49, y: 15, to: 'cave2', tx: 1, ty: 15 }],
+  pool: ['golem', 'iceblob', 'fireblob', 'wisp', 'cavebat', 'crystal', 'mole'], cnt: 42, boss: ['queenspider', 'crystalking']
 });
 mk('cave2', {
-  name: '심곡 지하던전', w: 50, h: 30, theme: 'cave', seed: 33, dens: .15, lvr: '25+',
+  name: '원종 지하던전', w: 50, h: 30, theme: 'cave', seed: 33, dens: .15, lvr: '25+',
   portals: [{ x: 0, y: 15, to: 'cave1', tx: 48, ty: 15 }],
-  pool: ['imp', 'shadow', 'dragonling', 'lavagolem'], cnt: 40, boss: ['dragonboss']
+  pool: ['imp', 'shadow', 'dragonling', 'lavagolem', 'darkknight', 'mimic'], cnt: 40, boss: ['dragonboss', 'lich']
 });
 const inSafe = (m, x, y) => !!m.safe && x >= m.safe.x0 && x <= m.safe.x1 && y >= m.safe.y0 && y <= m.safe.y1;
 const walk = (m, x, y) => x >= 0 && y >= 0 && x < m.w && y < m.h && m.t[y][x] === '.';
@@ -147,19 +219,22 @@ function spawnMob(m, mob) {
   const o = { id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 0, dead: 0, respawn: 0, atkAt: 0, mvAt: 0, tgt: 0 };
   m.mobs.push(o); return o;
 }
-function spawnBoss(m) {
+function spawnBoss(m, id, near) {
   let x, y, n = 0;
-  do { x = R(6, m.w - 6); y = R(4, m.h - 4); n++; } while ((!walk(m, x, y) || inSafe(m, x, y) || occ(m, x, y)) && n < 80);
-  const t = MI[pick(m.boss)], v = R(0, VAR.length - 1);
-  const o = { id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 1, v, acc: R(0, 3), dead: 0, atkAt: 0, mvAt: 0, tgt: 0, until: now() + 40 * 60000 };
+  do { if (near) { x = near.x + R(-4, 4); y = near.y + R(-4, 4); } else { x = R(6, m.w - 6); y = R(4, m.h - 4); } n++; } while ((!walk(m, x, y) || inSafe(m, x, y) || occ(m, x, y)) && n < 120);
+  const t = MI[id] || MI[pick(m.boss)], v = t.novar ? null : R(0, VAR.length - 1);
+  const o = { id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 1, v, acc: R(0, 3), dead: 0, atkAt: 0, mvAt: 0, tgt: 0, skAt: now() + 4000, until: now() + 40 * 60000 };
   m.mobs.push(o);
-  announce(`📢 [${m.name}]에 ${VAR[v].p} ${t.n}이(가) 나타났다!`);
+  const nm = (v == null ? '' : VAR[v].p + ' ') + t.n;
+  if (t.twin && !near?.twin) { spawnBoss(m, t.twin, { x, y, twin: 1 }); announce(`📢 [${m.name}]에 잘생긴 쌍둥이 보스 ${t.n} & ${MI[t.twin].n}이(가) 나타났다! ✨`); }
+  else if (!near?.twin) announce(`📢 [${m.name}]에 ${nm}이(가) 나타났다!`);
   return o;
 }
-Object.values(MAPS).forEach(m => { for (let i = 0; i < m.cnt; i++)spawnMob(m); });
+Object.values(MAPS).forEach(m => { if (m.pool.length) for (let i = 0; i < m.cnt; i++)spawnMob(m); });
 
 /* ===================== 아이템 ===================== */
 const power = it => { const arr = it.type === 'weapon' ? WB : it.type === 'armor' ? AB : HB; const base = arr[it.b][it.type === 'weapon' ? 'a' : 'd']; return Math.round(base * (1 + it.il * 0.22) * RAR[it.r].m * (1 + it.plus * 0.1) + it.plus); };
+const ADMIN_TIP = '👑 관리자 모드: 상단 👑 버튼으로 관리자 창 (보스 소환/레벨/아이템/이동/무적 등)';
 const isEq = it => it.type === 'weapon' || it.type === 'armor' || it.type === 'helm';
 function rollRarity(boss) { const w = boss ? [0, 0, 500, 350, 150] : [600, 250, 100, 40, 10]; let r = Math.random() * w.reduce((a, b) => a + b); for (let i = 0; i < 5; i++) { if ((r -= w[i]) < 0) return i; } return 0; }
 function buildEquip(type, il, r) {
@@ -196,9 +271,10 @@ function announce(m) { const s = JSON.stringify({ t: 'chat', ch: 'sys', m }); fo
 const say = (p, ch, m, c) => send(p, { t: 'chat', ch, m, c });
 function stats(p) {
   const j = JOBS[p.job], w = p.eq.weapon, a = p.eq.armor, h = p.eq.helm;
-  p.mhp = Math.round((60 + p.lv * 22) * j.hp); p.mmp = Math.round((25 + p.lv * 7) * j.mp);
-  p.atk = Math.round((6 + p.lv * 2.2) * j.atk + (w ? power(w) : 0));
-  p.def = Math.round(p.lv * 0.8 + (a ? power(a) : 0) + (h ? power(h) : 0));
+  const F = FAC[p.faction] || {};
+  p.mhp = Math.round((60 + p.lv * 22) * j.hp * (F.hp || 1)); p.mmp = Math.round((25 + p.lv * 7) * j.mp * (F.mp || 1));
+  p.atk = Math.round(((6 + p.lv * 2.2) * j.atk + (w ? power(w) : 0)) * (F.atk || 1));
+  p.def = Math.round((p.lv * 0.8 + (a ? power(a) : 0) + (h ? power(h) : 0)) * (F.def || 1));
   p.hp = Math.min(p.hp, p.mhp); p.mp = Math.min(p.mp, p.mmp);
 }
 const defOf = p => p.def * bm(p, 'def');
@@ -206,14 +282,14 @@ const atkOf = p => p.atk * bm(p, 'atk');
 function mePayload(p) {
   return {
     t: 'me', id: p.id, name: p.name, faction: p.faction, job: p.job, lv: p.lv, exp: p.exp, need: need(p.lv), gold: p.gold, hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp,
-    atk: p.atk, def: p.def, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, lock: [...p.lock]
+    atk: p.atk, def: p.def, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, lock: [...p.lock], admin: p.admin ? { god: p.god ? 1 : 0, onehit: p.onehit ? 1 : 0, fast: p.fast ? 1 : 0 } : 0
   };
 }
 function pubP(p) {
   const w = p.eq.weapon, a = p.eq.armor, h = p.eq.helm;
-  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
+  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, ad: p.admin ? 1 : 0, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
 }
-function mapMsg(m) { return { t: 'map', id: m.id, name: m.name, w: m.w, h: m.h, theme: m.theme, rows: m.t.map(r => r.join('')), portals: m.portals.map(p => ({ x: p.x, y: p.y, n: MAPS[p.to].name })), safe: m.safe }; }
+function mapMsg(m) { return { t: 'map', id: m.id, name: m.name, w: m.w, h: m.h, theme: m.theme, rows: m.t.map(r => r.join('')), portals: m.portals.map(p => ({ x: p.x, y: p.y, n: MAPS[p.to].name })), safe: m.safe, sl: m.sl, lvr: m.lvr }; }
 function warp(p, mapId, x, y) {
   const m = MAPS[mapId]; p.map = mapId;
   let n = 0; while (occ(m, x, y, p) && n < 20) { x += R(-1, 1); y += R(-1, 1); n++; if (!walk(m, x, y)) { x = m.spawn.x; y = m.spawn.y; } }
@@ -267,7 +343,7 @@ function hit(p, e, mult, s) {
   if (s && s.stun) e.o.stun = t + (e.k === 'p' ? s.stun * 0.6 : s.stun);
   if (s && (s.stun || s.slow) && e.k === 'p') e.o.vdirty = 1;
   let dmg = atkOf(p) * mult * (0.85 + Math.random() * 0.3); const crit = Math.random() < 0.1; if (crit) dmg *= 1.6;
-  if (e.k === 'm') { dmg = Math.max(1, Math.round(dmg - MON[e.o.t].lv * 0.8)); damageMob(p, e.o, dmg, crit); }
+  if (e.k === 'm') { dmg = p.onehit ? e.o.hp : Math.max(1, Math.round(dmg - MON[e.o.t].lv * 0.8)); damageMob(p, e.o, dmg, crit); }
   else { dmg = Math.max(1, Math.round(dmg * 0.5 - defOf(e.o) * 0.5)); damagePlayer(e.o, dmg, p, crit); }
 }
 function damageMob(p, mo, dmg, crit) {
@@ -277,6 +353,7 @@ function damageMob(p, mo, dmg, crit) {
 }
 function damagePlayer(v, dmg, att, crit) {
   if (v.dead) return;
+  if (v.god) { bc(v.map, { t: 'dm', x: v.x, y: v.y, v: 0, c: '#adb5bd' }); return; }
   v.hp -= dmg; v.vdirty = 1;
   bc(v.map, { t: 'dm', x: v.x, y: v.y, v: dmg, c: '#ff6b6b', cr: crit ? 1 : 0 });
   if (v.hp <= 0) die(v, att);
@@ -298,14 +375,14 @@ function die(v, att) {
 function killMob(p, mo) {
   const tp = MON[mo.t], m = MAPS[p.map]; mo.dead = 1;
   let xp = tp.xp; if (p.lv > tp.lv + 8) xp *= 0.3; xp = Math.round(xp);
-  const gold = Math.round(tp.g * (0.6 + Math.random() * 0.8)); p.gold += gold;
+  const gold = Math.round(tp.g * (0.6 + Math.random() * 0.8) * (FAC[p.faction].gold || 1)); p.gold += gold;
   const loot = [];
   const add = it => { giveItem(p, it); loot.push(itemLabel(it)); if (isEq(it) && it.r >= 4) announce(`✨ ${p.name}님이 ${itemLabel(it)} 획득!`); };
   if (mo.boss) {
     for (let i = R(2, 3); i > 0; i--)add(genEquip(tp.lv, true));
     add(mkScroll('enh', R(3, 6))); add(mkScroll('ward', R(1, 2))); add(mkPot('hp', R(5, 10))); add(stackItem('mat', tp.mat, tp.mat, R(2, 4)));
     if (Math.random() < 0.05) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
-    xp = tp.xp; announce(`🏆 ${p.name}님이 ${VAR[mo.v].p} ${tp.n}을(를) 처치했어요!`);
+    xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`);
   } else {
     if (Math.random() < 0.12) add(mkPot('hp', 1)); if (Math.random() < 0.06) add(mkPot('mp', 1));
     if (Math.random() < 0.07) add(mkScroll('enh', 1)); if (Math.random() < 0.015) add(mkScroll('ward', 1));
@@ -316,7 +393,7 @@ function killMob(p, mo) {
   addExp(p, xp);
   for (const k in p.q) { const qd = QUESTS.find(q => q.id === +k); if (qd && qd.kill && (qd.kill === 'any' || qd.kill === tp.id)) p.q[k] = Math.min(qd.cnt, (p.q[k] || 0) + 1); }
   p.dirty = 1; bc(p.map, { t: 'fx', k: 'die', x: mo.x, y: mo.y, c: tp.c });
-  if (mo.boss) m.mobs.splice(m.mobs.indexOf(mo), 1); else mo.respawn = now() + R(6000, 12000);
+  if (mo.boss || mo.temp) m.mobs.splice(m.mobs.indexOf(mo), 1); else mo.respawn = now() + R(6000, 12000);
 }
 function basicAttack(p) {
   const t = now(); if (p.dead || t < p.atkAt || t < p.stun) return;
@@ -331,10 +408,10 @@ const bm = (p, k) => p.bf && p.bf[k] && p.bf[k][1] > now() ? p.bf[k][0] : 1;
 function castSkill(p, i) {
   const j = JOBS[p.job], s = j.sk[i], t = now();
   if (!s || p.dead || t < p.stun) return;
-  if (p.lv < s.lv) return say(p, 'sys', '아직 사용할 수 없는 스킬이에요');
-  if (t < p.cd[i]) return;
-  if (p.mp < s.mp) return say(p, 'sys', 'MP가 부족해요');
-  const use = () => { p.mp -= s.mp; p.cd[i] = t + s.cd; p.vdirty = 1; send(p, { t: 'cd', i, ms: s.cd }); };
+  if (p.lv < s.lv && !p.admin) return say(p, 'sys', '아직 사용할 수 없는 스킬이에요');
+  if (t < p.cd[i] && !p.god) return;
+  if (p.mp < s.mp && !p.god) return say(p, 'sys', 'MP가 부족해요');
+  const use = () => { if (!p.god) { p.mp -= s.mp; p.cd[i] = t + s.cd; } p.vdirty = 1; send(p, { t: 'cd', i, ms: s.cd }); };
   const fx = o => bc(p.map, Object.assign({ t: 'fx', i: p.id, c: s.c, f: s.fx, n: s.n }, o));
   const buffs = q => { if (!s.dur) return; if (s.atk) q.bf.atk = [s.atk, t + s.dur]; if (s.def) q.bf.def = [s.def, t + s.dur]; if (s.spd) q.bf.spd = [s.spd, t + s.dur]; };
   const heal = q => { if (!s.heal) return; const v = Math.round(q.mhp * s.heal); q.hp = Math.min(q.mhp, q.hp + v); q.vdirty = 1; bc(p.map, { t: 'dm', x: q.x, y: q.y, v, c: '#69db7c' }); };
@@ -458,16 +535,51 @@ function pkMsg(p, m) {
   } else if (m.s === 'cancel') endGame(g, p.name + '님이 취소했어요');
 }
 
+/* ===================== 관리자 ===================== */
+function adminCmd(p, m) {
+  const mp = MAPS[p.map], ok = msg => say(p, 'sys', '👑 ' + msg);
+  switch (m.op) {
+    case 'boss': { const t = MI[m.id]; if (!t || !t.boss) return; spawnBoss(mp, t.id, p); return ok(t.n + ' 소환'); }
+    case 'mob': { const t = MI[m.id]; if (!t || t.boss) return; const n = Math.max(1, Math.min(20, m.n | 0)); let c = 0;
+      for (let k = 0; k < n * 6 && c < n; k++) { const x = p.x + R(-4, 4), y = p.y + R(-4, 4); if (!walk(mp, x, y) || occ(mp, x, y)) continue; mp.mobs.push({ id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 0, temp: 1, dead: 0, respawn: 0, atkAt: 0, mvAt: 0, tgt: 0 }); c++; }
+      return ok(`${t.n} ${c}마리 소환`); }
+    case 'clear': { for (let i = mp.mobs.length - 1; i >= 0; i--) { const o = mp.mobs[i]; if (o.boss || o.temp) mp.mobs.splice(i, 1); else { o.dead = 1; o.respawn = now() + 3000; } } return ok('맵의 몬스터를 모두 지웠어요'); }
+    case 'lv': p.lv = Math.max(1, Math.min(99, m.v | 0)); p.exp = 0; stats(p); p.hp = p.mhp; p.mp = p.mmp; p.dirty = 1; return ok('레벨 ' + p.lv);
+    case 'exp': addExp(p, need(p.lv)); return;
+    case 'gold': p.gold += 1000000; p.dirty = 1; return ok('골드 +1,000,000');
+    case 'scroll': giveItem(p, mkScroll('enh', 50)); giveItem(p, mkScroll('ward', 20)); return ok('강화 50 / 보호 20');
+    case 'pot': giveItem(p, mkPot('hp', 100)); giveItem(p, mkPot('mp', 100)); return ok('포션 100개씩');
+    case 'item': { const ty = ['weapon', 'armor', 'helm'].includes(m.type) ? m.type : 'weapon', r = Math.max(0, Math.min(5, m.r | 0)), il = Math.max(1, Math.min(99, m.il | 0 || p.lv));
+      const it = r === 5 ? hiddenEquip(ty, il) : buildEquip(ty, il, r); if (r < 5 && it.r === 5) { } giveItem(p, it); return ok(itemLabel(it) + ' 지급'); }
+    case 'mat': { const t = MI[m.id]; if (t) giveItem(p, stackItem('mat', t.mat, t.mat, 20)); return; }
+    case 'go': { const mm = MAPS[m.map]; if (mm) warp(p, mm.id, mm.spawn.x + (mm.safe && !mm.safe.all ? 6 : 0), mm.spawn.y); return; }
+    case 'heal': p.hp = p.mhp; p.mp = p.mmp; p.stun = 0; p.cd = [0, 0, 0, 0]; p.vdirty = 1; return ok('완전 회복');
+    case 'god': p.god = !p.god; p.dirty = 1; return ok('무적 ' + (p.god ? 'ON (피해 없음, 스킬 쿨/MP 없음)' : 'OFF'));
+    case 'onehit': p.onehit = !p.onehit; p.dirty = 1; return ok('한방 ' + (p.onehit ? 'ON' : 'OFF'));
+    case 'fast': p.fast = !p.fast; p.dirty = 1; return ok('초고속 이동 ' + (p.fast ? 'ON' : 'OFF'));
+    case 'job': { if (!JOBS[m.job]) return; p.job = m.job; p.cd = [0, 0, 0, 0]; stats(p); p.dirty = 1; bc(p.map, { t: 'fx', k: 'lvup', x: p.x, y: p.y, c: '#ff8cff' }); return ok('직업: ' + JOBS[m.job].n); }
+    case 'faction': if (FAC[m.f]) { p.faction = m.f; stats(p); p.dirty = 1; ok('진영: ' + FAC[m.f].n); } return;
+    case 'allboss': { for (const mm of Object.values(MAPS)) if (mm.boss) spawnBoss(mm); return ok('모든 사냥터에 보스 소환'); }
+  }
+}
+
 /* ===================== 접속/메시지 ===================== */
 const app = express(); app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app); const wss = new WebSocketServer({ server, maxPayload: 8192 });
-const INIT = { t: 'init', TIER1_LV, MON: MON.map(m => ({ id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+const INIT = { t: 'init', TIER1_LV, MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), MON: MON.map(m => ({ look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
   if (pw.length < 3 || pw.length > 30) return ws.send(JSON.stringify({ t: 'err', m: '비밀번호는 3자 이상' }));
   let acc = db.acc[name];
-  if (acc) {
+  const isAdmin = name === ADMIN;
+  if (isAdmin) {
+    const ok = ADMIN_PW && pw.length === ADMIN_PW.length && crypto.timingSafeEqual(Buffer.from(pw), Buffer.from(ADMIN_PW));
+    if (!ok) return ws.send(JSON.stringify({ t: 'err', m: ADMIN_PW ? '비밀번호가 틀렸어요' : '사용할 수 없는 이름이에요' }));
+    const salt = crypto.randomBytes(8).toString('hex');
+    if (!acc) acc = db.acc[name] = { salt, hash: hashPw(pw, salt), ch: newChar(FAC[m.faction] ? m.faction : 'sangdong') };
+    for (const q of players.values()) if (q.name === name) { save(q); q.ws.close(); players.delete(q.id); }
+  } else if (acc) {
     const h = Buffer.from(hashPw(pw, acc.salt)), o = Buffer.from(acc.hash);
     if (h.length !== o.length || !crypto.timingSafeEqual(h, o)) return ws.send(JSON.stringify({ t: 'err', m: '비밀번호가 틀렸어요' }));
     for (const q of players.values()) if (q.name === name) { save(q); q.ws.close(); players.delete(q.id); }
@@ -481,10 +593,12 @@ function login(ws, m) {
   if (!JOBS[p.job]) p.job = 'novice';
   if (p.job === 'novice' && p.lv >= TIER1_LV) setTimeout(() => send(p, { t: 'jobpick' }), 500);
   stats(p); if (p.hp > 900 && c.hp === 999) { p.hp = p.mhp; p.mp = p.mmp; } p.hp = Math.max(1, p.hp);
+  if (isAdmin) { p.admin = 1; p.god = 1; }
   players.set(p.id, p); ws.pid = p.id;
   ws.send(JSON.stringify(INIT)); warp(p, p.map, p.x, p.y);
   say(p, 'sys', `${FAC[p.faction].n} 진영 ${p.name}님 환영해요! 방향키 이동 / Space 공격 / 1~4 스킬 / I 가방 / E 장비 / Q 퀘스트`);
-  say(p, 'sys', '다른 진영 사람은 공격할 수 있어요. 마을 왼쪽 안전지대에서는 PvP가 안 돼요.');
+  say(p, 'sys', '다른 진영 사람은 공격할 수 있어요. 마을 왼쪽 안전지대와 사우나에서는 PvP가 안 돼요.');
+  if (p.admin) say(p, 'sys', ADMIN_TIP);
   announce(`👋 ${FAC[p.faction].n} ${name}님이 접속했어요`);
 }
 function onMsg(p, m) {
@@ -493,7 +607,7 @@ function onMsg(p, m) {
     case 'mv': {
       if (p.dead || t < p.mvAt || t < p.stun) return; const d = m.d | 0; if (d < 0 || d > 3) return; p.d = d;
       const nx = p.x + DX[d], ny = p.y + DY[d]; if (!walk(mp, nx, ny) || occ(mp, nx, ny, p)) return;
-      p.x = nx; p.y = ny; p.mvAt = t + Math.round(150 / bm(p, 'spd')) - 25;
+      p.x = nx; p.y = ny; p.mvAt = p.fast ? t + 40 : t + Math.round(150 / (bm(p, 'spd') * (FAC[p.faction].spd || 1))) - 25;
       for (let i = mp.ground.length - 1; i >= 0; i--) { const g = mp.ground[i]; if (g.x === p.x && g.y === p.y) { if (p.inv.length < MAXINV || (!isEq(g.it) && p.inv.some(s => s.type === g.it.type && s.k === g.it.k))) { mp.ground.splice(i, 1); giveItem(p, g.it); say(p, 'loot', `줍기: ${itemLabel(g.it)}`); } } }
       const po = mp.portals.find(q => q.x === p.x && q.y === p.y); if (po) warp(p, po.to, po.tx, po.ty);
       break;
@@ -502,7 +616,7 @@ function onMsg(p, m) {
     case 'sk': castSkill(p, m.i | 0); break;
     case 'chat': {
       let s = String(m.m || '').slice(0, 80).trim(); if (!s) return;
-      if (ADMIN && p.name === ADMIN) { if (s === '/boss') { spawnBoss(mp); return; } if (s.startsWith('/lv ')) { p.lv = Math.min(99, +s.slice(4) || 1); p.exp = 0; stats(p); p.hp = p.mhp; p.dirty = 1; return; } if (s.startsWith('/go ')) { const mm = MAPS[s.slice(4).trim()]; if (mm) warp(p, mm.id, mm.spawn.x + 6, mm.spawn.y); return; } if (s.startsWith('/give ')) { const o = [...players.values()].find(q => q.name === s.slice(6).trim()); if (o) { o.lv = Math.max(o.lv, 1); giveItem(o, genEquip(20, true)); } return; } if (s === '/gold') { p.gold += 100000; p.dirty = 1; return; } if (s === '/scroll') { giveItem(p, mkScroll('enh', 20)); giveItem(p, mkScroll('ward', 5)); return; } }
+      if (p.admin) { if (s === '/boss') { spawnBoss(mp); return; } if (s.startsWith('/lv ')) { p.lv = Math.min(99, +s.slice(4) || 1); p.exp = 0; stats(p); p.hp = p.mhp; p.dirty = 1; return; } if (s.startsWith('/go ')) { const mm = MAPS[s.slice(4).trim()]; if (mm) warp(p, mm.id, mm.spawn.x + 6, mm.spawn.y); return; } if (s.startsWith('/give ')) { const o = [...players.values()].find(q => q.name === s.slice(6).trim()); if (o) { o.lv = Math.max(o.lv, 1); giveItem(o, genEquip(20, true)); } return; } if (s === '/gold') { p.gold += 100000; p.dirty = 1; return; } if (s === '/scroll') { giveItem(p, mkScroll('enh', 20)); giveItem(p, mkScroll('ward', 5)); return; } }
       if (s.startsWith('/w ')) { const [, to, ...r] = s.split(' '); const o = [...players.values()].find(q => q.name === to); if (!o) return say(p, 'sys', '그런 사람이 없어요'); const msg = r.join(' '); say(o, 'w', `${p.name} → 나: ${msg}`); say(p, 'w', `나 → ${o.name}: ${msg}`); return; }
       if (s[0] === '!') { s = s.slice(1).trim(); if (!s) return; const o = JSON.stringify({ t: 'chat', ch: 'all', n: p.name, f: p.faction, m: s }); for (const q of players.values()) q.ws.send(o); return; }
       p.bub = s; p.bubT = t + 4000; bc(p.map, { t: 'chat', ch: 'map', n: p.name, f: p.faction, m: s }); break;
@@ -534,6 +648,7 @@ function onMsg(p, m) {
       bc(p.map, { t: 'fx', k: 'lvup', x: p.x, y: p.y, c: '#ff8cff' }); announce(`🌟 ${p.name}님이 [${J.n}] 직업으로 전직했어요!`); break;
     }
     case 'pk': pkMsg(p, m); break;
+    case 'adm': if (p.admin) adminCmd(p, m); break;
   }
 }
 wss.on('connection', ws => {
@@ -551,13 +666,22 @@ function tick() {
   for (const m of Object.values(MAPS)) {
     for (let i = m.mobs.length - 1; i >= 0; i--) {
       const o = m.mobs[i];
-      if (o.dead) { if (!o.boss && t > o.respawn) spawnMob(m, o); continue; }
+      if (o.dead) { if (o.temp) { m.mobs.splice(i, 1); continue; } if (!o.boss && t > o.respawn) spawnMob(m, o); continue; }
       if (o.boss && t > o.until) { m.mobs.splice(i, 1); continue; }
       if (t < (o.stun || 0)) continue;
       const slowM = t < (o.slow || 0) ? 2.2 : 1;
       const tp = MON[o.t]; let tg = null, bd = 1e9;
       for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y)) { const d = dist(o, q); if (d < bd && d <= (o.tgt === q.id ? 9 : 5)) { bd = d; tg = q; } }
       if (tg) {
+        if (o.boss && tp.sk && t > o.skAt && bd <= tp.sk.r + 0.5) {
+          const k = tp.sk; o.skAt = t + R(6000, 9000);
+          bc(m.id, { t: 'fx', k: 'ring', x: o.x, y: o.y, r: k.r, c: k.c, f: k.fx, n: k.n, mi: o.id });
+          for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y) && dist(o, q) <= k.r + 0.42) {
+            if (k.stun) { q.stun = t + k.stun; } if (k.slow) q.bf.spd = [0.45, t + k.slow];
+            damagePlayer(q, Math.max(1, Math.round(tp.atk * k.m * (0.85 + Math.random() * 0.3) - defOf(q) * 0.5)), null);
+          }
+          continue;
+        }
         if (bd <= 1.42) { if (t > o.atkAt) { o.atkAt = t + (o.boss ? 900 : 1200); const dmg = Math.max(1, Math.round(tp.atk * (0.8 + Math.random() * 0.4) - defOf(tg) * 0.5)); damagePlayer(tg, dmg, null); bc(m.id, { t: 'fx', k: 'bite', x: tg.x, y: tg.y, c: '#ff6b6b' }); } }
         else if (t > o.mvAt) { o.mvAt = t + (o.boss ? 320 : 480) * slowM; const dx = tg.x - o.x, dy = tg.y - o.y; const o1 = Math.abs(dx) > Math.abs(dy) ? [[Math.sign(dx), 0], [0, Math.sign(dy)]] : [[0, Math.sign(dy)], [Math.sign(dx), 0]]; for (const [a, b] of o1) { if (!a && !b) continue; const nx = o.x + a, ny = o.y + b; if (walk(m, nx, ny) && !occ(m, nx, ny, o) && !inSafe(m, nx, ny)) { o.x = nx; o.y = ny; break; } } }
       } else if (t > o.mvAt && Math.random() < 0.04) {
@@ -571,7 +695,7 @@ function tick() {
     const ps = []; for (const p of players.values()) if (p.map === m.id && !p.dead) ps.push(pubP(p));
     if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0)]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it)]) });
   }
-  if (tk % 20 === 0) for (const p of players.values()) if (!p.dead) { p.hp = Math.min(p.mhp, p.hp + Math.ceil(p.mhp * 0.02)); p.mp = Math.min(p.mmp, p.mp + Math.ceil(p.mmp * 0.04)); p.vdirty = 1; }
+  if (tk % 20 === 0) for (const p of players.values()) if (!p.dead) { const k = MAPS[p.map].regen; p.hp = Math.min(p.mhp, p.hp + Math.ceil(p.mhp * 0.02 * k)); p.mp = Math.min(p.mmp, p.mp + Math.ceil(p.mmp * 0.04 * k)); p.vdirty = 1; }
   for (const p of players.values()) {
     if (p.dirty) { p.dirty = 0; send(p, mePayload(p)); }
     if (p.vdirty && tk % 3 === 0) { p.vdirty = 0; send(p, { t: 'v', hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, exp: p.exp, need: need(p.lv), lv: p.lv, gold: p.gold }); }
