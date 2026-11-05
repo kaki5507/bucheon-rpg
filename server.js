@@ -316,7 +316,7 @@ function pickUp(p) {
     if (g.it.type === 'gold') { p.gold += g.it.q; m.ground.splice(i, 1); got++; say(p, 'loot', `💰 +${g.it.q}G`); continue; }
     if (p.inv.length >= MAXINV && (isEq(g.it) || !p.inv.some(s => s.type === g.it.type && s.k === g.it.k))) { full++; continue; }
     m.ground.splice(i, 1); giveItem(p, g.it); got++; say(p, 'loot', `줍기: ${itemLabel(g.it)}`, isEq(g.it) ? RAR[g.it.r].c : null);
-    if (isEq(g.it) && g.it.r >= 4) announce(`✨ ${p.name}님이 ${itemLabel(g.it)} 획득!`);
+    if (isEq(g.it) && g.it.r >= 3) { const msg = { t: 'notice', m: `✨ ${p.name}님이 ${itemLabel(g.it)}을(를) 획득했습니다!`, c: RAR[g.it.r].c, big: g.it.r >= 5 ? 1 : 0 }; sendAll(msg, g.it.r >= 4 ? null : p.map); }
   }
   if (full) say(p, 'sys', '가방이 가득 찼어요!'); else if (!got && other) say(p, 'sys', '다른 사람의 아이템이에요 (20초 뒤 누구나 주울 수 있어요)');
   if (got) { p.dirty = 1; p.vdirty = 1; }
@@ -330,6 +330,8 @@ const boomRate = plus => plus < 5 ? 0 : Math.min(80, (plus - 4) * 10);
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 32).toString('hex'); }
 function send(p, o) { if (p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify(o)); }
 function bc(mapId, o) { const s = JSON.stringify(o); for (const p of players.values()) if (p.map === mapId && p.ws.readyState === 1) p.ws.send(s); }
+function sendAll(o, mapId) { const s = JSON.stringify(o); for (const p of players.values()) if (p.ws.readyState === 1 && (!mapId || p.map === mapId)) p.ws.send(s); }
+const who = p => ({ n: p.name, f: p.faction });
 function announce(m) { const s = JSON.stringify({ t: 'chat', ch: 'sys', m }); for (const p of players.values()) if (p.ws.readyState === 1) p.ws.send(s); }
 const say = (p, ch, m, c) => send(p, { t: 'chat', ch, m, c });
 function stats(p) {
@@ -422,7 +424,7 @@ function damagePlayer(v, dmg, att, crit) {
   if (v.hp <= 0) die(v, att);
 }
 function die(v, att) {
-  v.dead = 1; v.hp = 0; const m = MAPS[v.map];
+  v.dead = 1; v.hp = 0; v.streak = 0; const m = MAPS[v.map];
   bc(v.map, { t: 'fx', k: 'die', x: v.x, y: v.y, c: '#ffffff' });
   if (att && att.name) {
     // 진영전 사망: 랜덤 아이템 1~3개 드랍
@@ -431,6 +433,8 @@ function die(v, att) {
     for (const g of m.ground) if (!walk(m, g.x, g.y)) { g.x = v.x; g.y = v.y; }
     say(v, 'sys', `💀 ${att.name}님에게 쓰러졌어요!${lost.length ? ' 떨어뜨림: ' + lost.join(', ') : ''}`);
     say(att, 'sys', `⚔️ ${v.name}님을 처치했어요! 바닥의 아이템을 주워보세요`);
+    att.kills = (att.kills || 0) + 1; att.streak = (att.streak || 0) + 1;
+    sendAll({ t: 'kill', a: who(att), v: who(v), map: MAPS[v.map].name, st: att.streak, lost: lost.length });
   } else say(v, 'sys', '💀 쓰러졌어요...');
   v.exp = Math.max(0, v.exp - Math.floor(need(v.lv) * 0.03)); v.dirty = 1;
   setTimeout(() => { if (!players.has(v.id)) return; v.dead = 0; stats(v); v.hp = v.mhp; v.mp = v.mmp; v.bf = {}; v.stun = 0; const vs = villageSpawn(v.faction); warp(v, vs.map, vs.x, vs.y); v.dirty = 1; }, 3000);
@@ -446,6 +450,7 @@ function killMob(p, mo) {
     add(mkScroll('enh', R(3, 6))); add(mkScroll('ward', R(1, 2))); add(mkPot('hp', R(5, 10))); add(stackItem('mat', tp.mat, tp.mat, R(2, 4)));
     if (Math.random() < 0.05) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
     xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`);
+    sendAll({ t: 'kill', a: who(p), boss: (mo.v == null ? '' : VAR[mo.v].p + ' ') + tp.n, map: m.name });
   } else {
     if (Math.random() < 0.12) add(mkPot('hp', 1)); if (Math.random() < 0.06) add(mkPot('mp', 1));
     if (Math.random() < 0.07) add(mkScroll('enh', 1)); if (Math.random() < 0.015) add(mkScroll('ward', 1));
@@ -727,7 +732,8 @@ function onMsg(p, m) {
     case 'enh': enhance(p, m.id | 0, !!m.ward); break;
     case 'compose': compose(p, (m.ids || []).map(Number).slice(0, 3)); break;
     case 'sell': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id)) return; p.gold += sellPrice(it); p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1; break; }
-    case 'drop': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id)) return; p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1; break; }
+    case 'drop': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id) || p.dead) return; p.inv.splice(p.inv.indexOf(it), 1); dropGround(mp, p.x, p.y, it, 0); p.dirty = 1; say(p, 'sys', `🗑️ ${itemLabel(it)}을(를) 바닥에 버렸어요 (누구나 주울 수 있어요)`);
+      if (isEq(it) && it.r >= 3) sendAll({ t: 'notice', m: `🗑️ ${p.name}님이 ${itemLabel(it)}을(를) 바닥에 버렸다!`, c: RAR[it.r].c }, p.map); break; }
     case 'buy': {
       const s = SHOP.find(x => x.k === m.k); const n = Math.max(1, Math.min(99, m.n | 0)); if (!s || p.gold < s.p * n) return say(p, 'sys', '골드가 부족해요');
       p.gold -= s.p * n; giveItem(p, s.k === 'hp' || s.k === 'mp' ? mkPot(s.k, n) : mkScroll(s.k, n)); p.dirty = 1; break;

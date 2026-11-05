@@ -79,6 +79,8 @@ function onMsg(m) {
     case 'stun': toast('💫 춤추는 중...', '#74c0fc'); break;
     case 'pk': onPoker(m); break;
     case 'dlg': showDlg(m); break;
+    case 'notice': notice(m.m, m.c, m.big); addChat({ ch: 'sys', m: m.m, c: m.c }); break;
+    case 'kill': killFeed(m); break;
   }
 }
 function onState(m) {
@@ -618,6 +620,19 @@ function addChat(m) {
   log.appendChild(d); while (log.children.length > 150) log.firstChild.remove();
   if (atBottom) log.scrollTop = log.scrollHeight;
 }
+function notice(s, c, big) {
+  const box = $('#notices'), d = document.createElement('div'); d.className = 'notice' + (big ? ' big' : ''); d.textContent = s; d.style.borderColor = c || '#ffd43b'; d.style.color = c || '#fff';
+  box.appendChild(d); while (box.children.length > 3) box.firstChild.remove(); setTimeout(() => { d.style.opacity = 0; setTimeout(() => d.remove(), 500); }, big ? 6000 : 4500);
+}
+function killFeed(m) {
+  const box = $('#kills'), d = document.createElement('div'), F = f => FACS[f] || ['?', '#fff'];
+  const nm = o => `<span style="color:${F(o.f)[1]}">[${F(o.f)[0]}] ${esc(o.n)}</span>`;
+  d.className = 'kf';
+  d.innerHTML = m.boss ? `${nm(m.a)} <b>🏆</b> <span style="color:#ffe066">${esc(m.boss)}</span>` : `${nm(m.a)} <b>⚔️</b> ${nm(m.v)}${m.st >= 3 ? ` <span style="color:#ff6b6b">🔥${m.st}연속</span>` : ''}`;
+  d.title = m.map; box.prepend(d); while (box.children.length > 6) box.lastChild.remove();
+  setTimeout(() => { d.style.opacity = 0; setTimeout(() => d.remove(), 600); }, 12000);
+  if (!m.boss) addChat({ ch: 'sys', m: `⚔️ [${m.map}] ${m.a.n} → ${m.v.n} 처치${m.lost ? ' (아이템 ' + m.lost + '개 떨어짐)' : ''}`, c: '#ff8787' });
+}
 function toast(s, c) { const e = $('#toast'); e.textContent = s; e.style.color = c || '#fff'; e.style.opacity = 1; clearTimeout(e._t); e._t = setTimeout(() => e.style.opacity = 0, 1800); }
 
 /* ============ 패널 ============ */
@@ -663,7 +678,7 @@ function renderInv() {
     else {
       if (isEq(sel)) h += `<button class="pri" id="a-eq">장착</button><button id="a-enh">✦ 강화</button><button id="a-ward">🛡 보호 강화</button>`;
       if (sel.type === 'potion') h += `<button class="pri" id="a-use">사용</button>`;
-      h += `<button id="a-sell">판매</button><button class="red" id="a-drop">버리기</button>`;
+      h += `<button id="a-sell">판매</button><button class="red" id="a-drop">🗑️ 바닥에 버리기</button>`;
     }
     h += `</div></div>`;
   }
@@ -679,7 +694,7 @@ function renderInv() {
   on('a-eq', () => send({ t: 'equip', id: sel.id })); on('a-enh', () => send({ t: 'enh', id: sel.id }));
   on('a-ward', () => send({ t: 'enh', id: sel.id, ward: 1 })); on('a-use', () => send({ t: 'use', id: sel.id }));
   on('a-sell', () => { if (!isEq(sel) || sel.r < 3 || confirm('정말 판매할까요?')) send({ t: 'sell', id: sel.id }); });
-  on('a-drop', () => { if (confirm('정말 버릴까요? (사라집니다)')) send({ t: 'drop', id: sel.id }); });
+  on('a-drop', () => { if (!isEq(sel) || sel.r < 2 || confirm('바닥에 버릴까요? 다른 사람이 주울 수 있어요')) send({ t: 'drop', id: sel.id }); });
   on('a-stake', () => { send({ t: 'pk', s: 'stake', id: sel.id }); stakeMode = false; closeAll(); });
   on('cmode', () => { composeMode = true; composeSel = []; renderInv(); });
   on('cx', () => { composeMode = false; renderInv(); });
