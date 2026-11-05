@@ -140,8 +140,55 @@ Object.assign(MI.grandma, {
     '주무관한테 미루지 말고 네가 해!', '연가? 이 시국에 연가를 쓴다고?', '도장 삐뚤게 찍지 말랬지!', '메신저 답장이 왜 이렇게 늦어!',
     '복사기 종이 걸린 거 누가 그냥 두고 갔어!', '내 말 듣고 있어? 메모 안 해?', '결론부터 말해, 결론부터!', '그래서 예산은 어디서 나오는데!'],
   stunTalk: ['정신 차려!!!', '똑바로 서!!', '마이크 테스트! 하나 둘! 셋!!', '전원 집합!!!'],
-  deathLine: '…오늘은 이만 봐준다. 내일 아침 8시까지 보고서 올려.'
+  deathLine: '…오늘은 이만 봐준다. 내일 아침 8시까지 보고서 올려.',
+  lshEvent: 1
 });
+// 김포최명순 x 이소현 이벤트: 이소현 발견 → 전체에 외침 → 쫓아가서 잔소리 폭탄 → 혼자 술 먹고 꽈당
+const LSH_SCOLD = ['이소현!! 거기 서!!!', '니온앤니온? 근무 시간에 춤을 춰?!', '아이돌 연습은 퇴근하고 해!!', '힐을 줘? 일을 줘야지 일을!!',
+  '버프 걸 시간에 보고서를 써!!', '내가 너 신입 때부터 봤어! 응?!', '앵콜 무대? 앵콜은 야근으로 해!!', '결재판 들고 따라와! 당장!!', '…하아… 속 터져 죽겠네.'];
+const LSH_DRINK = ['안 되겠다… 소주 한 잔만…', '🍶 꿀꺽꿀꺽꿀꺽…', '한 잔 더… 🍶 꿀꺽…', '어어…? 세상이 빙글빙글 도네…', '꽈당!!!'];
+function grandmaEvent(m, o, t) {
+  const ev = o.evt;
+  if (!ev) {
+    if (o.evDone) return false;
+    const q = [...players.values()].find(p => p.map === m.id && !p.dead && p.job === 'lsh'); if (!q) return false;
+    o.evt = { ph: 'hunt', tid: q.id, t0: t, step: 0, next: 0 };
+    bc(m.id, { t: 'mtalk', id: o.id, m: '이소현!!!!!!!!', loud: 1 });
+    sendAll({ t: 'notice', m: '🎤 김포최명순: "이소현!!!!!!!!" (' + m.name + ')', c: '#ff6b6b', big: 1 });
+    return true;
+  }
+  const q = players.get(ev.tid), here = q && !q.dead && q.map === m.id;
+  if (ev.ph === 'hunt') {
+    if (!here || t - ev.t0 > 60000) { o.evt = null; bc(m.id, { t: 'mtalk', id: o.id, m: '…어디로 도망갔어?! 다음에 보자!', loud: 1 }); return false; }
+    if (dist(o, q) <= 1.5) { ev.ph = 'scold'; ev.step = 0; ev.next = t; return true; }
+    if (t > o.mvAt) {
+      o.mvAt = t + 210; const dx = q.x - o.x, dy = q.y - o.y;
+      const tries = Math.abs(dx) > Math.abs(dy) ? [[Math.sign(dx), 0], [0, Math.sign(dy) || 1], [0, -(Math.sign(dy) || 1)]] : [[0, Math.sign(dy)], [Math.sign(dx) || 1, 0], [-(Math.sign(dx) || 1), 0]];
+      for (const [a, b] of tries) { if (!a && !b) continue; const nx = o.x + a, ny = o.y + b; if (walk(m, nx, ny) && !occ(m, nx, ny, o)) { o.x = nx; o.y = ny; break; } }
+    }
+    return true;
+  }
+  if (t < ev.next) return true;
+  if (ev.ph === 'scold') {
+    if (ev.step < LSH_SCOLD.length) {
+      bc(m.id, { t: 'mtalk', id: o.id, m: LSH_SCOLD[ev.step], loud: 1 });
+      if (here) { q.stun = t + 1300; q.vdirty = 1; }
+      if (ev.step % 3 === 0) bc(m.id, { t: 'fx', k: 'ring', x: o.x, y: o.y, r: 2.5, c: '#ff6b6b', f: 'mic', mi: o.id });
+      ev.step++; ev.next = t + 1250; return true;
+    }
+    ev.ph = 'drink'; ev.step = 0; o.drunk = 1; ev.next = t + 600; return true;
+  }
+  if (ev.ph === 'drink') {
+    if (ev.step < LSH_DRINK.length) { bc(m.id, { t: 'mtalk', id: o.id, m: LSH_DRINK[ev.step], loud: 1 }); ev.step++; ev.next = t + 1400; return true; }
+    o.evDone = 1; o.evt = null;
+    sendAll({ t: 'notice', m: '🍶 김포최명순이 혼자 술 먹고 꽈당! 쓰러졌다…', c: '#ffa94d', big: 1 });
+    bc(m.id, { t: 'fx', k: 'die', x: o.x, y: o.y, c: '#b197fc' });
+    const winner = here ? q : [...players.values()].find(p => p.map === m.id && !p.dead);
+    if (winner) { o.collapse = 1; killMob(winner, o); } else { o.dead = 1; m.mobs.splice(m.mobs.indexOf(o), 1); }
+    return true;
+  }
+  return false;
+}
 const VAR = [{ p: '붉은', c: '#ff5252' }, { p: '푸른', c: '#4dabf7' }, { p: '황금', c: '#ffd43b' }, { p: '그림자', c: '#495057' }, { p: '분홍', c: '#f783ac' }, { p: '무지개', c: 'rainbow' }];
 
 const { JOBS, TIER1_LV } = require('./jobs');
@@ -486,8 +533,9 @@ function killMob(p, mo) {
     for (let i = R(2, 3); i > 0; i--)add(genEquip(tp.lv, true));
     add(mkScroll('enh', R(3, 6))); add(mkScroll('ward', R(1, 2))); add(mkPot('hp', R(5, 10))); add(stackItem('mat', tp.mat, tp.mat, R(2, 4)));
     if (Math.random() < 0.05) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
-    xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`);
-    if (tp.deathLine) { bc(m.id, { t: 'mtalk', id: mo.id, m: tp.deathLine, loud: 1, x: mo.x, y: mo.y, n: tp.n }); announce(`🎤 ${tp.n}: "${tp.deathLine}"`); }
+    if (mo.collapse) { xp = tp.xp; announce(`🍶 보상은 잔소리를 끝까지 버틴 ${p.name}님에게!`); }
+    else { xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`); }
+    if (tp.deathLine && !mo.collapse) { bc(m.id, { t: 'mtalk', id: mo.id, m: tp.deathLine, loud: 1, x: mo.x, y: mo.y, n: tp.n }); announce(`🎤 ${tp.n}: "${tp.deathLine}"`); }
     sendAll({ t: 'kill', a: who(p), boss: (mo.v == null ? '' : VAR[mo.v].p + ' ') + tp.n, map: m.name });
   } else {
     if (Math.random() < 0.12) add(mkPot('hp', 1)); if (Math.random() < 0.06) add(mkPot('mp', 1));
@@ -806,6 +854,7 @@ function tick() {
       const o = m.mobs[i];
       if (o.dead) { if (o.temp) { m.mobs.splice(i, 1); continue; } if (!o.boss && t > o.respawn) spawnMob(m, o); continue; }
       if (o.boss && t > o.until) { m.mobs.splice(i, 1); continue; }
+      if (tp0(o).lshEvent && grandmaEvent(m, o, t)) continue;
       if (tp0(o).talk && t > (o.talkAt || 0) && players.size) { o.talkAt = t + R(2600, 4200); bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp0(o).talk) }); }
       if (t < (o.stun || 0)) continue;
       const slowM = t < (o.slow || 0) ? 2.2 : 1;
@@ -833,7 +882,7 @@ function tick() {
     for (let i = m.ground.length - 1; i >= 0; i--) if (t > m.ground[i].exp) m.ground.splice(i, 1);
     if (tk % 600 === 0 && m.boss && !m.mobs.some(o => o.boss && !o.dead) && Math.random() < 1 / 60) spawnBoss(m); // 약 1시간에 1번 (1분마다 1/60)
     const ps = []; for (const p of players.values()) if (p.map === m.id && !p.dead) ps.push(pubP(p));
-    if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0)]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it), t < g.ownT ? g.own : 0, g.it.type === 'gold' ? 1 : isEq(g.it) ? 2 : 0]) });
+    if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0) | (o.drunk ? 4 : 0)]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it), t < g.ownT ? g.own : 0, g.it.type === 'gold' ? 1 : isEq(g.it) ? 2 : 0]) });
   }
   if (tk % 20 === 0) for (const p of players.values()) if (!p.dead) { const k = MAPS[p.map].regen; p.hp = Math.min(p.mhp, p.hp + Math.ceil(p.mhp * 0.02 * k)); p.mp = Math.min(p.mmp, p.mp + Math.ceil(p.mmp * 0.04 * k)); p.vdirty = 1; }
   for (const p of players.values()) {
