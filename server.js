@@ -93,6 +93,7 @@ const MON = [
   ['gymking', '헬창골렘', 'golem', '#f783ac', 9000, 62, 6000, 1500, 17, '황금덤벨', 1], ['protein', '프로틴대왕', 'blob', '#a0522d', 8000, 58, 5600, 1400, 16, '대왕프로틴', 1],
   ['skullboss', '해골기사단장', 'skull', '#dee2e6', 15000, 95, 11000, 2500, 20, '기사단장의뼈', 1], ['papermaster', '결재왕 서류귀신', 'paper', '#fff3bf', 14000, 90, 10500, 2400, 21, '최종결재도장', 1],
   ['hyunchang', '천현창', 'human', '#ff8cc6', 16000, 70, 11500, 2600, 21, '천현창의 손거울', 1], ['dohyun', '김도현', 'human', '#ffe066', 16000, 66, 11500, 2600, 21, '도리스타 별조각', 1],
+  ['babpuli', '밥풀이', 'dog', '#ffffff', 2400, 20, 1200, 600, 6, '밥풀이 털뭉치', 1],
   ['hwiseok', '박휘석', 'human', '#c92a2a', 52000, 160, 40000, 9000, 31, '박휘석의 볼펜', 1],
   ['grandma', '김포최명순', 'human', '#b197fc', 20000, 72, 13500, 3000, 22, '최명순의 마이크', 1],
   ['queenspider', '여왕거미', 'spider', '#862e9c', 25000, 120, 18000, 4000, 25, '여왕거미줄', 1], ['crystalking', '수정왕', 'golem', '#3bc9db', 26000, 115, 19000, 4200, 24, '왕수정', 1],
@@ -107,6 +108,7 @@ const BSK = {
   gymking: { n: '데드리프트 쾅', r: 2.5, m: 1.8, c: '#f783ac', stun: 1000 }, protein: { n: '프로틴 폭발', r: 3, m: 1.5, c: '#c08552' },
   skullboss: { n: '뼈 회오리', r: 3, m: 1.6, c: '#dee2e6' }, papermaster: { n: '반려 도장', r: 3, m: 1.6, c: '#e03131', stun: 1000 },
   hyunchang: { n: '잘생김 광선', r: 3.5, m: 1.7, c: '#ff8cc6', stun: 1200, fx: 'charm' }, dohyun: { n: '도리스타', r: 3.5, m: 1.3, c: '#ffe066', stun: 2200, fx: 'doristar' },
+  babpuli: { n: '왈왈 짖기', r: 2.5, m: 1.2, c: '#ffc9c9', stun: 800, fx: 'charm', cd: [5000, 7000] },
   hwiseok: { n: '엑소시즘 볼펜 찌르기', r: 2.8, m: 1.5, c: '#4c6ef5', stun: 1200, fx: 'pen', cd: [4000, 6000] },
   grandma: { n: '마이크 샤우팅', r: 3.8, m: 1.15, c: '#ff6b6b', stun: 1600, fx: 'mic', cd: [3200, 4800] },
   queenspider: { n: '거미줄 감옥', r: 3, m: 1.5, c: '#862e9c', slow: 4000 }, crystalking: { n: '수정 파편', r: 3, m: 1.7, c: '#3bc9db' },
@@ -129,6 +131,25 @@ Object.assign(MI.hwiseok, {
   hateTalk: ['정석환 발견!! 볼펜 연타!!!', '거기 정석환! 춤추지 마!!', '정석환은 특별히 두 배로 찍어주지!'],
   deathLine: '크윽… 내일 1교시… 수학인데…'
 });
+// 밥풀이: 흰색 말티즈. 윤태정(ytj) 직업이 다가오면 주인으로 따르며 영구 탈것이 됨
+Object.assign(MI.babpuli, {
+  novar: 1, tameJob: 'ytj',
+  spawnMsg: '🐶 [{map}]에 흰색 말티즈 밥풀이가 나타났다! 꼬리를 살랑살랑…',
+  talk: ['왈!', '왈왈!!', '멍멍! 🦴', '(꼬리 살랑살랑)', '끼잉…', '왈? (갸웃)', '🐾 총총총', '(배 보여주기)'],
+  deathLine: '끼잉… (털썩)'
+});
+const MOUNT_SPD = 1.35;
+function tameCheck(m, o, t) {
+  const tp = MON[o.t]; if (!tp.tameJob) return false;
+  const q = [...players.values()].find(p => p.map === m.id && !p.dead && p.job === tp.tameJob && p.mount !== o.t && !p.mount && dist(o, p) <= 2.5);
+  if (!q) return false;
+  q.mount = 'babpuli'; q.dirty = 1; q.vdirty = 1;
+  bc(m.id, { t: 'mtalk', id: o.id, m: '왈왈!! 🐶💕 (꼬리를 미친 듯이 흔든다)', loud: 1 });
+  bc(m.id, { t: 'fx', k: 'abuff', x: q.x, y: q.y, r: 2, c: '#ff8cc6', f: 'charm', n: '밥풀이 탑승!', i: q.id });
+  sendAll({ t: 'notice', m: `🐶 밥풀이가 [윤태정] ${q.name}님을 주인으로 선택했다! 이제 밥풀이를 타고 다닙니다 (이동속도 영구 +35%)`, c: '#ffc9c9', big: 1 });
+  m.mobs.splice(m.mobs.indexOf(o), 1);
+  return true;
+}
 // 김포최명순: 무서운 할머니 (시청 과장 st.) - 잔소리가 끝이 없음
 Object.assign(MI.grandma, {
   novar: 1, look: { ar: [2, 4], w: [0, 4, 0], ws: 'mic', hair: '#dee2e6', perm: 1, glasses: 1, cardigan: '#9c36b5', grandma: 1 },
@@ -297,7 +318,7 @@ mk('bucheon', {
   portals: [{ x: 38, y: VH - 1, to: 'pub', tx: 4, ty: 17 }],
   safes: FK.map(f => ({ x0: VILLAGE[f].x, y0: VILLAGE[f].y, x1: VILLAGE[f].x + 10, y1: VILLAGE[f].y + 7, f, label: '🏠 ' + FAC[f].n + ' 마을' })),
   npcs: FK.map(f => ({ id: 'chief', x: VILLAGE[f].x + 5, y: VILLAGE[f].y + 1 })),
-  pool: ['slime', 'bunny', 'mush', 'bee', 'crab', 'cat', 'pigeon'], cnt: 85, boss: ['kingslime', 'bunnyking']
+  pool: ['slime', 'bunny', 'mush', 'bee', 'crab', 'cat', 'pigeon'], cnt: 85, boss: ['kingslime', 'bunnyking', 'babpuli', 'babpuli']
 });
 const SZ = (cy, label) => [{ x0: 1, y0: cy - 3, x1: 7, y1: cy + 3, label: label || '🏕️ 안전지대' }];
 mk('pub', {
@@ -431,12 +452,12 @@ const atkOf = p => p.atk * bm(p, 'atk');
 function mePayload(p) {
   return {
     t: 'me', id: p.id, name: p.name, faction: p.faction, job: p.job, lv: p.lv, exp: p.exp, need: need(p.lv), gold: p.gold, hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp,
-    atk: p.atk, def: p.def, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, lock: [...p.lock], admin: p.admin ? { god: p.god ? 1 : 0, onehit: p.onehit ? 1 : 0, fast: p.fast ? 1 : 0 } : 0
+    atk: p.atk, def: p.def, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, lock: [...p.lock], mount: p.mount || '', admin: p.admin ? { god: p.god ? 1 : 0, onehit: p.onehit ? 1 : 0, fast: p.fast ? 1 : 0 } : 0
   };
 }
 function pubP(p) {
   const w = p.eq.weapon, a = p.eq.armor, h = p.eq.helm;
-  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, ad: p.admin ? 1 : 0, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
+  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, ad: p.admin ? 1 : 0, mt: p.mount ? 1 : 0, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
 }
 function mapMsg(m) { return { t: 'map', id: m.id, name: m.name, w: m.w, h: m.h, theme: m.theme, rows: m.t.map(r => r.join('')), portals: m.portals.map(p => ({ x: p.x, y: p.y, n: MAPS[p.to].name })), safes: m.safes, sl: m.sl, lvr: m.lvr, npcs: m.npcs.map(n => ({ id: n.id, x: n.x, y: n.y, n: NPCS[n.id].n, look: NPCS[n.id].look })) }; }
 function warp(p, mapId, x, y) {
@@ -446,7 +467,7 @@ function warp(p, mapId, x, y) {
 }
 function save(p) {
   const a = db.acc[p.name]; if (!a) return;
-  a.ch = { faction: p.faction, job: p.job, lv: p.lv, exp: p.exp, gold: p.gold, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, qv: p.qv, map: p.map, x: p.x, y: p.y, hp: p.hp, mp: p.mp };
+  a.ch = { faction: p.faction, job: p.job, lv: p.lv, exp: p.exp, gold: p.gold, inv: p.inv, eq: p.eq, q: p.q, qd: p.qd, qv: p.qv, mount: p.mount || '', map: p.map, x: p.x, y: p.y, hp: p.hp, mp: p.mp };
 }
 let saveDirty = true;
 let saving = false;
@@ -731,6 +752,7 @@ function adminCmd(p, m) {
     case 'onehit': p.onehit = !p.onehit; p.dirty = 1; return ok('한방 ' + (p.onehit ? 'ON' : 'OFF'));
     case 'fast': p.fast = !p.fast; p.dirty = 1; return ok('초고속 이동 ' + (p.fast ? 'ON' : 'OFF'));
     case 'job': { if (!JOBS[m.job]) return; p.job = m.job; p.cd = [0, 0, 0, 0]; stats(p); p.dirty = 1; bc(p.map, { t: 'fx', k: 'lvup', x: p.x, y: p.y, c: '#ff8cff' }); return ok('직업: ' + JOBS[m.job].n); }
+    case 'mount': p.mount = p.mount ? '' : 'babpuli'; p.dirty = 1; return ok('밥풀이 탑승 ' + (p.mount ? 'ON' : 'OFF'));
     case 'faction': if (FAC[m.f]) { p.faction = m.f; stats(p); p.dirty = 1; ok('진영: ' + FAC[m.f].n); } return;
     case 'qnext': { const act = Object.keys(p.q).map(Number).find(id => !QUESTS.find(q => q.id === id).rep);
       if (act) { const q = QUESTS.find(x => x.id === act); if (q.collect) giveItem(p, stackItem('mat', q.collect, q.collect, q.cnt)); else p.q[act] = q.cnt; if (q.to) { delete p.q[act]; p.qd[act] = 1; } p.dirty = 1; return ok(`[${q.n}] 조건 달성 (NPC에게 보고하세요)`); }
@@ -791,7 +813,7 @@ function onMsg(p, m) {
     case 'mv': {
       if (p.dead || t < p.mvAt || t < p.stun) return; const d = m.d | 0; if (d < 0 || d > 3) return; p.d = d;
       const nx = p.x + DX[d], ny = p.y + DY[d]; if (!walk(mp, nx, ny) || occ(mp, nx, ny, p)) return;
-      p.x = nx; p.y = ny; p.mvAt = p.fast ? t + 40 : t + Math.round(150 / (bm(p, 'spd') * (FAC[p.faction].spd || 1))) - 25;
+      p.x = nx; p.y = ny; p.mvAt = p.fast ? t + 40 : t + Math.round(150 / (bm(p, 'spd') * (FAC[p.faction].spd || 1) * (p.mount ? MOUNT_SPD : 1))) - 25;
       const po = mp.portals.find(q => q.x === p.x && q.y === p.y); if (po) warp(p, po.to, po.tx, po.ty);
       break;
     }
@@ -855,6 +877,7 @@ function tick() {
       if (o.dead) { if (o.temp) { m.mobs.splice(i, 1); continue; } if (!o.boss && t > o.respawn) spawnMob(m, o); continue; }
       if (o.boss && t > o.until) { m.mobs.splice(i, 1); continue; }
       if (tp0(o).lshEvent && grandmaEvent(m, o, t)) continue;
+      if (tp0(o).tameJob && tameCheck(m, o, t)) continue;
       if (tp0(o).talk && t > (o.talkAt || 0) && players.size) { o.talkAt = t + R(2600, 4200); bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp0(o).talk) }); }
       if (t < (o.stun || 0)) continue;
       const slowM = t < (o.slow || 0) ? 2.2 : 1;
