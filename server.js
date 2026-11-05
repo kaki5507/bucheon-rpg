@@ -93,6 +93,7 @@ const MON = [
   ['gymking', '헬창골렘', 'golem', '#f783ac', 9000, 62, 6000, 1500, 17, '황금덤벨', 1], ['protein', '프로틴대왕', 'blob', '#a0522d', 8000, 58, 5600, 1400, 16, '대왕프로틴', 1],
   ['skullboss', '해골기사단장', 'skull', '#dee2e6', 15000, 95, 11000, 2500, 20, '기사단장의뼈', 1], ['papermaster', '결재왕 서류귀신', 'paper', '#fff3bf', 14000, 90, 10500, 2400, 21, '최종결재도장', 1],
   ['hyunchang', '천현창', 'human', '#ff8cc6', 16000, 70, 11500, 2600, 21, '천현창의 손거울', 1], ['dohyun', '김도현', 'human', '#ffe066', 16000, 66, 11500, 2600, 21, '도리스타 별조각', 1],
+  ['seunghyun', '김승현', 'tennis', '#c0eb75', 1800, 14, 2000, 900, 9, '김승현의 테니스공', 1],
   ['babpuli', '밥풀이', 'dog', '#ffffff', 2400, 20, 1200, 600, 6, '밥풀이 털뭉치', 1],
   ['hwiseok', '박휘석', 'human', '#c92a2a', 52000, 160, 40000, 9000, 31, '박휘석의 볼펜', 1],
   ['grandma', '김포최명순', 'human', '#b197fc', 20000, 72, 13500, 3000, 22, '최명순의 마이크', 1],
@@ -108,6 +109,7 @@ const BSK = {
   gymking: { n: '데드리프트 쾅', r: 2.5, m: 1.8, c: '#f783ac', stun: 1000 }, protein: { n: '프로틴 폭발', r: 3, m: 1.5, c: '#c08552' },
   skullboss: { n: '뼈 회오리', r: 3, m: 1.6, c: '#dee2e6' }, papermaster: { n: '반려 도장', r: 3, m: 1.6, c: '#e03131', stun: 1000 },
   hyunchang: { n: '잘생김 광선', r: 3.5, m: 1.7, c: '#ff8cc6', stun: 1200, fx: 'charm' }, dohyun: { n: '도리스타', r: 3.5, m: 1.3, c: '#ffe066', stun: 2200, fx: 'doristar' },
+  seunghyun: { n: '스매시 난타', r: 3.2, m: 0.8, c: '#c0eb75', fx: 'tennis', cd: [5500, 8000] },
   babpuli: { n: '왈왈 짖기', r: 2.5, m: 1.2, c: '#ffc9c9', stun: 800, fx: 'charm', cd: [5000, 7000] },
   hwiseok: { n: '엑소시즘 볼펜 찌르기', r: 2.8, m: 1.5, c: '#4c6ef5', stun: 1200, fx: 'pen', cd: [4000, 6000] },
   grandma: { n: '마이크 샤우팅', r: 3.8, m: 1.15, c: '#ff6b6b', stun: 1600, fx: 'mic', cd: [3200, 4800] },
@@ -130,6 +132,14 @@ Object.assign(MI.hwiseok, {
   stunTalk: ['딸깍! 퇴마!!', '엑소시즘 필기체 찌르기!!', '모나미의 이름으로!!'],
   hateTalk: ['정석환 발견!! 볼펜 연타!!!', '거기 정석환! 춤추지 마!!', '정석환은 특별히 두 배로 찍어주지!'],
   deathLine: '크윽… 내일 1교시… 수학인데…'
+});
+// 김승현: 거대한 테니스 괴물. 테니스공을 던져 원거리 공격하지만 약해서 Lv10 근처면 잡을 수 있음
+Object.assign(MI.seunghyun, {
+  novar: 1, big: 2.7, ranged: 4,
+  spawnMsg: '🎾 [{map}]에 거대한 테니스 괴물 김승현이 나타났다! 라켓을 휘두르는 중…',
+  talk: ['15-0!', '아웃 아니야! 인이야!!', '러브 게임 가자~', '듀스!', '에이스!!', '라켓 줄 끊어졌잖아!', '내 서브 받아봐!', '테니스 칠 사람~?', '발리! 발리!', '포핸드는 자신 있다고!', '오늘 코트 예약했어?', '공 주워 와!'],
+  stunTalk: ['스매시!!!', '받아라 서브 에이스!!', '게임 셋!!'],
+  deathLine: '…40-0… 내가 졌다… 다음엔 복식으로 하자…'
 });
 // 밥풀이: 흰색 말티즈. 윤태정(ytj) 직업이 다가오면 주인으로 따르며 영구 탈것이 됨
 Object.assign(MI.babpuli, {
@@ -324,7 +334,7 @@ const SZ = (cy, label) => [{ x0: 1, y0: cy - 3, x1: 7, y1: cy + 3, label: label 
 mk('pub', {
   name: '상동역 술집거리', w: 50, h: 34, theme: 'street', seed: 7, dens: .08, lvr: '8~13', npcs: [{ id: 'pocha', x: 4, y: 15 }], safes: SZ(17), spawn: { x: 4, y: 17 },
   portals: [{ x: 0, y: 17, to: 'bucheon', tx: 38, ty: VH - 3 }, { x: 49, y: 17, to: 'gym', tx: 2, ty: 15 }, { x: 25, y: 0, to: 'sauna', tx: 15, ty: 17 }],
-  pool: ['bat', 'beer', 'ghost', 'soju', 'skewer', 'pumpkin', 'golbaeng', 'rat'], cnt: 46, boss: ['mushking', 'drunkwhale']
+  pool: ['bat', 'beer', 'ghost', 'soju', 'skewer', 'pumpkin', 'golbaeng', 'rat'], cnt: 46, boss: ['mushking', 'drunkwhale', 'seunghyun', 'seunghyun']
 });
 mk('sauna', {
   name: '♨️ 사우나 (세이브존)', w: 30, h: 20, theme: 'sauna', seed: 55, dens: .06, lvr: '휴식',
@@ -768,7 +778,7 @@ function adminCmd(p, m) {
 /* ===================== 접속/메시지 ===================== */
 const app = express(); app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app); const wss = new WebSocketServer({ server, maxPayload: 8192 });
-const INIT = { t: 'init', TIER1_LV, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), MON: MON.map(m => ({ look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+const INIT = { t: 'init', TIER1_LV, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), MON: MON.map(m => ({ big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
@@ -812,7 +822,7 @@ function onMsg(p, m) {
   switch (m.t) {
     case 'mv': {
       if (p.dead || t < p.mvAt || t < p.stun) return; const d = m.d | 0; if (d < 0 || d > 3) return; p.d = d;
-      const nx = p.x + DX[d], ny = p.y + DY[d]; if (!walk(mp, nx, ny) || occ(mp, nx, ny, p)) return;
+      const nx = p.x + DX[d], ny = p.y + DY[d]; if (!walk(mp, nx, ny)) return; // 플레이어는 몬스터/다른 플레이어를 통과
       p.x = nx; p.y = ny; p.mvAt = p.fast ? t + 40 : t + Math.round(150 / (bm(p, 'spd') * (FAC[p.faction].spd || 1) * (p.mount ? MOUNT_SPD : 1))) - 25;
       const po = mp.portals.find(q => q.x === p.x && q.y === p.y); if (po) warp(p, po.to, po.tx, po.ty);
       break;
@@ -894,7 +904,7 @@ function tick() {
           }
           continue;
         }
-        if (bd <= 1.42) { if (t > o.atkAt) { o.atkAt = t + (o.boss ? 900 : 1200); const hm = tp.hate && tg.job === tp.hate ? tp.hateMul : 1; const dmg = Math.max(1, Math.round((tp.atk * (0.8 + Math.random() * 0.4) - defOf(tg) * 0.5) * hm)); damagePlayer(tg, dmg, null); if (tp.drain) o.hp = Math.min(o.mhp, o.hp + Math.round(dmg * tp.drain)); if (hm > 1 && tp.hateTalk && Math.random() < .35) bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp.hateTalk), loud: 1 }); bc(m.id, { t: 'fx', k: 'bite', x: tg.x, y: tg.y, c: '#ff6b6b' }); } }
+        if (bd <= (tp.ranged || 1.42)) { if (t > o.atkAt) { o.atkAt = t + (o.boss ? (tp.ranged ? 1500 : 900) : 1200); if (tp.ranged) bc(m.id, { t: 'fx', k: 'proj', x: o.x, y: o.y, x2: tg.x, y2: tg.y, c: tp.c, f: 'tball', big: 1 }); const hm = tp.hate && tg.job === tp.hate ? tp.hateMul : 1; const dmg = Math.max(1, Math.round((tp.atk * (0.8 + Math.random() * 0.4) - defOf(tg) * 0.5) * hm)); damagePlayer(tg, dmg, null); if (tp.drain) o.hp = Math.min(o.mhp, o.hp + Math.round(dmg * tp.drain)); if (hm > 1 && tp.hateTalk && Math.random() < .35) bc(m.id, { t: 'mtalk', id: o.id, m: pick(tp.hateTalk), loud: 1 }); bc(m.id, { t: 'fx', k: 'bite', x: tg.x, y: tg.y, c: '#ff6b6b' }); } }
         else if (t > o.mvAt) { o.mvAt = t + (o.boss ? 320 : 480) * slowM; const dx = tg.x - o.x, dy = tg.y - o.y; const o1 = Math.abs(dx) > Math.abs(dy) ? [[Math.sign(dx), 0], [0, Math.sign(dy)]] : [[0, Math.sign(dy)], [Math.sign(dx), 0]]; for (const [a, b] of o1) { if (!a && !b) continue; const nx = o.x + a, ny = o.y + b; if (walk(m, nx, ny) && !occ(m, nx, ny, o) && !inSafe(m, nx, ny)) { o.x = nx; o.y = ny; break; } } }
       } else if (t > o.mvAt && Math.random() < 0.04) {
         o.mvAt = t + 600; const d = R(0, 3); let nx = o.x + DX[d], ny = o.y + DY[d]; if (Math.abs(nx - o.hx) > 8 || Math.abs(ny - o.hy) > 8) { nx = o.x + Math.sign(o.hx - o.x); ny = o.y; }

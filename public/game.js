@@ -313,7 +313,7 @@ function drawDog(g, t, moving, angry) {
   g.fillStyle = '#ffc9c9aa'; g.beginPath(); g.ellipse(hx - 5.5, hy + 3, 1.8, 1.1, 0, 0, 7); g.ellipse(hx + 6, hy + 3, 1.8, 1.1, 0, 0, 7); g.fill();
 }
 function drawMob(g, cx, cy, e, t) {
-  const M = D.MON[e.t], boss = M.boss, S = boss ? 1.9 : 1, c = mobColor(e, M.c, t);
+  const M = D.MON[e.t], boss = M.boss, S = boss ? (M.big || 1.9) : 1, c = mobColor(e, M.c, t);
   const ph = (e.id || 0) * 1.7, bob = Math.sin(t / 250 + ph);
   g.save(); g.translate(cx, cy);
   g.fillStyle = '#0004'; g.beginPath(); g.ellipse(0, 0, 11 * S, 4 * S, 0, 0, 7); g.fill();
@@ -347,6 +347,18 @@ function drawMob(g, cx, cy, e, t) {
     case 'paper': { const y = -14 + bob * 3; g.fillStyle = c; g.beginPath(); g.moveTo(-9, y - 10); g.lineTo(5, y - 10); g.lineTo(10, y - 5); g.lineTo(10, y + 10); for (let k = 0; k < 4; k++) g.lineTo(10 - k * 5 - 2.5, y + 7 + (k % 2) * 4); g.lineTo(-9, y + 10); g.closePath(); g.fill(); g.strokeStyle = '#ced4da'; g.lineWidth = 1; g.stroke(); g.fillStyle = '#dee2e6'; g.fillRect(-6, y + 3, 12, 1.2); g.fillRect(-6, y + 6, 9, 1.2); g.fillStyle = '#e03131'; g.beginPath(); g.arc(5, y + 5, 3, 0, 7); g.fill(); face(g, 0, y - 3, .7, angry); break; }
     case 'mimic': { const o = Math.max(0, Math.sin(t / 300 + ph)) * 5; g.fillStyle = c; rr(g, -12, -14, 24, 14, 2); g.fill(); g.fillStyle = '#ffd43b'; g.fillRect(-12, -8, 24, 2); g.fillStyle = '#c92a2a'; g.fillRect(-10, -16 - o, 20, o + 2); g.fillStyle = '#fff'; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(-10 + k * 4, -14); g.lineTo(-8 + k * 4, -11); g.lineTo(-6 + k * 4, -14); g.fill(); } g.fillStyle = c; rr(g, -13, -22 - o, 26, 8, 3); g.fill(); g.fillStyle = '#ffd43b'; g.fillRect(-2, -18 - o, 4, 4); g.fillStyle = '#fff'; g.beginPath(); g.arc(-5, -26 - o, 3, 0, 7); g.arc(5, -26 - o, 3, 0, 7); g.fill(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(-5, -26 - o, 1.5, 0, 7); g.arc(5, -26 - o, 1.5, 0, 7); g.fill(); break; }
     case 'whale': { const y = -10 + bob * 2; g.fillStyle = c; g.beginPath(); g.ellipse(0, y, 15, 10, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(-13, y); g.lineTo(-22, y - 7); g.lineTo(-20, y + 6); g.fill(); g.fillStyle = '#d0ebff'; g.beginPath(); g.ellipse(2, y + 4, 10, 5, 0, 0, Math.PI); g.fill(); g.fillStyle = '#74c0fc'; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(4 + (k - 1) * 4, y - 14 - Math.abs(Math.sin(t / 200 + k)) * 6, 2.5, 0, 7); g.fill(); } face(g, 5, y - 2, .8, angry); g.fillStyle = '#ff8787aa'; g.beginPath(); g.ellipse(-4, y + 1, 3, 2, 0, 0, 7); g.ellipse(13, y + 1, 3, 2, 0, 0, 7); g.fill(); break; }
+    case 'tennis': {
+      const sq = 1 + Math.sin(t / 160 + ph) * .05, y0 = -13 - Math.abs(Math.sin(t / 260 + ph)) * 2;
+      g.fillStyle = '#e9ecef'; g.beginPath(); g.ellipse(-6, -2, 4, 2.4, 0, 0, 7); g.ellipse(6, -2, 4, 2.4, 0, 0, 7); g.fill();
+      g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.moveTo(-6, y0 + 6); g.lineTo(-6, -3); g.moveTo(6, y0 + 6); g.lineTo(6, -3); g.stroke();
+      g.fillStyle = c; g.beginPath(); g.ellipse(0, y0, 13 / sq, 12 * sq, 0, 0, 7); g.fill();
+      g.fillStyle = '#d8f5a2'; for (let k = 0; k < 18; k++) { const a = k * .349, rr2 = 9 + (k % 3); g.fillRect(Math.cos(a) * rr2 - .6, y0 + Math.sin(a) * rr2 - .6, 1.2, 1.2); }
+      g.strokeStyle = '#fff'; g.lineWidth = 1.8; g.beginPath(); g.arc(-15, y0, 11, -.9, .9); g.stroke(); g.beginPath(); g.arc(15, y0, 11, Math.PI - .9, Math.PI + .9); g.stroke();
+      g.fillStyle = '#ff6b6b'; g.fillRect(-11, y0 - 9, 22, 3); g.fillStyle = '#fff'; g.font = 'bold 3px sans-serif'; g.textAlign = 'center'; g.fillText('SH', 0, y0 - 6.8);
+      face(g, 0, y0 - 1, .85, angry);
+      const sw = Math.sin(t / 220 + ph) * .5; g.save(); g.translate(12, y0 + 2); g.rotate(.4 + sw); g.strokeStyle = '#495057'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -8); g.stroke(); g.strokeStyle = '#1c7ed6'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, -14, 5, 6.5, 0, 0, 7); g.stroke(); g.strokeStyle = '#ffffff99'; g.lineWidth = .5; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(k * 2, -19.5); g.lineTo(k * 2, -8.5); g.moveTo(-4.5, -14 + k * 2.2); g.lineTo(4.5, -14 + k * 2.2); g.stroke(); } g.restore();
+      g.fillStyle = '#fff'; g.fillRect(-14, y0 + 2, 3, 3); g.fillRect(11, y0 + 2, 3, 3);
+      break; }
     case 'dog': { drawDog(g, t, Math.abs((e.x || 0) - (e.rx || 0)) + Math.abs((e.y || 0) - (e.ry || 0)) > .05, angry); break; }
     case 'human': { g.restore(); g.save(); g.translate(cx, cy); if (e.fl & 4) { g.rotate(Math.sin(t / 180) * .28); } g.scale(1.55, 1.55); const L = M.look || {}; drawChar(g, 0, 0, Object.assign({ n: M.n, d: 0 }, L), t, false, true);
       if (L.shades) { g.font = '9px sans-serif'; for (let k = 0; k < 4; k++) { const a = t / 500 + k * 1.57; g.globalAlpha = .6 + .4 * Math.sin(t / 150 + k); g.fillText(k % 2 ? '✨' : '💖', Math.cos(a) * 20 - 4, -26 + Math.sin(a) * 12); } g.globalAlpha = 1;
@@ -357,7 +369,7 @@ function drawMob(g, cx, cy, e, t) {
       g.restore(); g.save(); g.translate(cx, cy); g.scale(S, S); break; }
   }
   // 보스 장식
-  if (boss && M.s !== 'human' && M.s !== 'dog') {
+  if (boss && M.s !== 'human' && M.s !== 'dog' && M.s !== 'tennis') {
     const top = M.s === 'golem' ? -26 : M.s === 'skull' ? -32 : -24;
     if (e.acc === 0) { g.fillStyle = '#fcc419'; g.beginPath(); g.moveTo(-7, top); g.lineTo(-7, top - 7); g.lineTo(-3.5, top - 3.5); g.lineTo(0, top - 9); g.lineTo(3.5, top - 3.5); g.lineTo(7, top - 7); g.lineTo(7, top); g.fill(); }
     else if (e.acc === 1) { g.fillStyle = '#495057'; g.beginPath(); g.moveTo(-7, top + 2); g.quadraticCurveTo(-13, top - 4, -10, top - 9); g.lineTo(-4, top + 2); g.moveTo(7, top + 2); g.quadraticCurveTo(13, top - 4, 10, top - 9); g.lineTo(4, top + 2); g.fill(); }
@@ -407,7 +419,8 @@ function drawFx(g, t) {
     switch (f.k) {
       case 'slash': { const x2 = tc(f.x2), y2 = tc(f.y2), a = Math.atan2(y2 - y, x2 - x); g.strokeStyle = c; g.lineWidth = 4 * (1 - p) + 1; g.beginPath(); g.arc(x2, y2 - 8, 14, a - 1.6 + p * 2, a - .4 + p * 2); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); break; }
       case 'proj': { const x2 = tc(f.x2), y2 = tc(f.y2), px = x + (x2 - x) * p, py = y - 14 + (y2 - y) * p; g.fillStyle = c; g.shadowColor = c; g.shadowBlur = 10; g.beginPath(); g.arc(px, py, f.big ? 6 : 3.5, 0, 7); g.fill();
-        if (f.f === 'football' || f.n === '프리킥' || f.n === '슈퍼골') { g.font = '14px sans-serif'; g.fillText('⚽', px - 7, py + 5); }
+        if (f.f === 'tball') { g.font = '15px sans-serif'; g.fillText('🎾', px - 8, py + 5 - Math.sin(p * Math.PI) * 18); }
+        else if (f.f === 'football' || f.n === '프리킥' || f.n === '슈퍼골') { g.font = '14px sans-serif'; g.fillText('⚽', px - 7, py + 5); }
         else if (f.n === '삼각김밥') { g.font = '14px sans-serif'; g.fillText('🍙', px - 7, py + 5); } break; }
       case 'impact': {
         if (f.f === 'nuke') { const r = 10 + p * 34; g.fillStyle = '#ff922b'; g.beginPath(); g.arc(x, y - 6 - p * 30, r * .7, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.beginPath(); g.arc(x, y - 6 - p * 30, r * .45, 0, 7); g.fill(); g.fillStyle = '#868e96'; g.fillRect(x - 4, y - 6 - p * 30, 8, p * 30); g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.ellipse(x, y, r * 1.4, r * .4, 0, 0, 7); g.stroke(); g.font = 'bold 18px Jua'; g.fillStyle = '#ff5252'; g.textAlign = 'center'; g.fillText('쾅!!', x, y - 50); }
@@ -419,6 +432,7 @@ function drawFx(g, t) {
         g.strokeStyle = c; g.lineWidth = 4; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, 7); g.stroke(); g.fillStyle = c + '22'; g.fill();
         if (f.f === 'doristar') { g.font = '16px sans-serif'; for (let k = 0; k < 10; k++) { const a = k * .628 + t / 250; g.fillText('⭐', x + Math.cos(a) * r - 8, y + Math.sin(a) * r * .55 - 10 - Math.sin(p * 3) * 10); } }
         else if (f.f === 'football') { for (let k = 0; k < 6; k++) { const a = k * 1.047 + p * 2, px = x + Math.cos(a) * r * .9, py = y + Math.sin(a) * r * .5; drawPlayerMini(g, px, py, k, t); g.font = '12px sans-serif'; g.fillText('⚽', x + Math.cos(a + .5) * r * 1.2 * p - 6, y + Math.sin(a + .5) * r * .6 * p - 10 - Math.abs(Math.sin(p * 8 + k)) * 10); } }
+        else if (f.f === 'tennis') { g.font = '16px sans-serif'; for (let k = 0; k < 12; k++) { const a = k * .524 + k * k, rr2 = r * ((k * 37 % 10) / 10), bx = x + Math.cos(a) * rr2, by = y + Math.sin(a) * rr2 * .55; const hop = Math.abs(Math.sin(p * 7 + k)) * 26; g.fillText('🎾', bx - 8, by - hop); } g.font = 'bold 20px Jua'; g.textAlign = 'center'; g.fillStyle = '#c0eb75'; g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeText('스매시!!', x, y - 110 - p * 10); g.fillText('스매시!!', x, y - 110 - p * 10); }
         else if (f.f === 'finish') { g.strokeStyle = '#fff'; g.lineWidth = 3; const tw = r * 1.1; g.beginPath(); g.moveTo(x - tw, y - 16 - Math.sin(p * 9) * 3); g.quadraticCurveTo(x, y - 6 + p * 18, x + tw, y - 16 + Math.sin(p * 9) * 3); g.stroke(); g.strokeStyle = '#e03131'; g.lineWidth = 1.5; g.stroke();
           g.font = 'bold 22px Jua'; g.textAlign = 'center'; g.fillStyle = '#ffe066'; g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeText('🏁 FINISH!', x, y - 64 - p * 14); g.fillText('🏁 FINISH!', x, y - 64 - p * 14); }
         else if (f.f === 'pen') { g.strokeStyle = '#4c6ef5'; g.lineWidth = 2.5; for (let k = 0; k < 14; k++) { const a = k * .449 + p * 2, r1 = r * (.2 + ((k * 37) % 10) / 14), r2 = r1 + 14; g.beginPath(); g.moveTo(x + Math.cos(a) * r1, y - 10 + Math.sin(a) * r1 * .55); g.lineTo(x + Math.cos(a) * r2, y - 10 + Math.sin(a) * r2 * .55); g.stroke(); }
@@ -494,7 +508,6 @@ $('#pickb').onclick = () => actionKey();
 function me() { return ents.get('p' + myId); }
 function blockedAt(x, y) {
   if (!MAP || x < 0 || y < 0 || x >= MAP.w || y >= MAP.h || MAP.rows[y][x] !== '.') return true;
-  for (const e of ents.values()) if (e.k !== 'p' + myId && e.x === x && e.y === y) return true;
   return false;
 }
 function inputTick(t) {
@@ -586,8 +599,8 @@ function frame() {
         if (e.h < e.H) hpBar(ctx, x, y - 50 - up, 26, e.h / e.H, enemy ? '#ff6b6b' : '#51cf66');
         if (e.bb) bubble(ctx, x, y - 58 - up, e.bb);
       } else {
-        const M = D.MON[e.t], S = M.boss ? 1.9 : 1;
-        if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
+        const M = D.MON[e.t], S = M.boss ? (M.big || 1.9) : 1;
+        if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
         else { if (e.h < e.H) hpBar(ctx, x, y - 30, 22, e.h / e.H, '#fa5252'); if (m && Math.hypot(e.x - m.x, e.y - m.y) < 4) { ctx.font = '9px Jua'; ctx.fillStyle = '#fff'; ctx.fillText(M.n + ' Lv' + M.lv, x, y + 10); } }
       }
     }
