@@ -129,6 +129,13 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
  #kills{top:auto;bottom:250px;right:6px}.kf{font-size:11px}
  #notices{top:118px}.notice{font-size:13px}
 }
+#zrank{position:fixed;right:12px;top:190px;z-index:30;width:205px;background:#0b1f0be6;border:2px solid #69db7c;border-radius:12px;padding:8px 10px;color:#fff;font-size:13px;box-shadow:0 0 18px #2b8a3e88;cursor:pointer;display:none}
+#zrank .zh{font-size:15px;color:#8ce99a;margin-bottom:2px}#zrank .zs{font-size:11px;color:#b2f2bb;margin-bottom:4px}
+#zrank .zr{display:flex;gap:6px;align-items:center;padding:1px 3px}#zrank .zr span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#zrank .zr.me,#zres .zr.me{background:#2b8a3e66;border-radius:6px}#zrank.mini .zr{display:none}
+#zres{display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;width:min(380px,92vw);max-height:80vh;overflow-y:auto;background:linear-gradient(#0f2a0f,#071407);border:3px solid #69db7c;border-radius:16px;padding:14px;color:#fff;box-shadow:0 0 40px #2b8a3eaa;text-align:center}
+#zres .zr{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:5px 8px;border-bottom:1px solid #2b8a3e55}
+@media (max-width:700px){#zrank{top:96px;width:155px;font-size:11px;right:6px;padding:6px 8px}}
 </style>
 </head>
 <body>

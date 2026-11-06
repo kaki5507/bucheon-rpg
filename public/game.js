@@ -28,7 +28,7 @@ const fxs = [], dmgs = [];
 const cds = {};
 let ws = null, myId = 0, faction = '', WHO = [], EVT = 1;
 const WARN = [], HZ = [];
-let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0;
+let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null;
 const MARKS = {};
 
 /* ============ 로그인 ============ */
@@ -90,7 +90,7 @@ function onMsg(m) {
     case 'dlg': showDlg(m); break;
     case 'notice': notice(m.m, m.c, m.big, m.small); if (!m.small) LOG.push(`<span style="color:${m.c || '#fff'}">${esc(m.m)}</span>`); break;
     case 'kill': killFeed(m); break;
-    case 'who': WHO = m.l; renderWho(); break;
+    case 'who': WHO = m.l; ZR = m.zr || null; renderWho(); break;
     case 'evt': EVT = m.mult; $('#evbadge').classList.toggle('hidden', EVT <= 1); $('#evbadge').textContent = `🔥 경험치 ${EVT}배 이벤트`; break;
     case 'warn': WARN.push({ tiles: m.tiles, t0: now(), until: now() + m.ms, c: m.c }); break;
     case 'hz': HZ.push({ tiles: m.tiles, t0: now(), c: m.c }); break;
@@ -100,6 +100,13 @@ function onMsg(m) {
     case 'count': COUNT = now() + m.ms; break;
     case 'roy': ROYN = m.st === 'idle' ? 0 : m.n; break;
     case 'mood': MOOD = m.m; break;
+    case 'zev':
+      if (m.st === 'start') { ZBAN = { t: now(), ms: 4500, txt: '🧟 좀비들이 몰려옵니다…', sub: `${m.min}분 동안 좀비 보스를 가장 많이 잡아라! (좀비 1점 · 좀비 킹 5점)` }; SHAKE = now() + 900; }
+      else if (m.st === 'wave') ZBAN = { t: now(), ms: 2600, txt: `🧟 ${m.wave}번째 웨이브!`, sub: '좀비가 더 몰려옵니다…', small: 1 };
+      else if (m.st === 'on') { ZST = Object.assign(m, { at: now() }); }
+      else if (m.st === 'end') { ZST = null; ZBAN = null; }
+      renderZRank(); break;
+    case 'zres': showZRes(m); break;
     case 'shake': SHAKE = now() + (m.ms || 600); break;
     case 'tiles': if (MAP && mapCv) { const g = mapCv.getContext('2d'), fl = FLOOR[MAP.theme] || FLOOR.grass; for (const [x, y] of m.set) { MAP.rows[y] = MAP.rows[y].slice(0, x) + m.ch + MAP.rows[y].slice(x + 1); g.fillStyle = fl[(x + y) & 1]; g.fillRect(x * T, y * T, T, T); drawTile(g, m.ch, x * T, y * T, MAP.theme, rnd(x, y, 1)); } scanLava(); } break;
     case 'mtalk': { const e = ents.get('m' + m.id); if (e) { e.mb = m.m; e.mbT = now() + (m.loud ? 2600 : 3800); e.loud = m.loud; } const nm = e ? D.MON[e.t].n : m.n; if (nm && m.loud) addChat({ ch: 'sys', m: `💬 ${nm}: ${m.m}`, c: '#ffa8a8' }); break; }
@@ -128,7 +135,7 @@ function onState(m) {
 
 /* ============ 맵 ============ */
 function rnd(x, y, s) { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v); }
-const FLOOR = { arena4: ['#1f3a5f', '#234269'], arena5: ['#4a3b1f', '#544324'], altar: ['#4c4466', '#554c70'], arena1: ['#6b8f4e', '#749957'], arena2: ['#5a3a32', '#634038'], arena3: ['#3f3a4f', '#47415a'], cave: ['#5c4b51', '#64535a'], forest: ['#4c9a52', '#55a65b'], grass: ['#7cc96a', '#86d174'], street: ['#4a4e57', '#50545d'], gym: ['#c9a27a', '#d1ab84'], hall: ['#e9e4dc', '#f3efe8'], sauna: ['#b9e6f0', '#c8eef5'] };
+const FLOOR = { arena4: ['#1f3a5f', '#234269'], arena5: ['#4a3b1f', '#544324'], altar: ['#4c4466', '#554c70'], arena1: ['#6b8f4e', '#749957'], arena2: ['#5a3a32', '#634038'], arena3: ['#3f3a4f', '#47415a'], cave: ['#5c4b51', '#64535a'], forest: ['#4c9a52', '#55a65b'], grass: ['#7cc96a', '#86d174'], street: ['#4a4e57', '#50545d'], gym: ['#c9a27a', '#d1ab84'], hall: ['#e9e4dc', '#f3efe8'], sauna: ['#b9e6f0', '#c8eef5'], station: ['#9aa5b1', '#a3aebb'], market: ['#b08968', '#b8916f'], lake: ['#7cc96a', '#86d174'], sewer: ['#3d4a3a', '#435140'], factory: ['#5c5f66', '#63666d'], tunnel: ['#2a2a35', '#30303c'], castle: ['#3a1f2b', '#422431'] };
 function scanLava() { LAVA = []; if (!MAP) return; for (let y = 0; y < MAP.h; y++) for (let x = 0; x < MAP.w; x++) if (MAP.rows[y][x] === 'L') LAVA.push([x, y]); }
 function loadMap(m) {
   MAP = m; ents.clear(); ground = []; WARN.length = 0; HZ.length = 0; PLATES = { l: [], seq: null, i: 0 }; MOOD = ''; setTimeout(scanLava, 0); if (typeof dlg !== 'undefined' && dlg) { dlg = null; drawDlg(); }
@@ -138,7 +145,7 @@ function loadMap(m) {
   for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
     const px = x * T, py = y * T, r = rnd(x, y, 1);
     g.fillStyle = floor[(x + y) & 1]; g.fillRect(px, py, T, T);
-    if (th === 'grass' || th === 'forest') {
+    if (th === 'grass' || th === 'forest' || th === 'lake') {
       if (r < .08) { g.fillStyle = ['#fff', '#ffd6e7', '#fff3bf', '#d0bfff'][Math.floor(r * 50) % 4]; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(px + 10 + Math.cos(k * 1.57) * 3, py + 12 + Math.sin(k * 1.57) * 3, 2.2, 0, 7); g.fill(); } g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(px + 10, py + 12, 1.6, 0, 7); g.fill(); }
       else if (r < .2) { g.strokeStyle = '#3f8f45'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px + 18, py + 24); g.lineTo(px + 16, py + 18); g.moveTo(px + 20, py + 24); g.lineTo(px + 22, py + 17); g.stroke(); }
     } else if (th === 'cave' && r < .07) { g.fillStyle = '#8ce99a55'; g.beginPath(); g.arc(px + 16, py + 16, 3, 0, 7); g.fill(); }
@@ -146,6 +153,12 @@ function loadMap(m) {
     else if (th === 'gym') { g.fillStyle = '#0000000f'; g.fillRect(px, py + 15, T, 1); if ((x + (y & 1) * 2) % 4 === 0) g.fillRect(px, py, 1, 16); }
     else if (th === 'hall') { if (r < .04) { g.fillStyle = '#a61e4d22'; g.fillRect(px + 2, py + 2, 28, 28); } }
     else if (th && th.startsWith('arena') || th === 'altar') { g.strokeStyle = '#ffffff10'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (th === 'arena2' && r < .06) { g.fillStyle = '#ff6b0055'; g.beginPath(); g.ellipse(px + 16, py + 16, 9, 5, 0, 0, 7); g.fill(); } if (th === 'arena1' && r < .1) { g.fillStyle = '#ffffff55'; g.beginPath(); g.arc(px + 12, py + 14, 2, 0, 7); g.fill(); } }
+    else if (th === 'station') { g.strokeStyle = '#ffffff22'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (y % 10 === 5) { g.fillStyle = '#fab005'; g.fillRect(px, py + 12, T, 8); g.fillStyle = '#e67700'; for (let k = 0; k < 4; k++) g.fillRect(px + 3 + k * 8, py + 14, 3, 4); } }
+    else if (th === 'market') { if (r < .06) { g.fillStyle = '#0002'; g.beginPath(); g.ellipse(px + 16, py + 18, 9, 4, 0, 0, 7); g.fill(); } if (x % 12 === 6) { g.fillStyle = '#ffffff18'; g.fillRect(px, py, T, T); } }
+    else if (th === 'sewer') { if (r < .1) { g.fillStyle = '#94d82d33'; g.beginPath(); g.ellipse(px + 16, py + 18, 10, 5, 0, 0, 7); g.fill(); } g.fillStyle = '#0002'; g.fillRect(px, py + 30, T, 2); }
+    else if (th === 'factory') { g.strokeStyle = '#0003'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .04) { g.fillStyle = '#111a'; g.beginPath(); g.ellipse(px + 16, py + 18, 11, 6, 0, 0, 7); g.fill(); } if (y % 9 === 4) { g.fillStyle = (x & 1) ? '#fab005' : '#212529'; g.fillRect(px, py + 13, T, 6); } }
+    else if (th === 'tunnel') { if (y % 6 === 3) { g.fillStyle = '#5c4b51'; for (let k = 0; k < 4; k++) g.fillRect(px + k * 8 + 1, py + 6, 5, 20); g.fillStyle = '#adb5bd'; g.fillRect(px, py + 9, T, 2); g.fillRect(px, py + 21, T, 2); } else if (r < .05) { g.fillStyle = '#7048e833'; g.beginPath(); g.arc(px + 16, py + 16, 4, 0, 7); g.fill(); } }
+    else if (th === 'castle') { g.strokeStyle = '#00000044'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .05) { g.fillStyle = '#e0313133'; g.beginPath(); g.ellipse(px + 16, py + 16, 9, 5, 0, 0, 7); g.fill(); } if (y % 10 === 5) { g.fillStyle = '#7a0f1f'; g.fillRect(px, py + 4, T, T - 8); } }
     else if (th === 'sauna') { g.strokeStyle = '#ffffff88'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); }
     drawTile(g, m.rows[y][x], px, py, th, r);
   }
@@ -166,12 +179,12 @@ function drawTile(g, c, px, py, th, r) {
   switch (c) {
     case 't': drawTree(g, px, py, th); break;
     case 'r': sh(); g.fillStyle = th === 'cave' ? '#8a7a80' : '#adb5bd'; g.beginPath(); g.ellipse(px + 16, py + 18, 12, 10, 0, 0, 7); g.fill(); g.fillStyle = '#fff6'; g.beginPath(); g.ellipse(px + 12, py + 14, 4, 3, 0, 0, 7); g.fill(); break;
-    case 'w': g.fillStyle = '#4dabf7'; g.fillRect(px, py, T, T); g.fillStyle = '#a5d8ff'; g.fillRect(px + 5 + r * 10, py + 10, 8, 2); g.fillRect(px + 14, py + 22 - r * 6, 9, 2); break;
+    case 'w': if (th === 'sewer') { g.fillStyle = '#5c7a2c'; g.fillRect(px, py, T, T); g.fillStyle = '#94d82d88'; g.fillRect(px + 5 + r * 10, py + 10, 8, 2); g.beginPath(); g.arc(px + 20, py + 22 - r * 6, 2, 0, 7); g.fill(); break; } g.fillStyle = '#4dabf7'; g.fillRect(px, py, T, T); g.fillStyle = '#a5d8ff'; g.fillRect(px + 5 + r * 10, py + 10, 8, 2); g.fillRect(px + 14, py + 22 - r * 6, 9, 2); break;
     case '#': g.fillStyle = '#3b2c35'; g.fillRect(px, py, T, T); g.fillStyle = '#4e3b47'; g.fillRect(px + 2, py + 2, T - 4, T - 10); g.fillStyle = '#2a1f26'; g.fillRect(px, py + T - 6, T, 6); break;
     case 'Y': { sh(15); g.fillStyle = '#fff4e6'; g.fillRect(px + 4, py + 12, 24, 16); g.fillStyle = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#9c36b5'][(px / T * 7 + py / T) % 5 | 0]; g.beginPath(); g.moveTo(px, py + 14); g.lineTo(px + 16, py + 1); g.lineTo(px + 32, py + 14); g.fill(); g.fillStyle = '#8d5a3b'; g.fillRect(px + 13, py + 19, 7, 9); g.fillStyle = '#74c0fc'; g.fillRect(px + 6, py + 16, 5, 5); g.fillRect(px + 22, py + 16, 5, 5); break; }
     case 'L': { g.fillStyle = '#c92a2a'; g.fillRect(px, py, T, T); g.fillStyle = '#ff6b00'; g.fillRect(px + 2, py + 2, T - 4, T - 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.ellipse(px + 10 + r * 10, py + 12, 5, 3, r, 0, 7); g.ellipse(px + 20, py + 22 - r * 6, 4, 2.5, 0, 0, 7); g.fill(); g.strokeStyle = '#7a1a00'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px + 4, py + 28); g.lineTo(px + 14, py + 18); g.lineTo(px + 26, py + 26); g.stroke(); break; }
     case 'V': { g.fillStyle = '#05030a'; g.fillRect(px, py, T, T); g.fillStyle = '#2b1d4a'; g.fillRect(px, py, T, 3); g.fillStyle = '#1a1030'; g.fillRect(px + 4 + r * 10, py + 10, 3, 3); break; }
-    case 'W': { const lava = th === 'arena2'; g.fillStyle = lava ? '#3b1f1a' : '#2b2540'; g.fillRect(px, py, T, T); g.fillStyle = lava ? '#5c2c22' : '#3d3459'; g.fillRect(px + 2, py + 2, 13, 12); g.fillRect(px + 17, py + 2, 13, 12); g.fillRect(px + 9, py + 17, 14, 12); if (lava && r < .3) { g.fillStyle = '#ff6b00aa'; g.fillRect(px + 4, py + 26, 24, 3); } break; }
+    case 'W': { const lava = th === 'arena2' || th === 'castle'; g.fillStyle = lava ? '#3b1f1a' : '#2b2540'; g.fillRect(px, py, T, T); g.fillStyle = lava ? '#5c2c22' : '#3d3459'; g.fillRect(px + 2, py + 2, 13, 12); g.fillRect(px + 17, py + 2, 13, 12); g.fillRect(px + 9, py + 17, 14, 12); if (lava && r < .3) { g.fillStyle = '#ff6b00aa'; g.fillRect(px + 4, py + 26, 24, 3); } break; }
     // 술집거리
     case 'B': { g.fillStyle = ['#5c3d6e', '#3d4f6e', '#6e3d48'][(px / T + py / T) % 3 | 0]; g.fillRect(px, py, T, T); g.fillStyle = r < .5 ? '#ffe066' : '#ffa8a8'; g.fillRect(px + 5, py + 6, 8, 8); g.fillRect(px + 19, py + 6, 8, 8); g.fillStyle = '#0004'; g.fillRect(px, py + T - 5, T, 5); break; }
     case 'p': sh(14); g.fillStyle = '#ff6b6b'; g.beginPath(); g.moveTo(px + 2, py + 12); g.lineTo(px + 16, py + 2); g.lineTo(px + 30, py + 12); g.fill(); g.fillStyle = '#fff'; for (let k = 0; k < 4; k++) g.fillRect(px + 4 + k * 7, py + 10, 3, 3); g.fillStyle = '#e03131'; g.fillRect(px + 6, py + 16, 20, 4); g.fillStyle = '#c92a2a'; g.fillRect(px + 8, py + 20, 2, 7); g.fillRect(px + 22, py + 20, 2, 7); g.fillStyle = '#69db7c'; g.fillRect(px + 13, py + 10, 3, 6); break;
@@ -221,6 +234,12 @@ function drawWeapon(g, s, r, plus, t) {
     case 'axe': g.strokeStyle = '#8d5a3b'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 5); g.lineTo(0, -18); g.stroke(); g.fillStyle = metal; g.beginPath(); g.moveTo(0, -18); g.quadraticCurveTo(11, -22, 10, -10); g.quadraticCurveTo(6, -12, 0, -11); g.fill(); break;
     case 'pen': g.fillStyle = '#4c6ef5'; rr(g, -1.6, -22, 3.2, 24, 1.5); g.fill(); g.fillStyle = '#fff'; g.fillRect(-1.6, -16, 3.2, 6); g.fillStyle = '#212529'; g.font = '3px sans-serif'; g.fillStyle = '#adb5bd'; g.beginPath(); g.moveTo(-1.6, 2); g.lineTo(1.6, 2); g.lineTo(0, 6); g.fill(); g.fillStyle = '#364fc7'; g.fillRect(-1, -26, 2, 4); g.fillStyle = '#ced4da'; g.fillRect(1.6, -21, 1.2, 8); break;
     case 'mic': g.fillStyle = '#212529'; rr(g, -2, -12, 4, 14, 2); g.fill(); g.fillStyle = '#ced4da'; g.beginPath(); g.arc(0, -15, 5, 0, 7); g.fill(); g.strokeStyle = '#868e96'; g.lineWidth = .8; for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(-4, -15 + k * 2.5); g.lineTo(4, -15 + k * 2.5); g.stroke(); } g.fillStyle = '#ff6b6b'; g.fillRect(-2, -5, 4, 2); break;
+    case 'zstaff': { g.strokeStyle = '#3b2c35'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 6); g.quadraticCurveTo(3, -8, -1, -19); g.stroke();
+      g.save(); g.shadowColor = '#69db7c'; g.shadowBlur = 12 + Math.sin(t / 200) * 5; g.fillStyle = '#e9ecef'; g.beginPath(); g.arc(-1, -25, 6, 0, 7); g.fill(); rr(g, -5, -21, 8, 4, 1); g.fill();
+      g.fillStyle = '#2b8a3e'; g.beginPath(); g.arc(-3.2, -25.5, 1.7, 0, 7); g.arc(1.2, -25.5, 1.7, 0, 7); g.fill(); g.fillStyle = '#b2f2bb'; g.beginPath(); g.arc(-3.2, -25.5, .7, 0, 7); g.arc(1.2, -25.5, .7, 0, 7); g.fill(); g.restore();
+      g.fillStyle = '#212529'; for (let k = 0; k < 3; k++) g.fillRect(-4 + k * 2.4, -20, 1, 2);
+      g.fillStyle = '#94d82d'; for (let k = 0; k < 4; k++) { const a = t / 350 + k * 1.57; g.globalAlpha = .45 + .4 * Math.sin(t / 160 + k); g.beginPath(); g.arc(-1 + Math.cos(a) * 10, -26 + Math.sin(a) * 6, 1.6, 0, 7); g.fill(); } g.globalAlpha = 1;
+      break; }
     case 'tuna': { const sh = Math.sin(t / 300);
       g.save(); g.shadowColor = '#a5d8ff'; g.shadowBlur = 12 + sh * 4;
       g.fillStyle = '#5c7cfa'; g.beginPath(); g.moveTo(0, -46); g.lineTo(-9, -54); g.lineTo(-2, -44); g.lineTo(2, -44); g.lineTo(9, -54); g.closePath(); g.fill();
@@ -388,6 +407,35 @@ function drawMob(g, cx, cy, e, t) {
     case 'kraken': { const y0 = Math.sin(t / 400) * 1.5; g.fillStyle = c; for (let k = 0; k < 6; k++) { const a = Math.PI * (.15 + k * .14), sw = Math.sin(t / 300 + k) * .25; g.save(); g.translate(Math.cos(a) * 7 * (k < 3 ? -1 : 1) * 0 + (k - 2.5) * 4, -6 + y0); g.rotate((k - 2.5) * .35 + sw); g.beginPath(); g.ellipse(0, 6, 2.5, 8, 0, 0, 7); g.fill(); g.restore(); } g.beginPath(); g.ellipse(0, -18 + y0, 13, 14, 0, 0, 7); g.fill(); g.fillStyle = '#9775fa'; for (const [sx, sy] of [[-6, -26], [5, -28], [0, -22]]) { g.beginPath(); g.arc(sx, sy + y0, 2, 0, 7); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.ellipse(-5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.ellipse(5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.fillRect(-5.6, -17 + y0, 1.3, 4); g.fillRect(4.4, -17 + y0, 1.3, 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(-8, -31 + y0); g.lineTo(-6, -37 + y0); g.lineTo(-2, -33 + y0); g.lineTo(0, -39 + y0); g.lineTo(2, -33 + y0); g.lineTo(6, -37 + y0); g.lineTo(8, -31 + y0); g.fill(); break; }
     case 'tentacle': { const sw = Math.sin(t / 220 + ph) * .45; g.save(); g.rotate(sw); g.fillStyle = c; g.beginPath(); g.moveTo(-5, 0); g.quadraticCurveTo(-7, -18, 0, -32); g.quadraticCurveTo(7, -18, 5, 0); g.fill(); g.fillStyle = '#e5dbff'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(1, -5 - k * 5.5, 1.6, 0, 7); g.fill(); } g.restore(); break; }
     case 'clock': { const y0 = Math.sin(t / 500), fake = M.id === 'clockclone'; if (fake) g.globalAlpha = .6 + .2 * Math.sin(t / 150); g.fillStyle = '#5c3d2e'; rr(g, -9, -10 + y0, 18, 10, 2); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(0, -22 + y0, 13, 0, 7); g.fill(); g.fillStyle = '#fff9db'; g.beginPath(); g.arc(0, -22 + y0, 10.5, 0, 7); g.fill(); g.fillStyle = '#212529'; for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; g.fillRect(Math.cos(a) * 8.5 - .6, -22 + y0 + Math.sin(a) * 8.5 - .6, 1.2, 1.2); } g.strokeStyle = '#212529'; g.lineWidth = 1.6; g.lineCap = 'round'; const a1 = t / 600, a2 = t / 60; g.beginPath(); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a1) * 5, -22 + y0 + Math.sin(a1) * 5); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a2) * 8, -22 + y0 + Math.sin(a2) * 8); g.stroke(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(-4, -26 + y0, 1.6, 0, 7); g.arc(4, -26 + y0, 1.6, 0, 7); g.fill(); g.fillStyle = '#7048e8'; g.beginPath(); g.moveTo(-13, -30 + y0); g.lineTo(-17, -40 + y0); g.lineTo(-8, -33 + y0); g.moveTo(13, -30 + y0); g.lineTo(17, -40 + y0); g.lineTo(8, -33 + y0); g.fill(); g.globalAlpha = 1; break; }
+    case 'zombie': {
+      const sw = Math.sin(t / 260 + ph), lean = Math.sin(t / 520 + ph) * .12, id = M.id, king = id === 'zking';
+      g.save(); g.rotate(lean);
+      g.fillStyle = id === 'zstudent' ? '#1c3d7a' : id === 'zgym' ? '#212529' : id === 'zking' ? '#3b0d0d' : '#495057'; g.fillRect(-5, -10, 4, 10 + sw * 1.5); g.fillRect(1, -10, 4, 10 - sw * 1.5);
+      g.fillStyle = '#343a40'; g.fillRect(-6, -1 + sw * 1.5, 5, 2); g.fillRect(1, -1 - sw * 1.5, 5, 2);
+      const shirt = { zoffice: '#f1f3f5', zdrunk: '#e8590c', zgym: '#c92a2a', zstudent: '#f8f9fa', zking: '#5f3dc4' }[id] || '#868e96';
+      g.fillStyle = shirt; rr(g, -7, -22, 14, 13, 3); g.fill();
+      g.fillStyle = c; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(-6 + k * 5, -9); g.lineTo(-4 + k * 5, -13); g.lineTo(-2 + k * 5, -9); g.fill(); } g.beginPath(); g.arc(3, -17, 1.8, 0, 7); g.fill();
+      if (id === 'zoffice') { g.fillStyle = '#1c7ed6'; g.beginPath(); g.moveTo(-1.2, -22); g.lineTo(1.2, -22); g.lineTo(1.6, -14); g.lineTo(0, -12.5); g.lineTo(-1.6, -14); g.fill(); }
+      if (id === 'zstudent') { g.fillStyle = '#1c3d7a'; g.fillRect(-6, -22, 2, 12); g.fillRect(4, -22, 2, 12); g.fillStyle = '#fff'; g.fillRect(-4, -18, 5, 2); }
+      if (id === 'zgym') { g.fillStyle = '#fff'; g.font = 'bold 4px sans-serif'; g.textAlign = 'center'; g.fillText('GYM', 0, -14); }
+      if (king) { g.fillStyle = '#c92a2a'; g.beginPath(); g.moveTo(-8, -22); g.lineTo(-12, -6); g.lineTo(12, -6); g.lineTo(8, -22); g.fill(); g.fillStyle = shirt; rr(g, -7, -22, 14, 13, 3); g.fill(); }
+      const arm = id === 'zgym' ? 5.5 : 4; g.strokeStyle = c; g.lineCap = 'round'; g.lineWidth = arm;
+      g.beginPath(); g.moveTo(-6, -19); g.lineTo(-14, -18 + sw * 2); g.moveTo(6, -19); g.lineTo(14, -19 - sw * 2); g.stroke();
+      g.fillStyle = c; g.beginPath(); g.arc(-15, -18 + sw * 2, arm * .55, 0, 7); g.arc(15, -19 - sw * 2, arm * .55, 0, 7); g.fill();
+      if (id === 'zdrunk') { g.fillStyle = '#2f9e44'; rr(g, 13, -27 - sw * 2, 4, 9, 1.5); g.fill(); g.fillRect(14, -30 - sw * 2, 2, 3); }
+      g.fillStyle = c; g.beginPath(); g.arc(0, -29, 8, 0, 7); g.fill();
+      g.fillStyle = '#343a40'; g.beginPath(); g.arc(-4, -36, 2.5, 0, 7); g.arc(1, -37, 2, 0, 7); g.arc(5, -35, 2, 0, 7); g.fill();
+      g.strokeStyle = '#2b2b2b'; g.lineWidth = .8; g.beginPath(); g.moveTo(-6, -33); g.lineTo(2, -31); for (let k = 0; k < 4; k++) { g.moveTo(-5 + k * 2, -34); g.lineTo(-4.4 + k * 2, -31); } g.stroke();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(-3, -29, 2.7, 0, 7); g.fill(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(-3, -29, 1.2, 0, 7); g.fill();
+      g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(3.4, -28.5, 1.4, 0, 7); g.fill();
+      g.fillStyle = '#3b0d0d'; rr(g, -3.5, -25, 7, 2.6, 1); g.fill(); g.fillStyle = '#fff'; g.fillRect(-2.5, -25, 1.2, 1.2); g.fillRect(.5, -25, 1.2, 1.2);
+      g.fillStyle = '#94d82dcc'; g.beginPath(); g.ellipse(2, -21 + ((t / 90 + ph * 10) % 6), .9, 1.5, 0, 0, 7); g.fill();
+      if (id === 'zgym') { g.fillStyle = '#e03131'; g.fillRect(-8, -33, 16, 2); }
+      if (king) { g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(-7, -36); g.lineTo(-6, -43); g.lineTo(-3, -39); g.lineTo(0, -45); g.lineTo(3, -39); g.lineTo(6, -43); g.lineTo(7, -36); g.fill(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(0, -39, 1.2, 0, 7); g.fill(); }
+      g.restore();
+      if (boss) { g.fillStyle = '#69db7c'; for (let k = 0; k < 3; k++) { const p2 = ((t / 25 + k * 13 + ph * 7) % 18) / 18; g.globalAlpha = .45 * (1 - p2); g.beginPath(); g.arc(Math.sin(t / 400 + k * 2) * 9, -36 - p2 * 14, 2 + p2 * 2, 0, 7); g.fill(); } g.globalAlpha = 1; }
+      if (M.pet) { g.strokeStyle = '#94d82d'; g.globalAlpha = .5 + .3 * Math.sin(t / 150); g.lineWidth = 1.5; g.beginPath(); g.ellipse(0, 0, 12, 4, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
+      break; }
     case 'tuna': { const y0 = Math.sin(t / 450) * 1.2, flap = Math.sin(t / 220) * .25;
       g.fillStyle = '#d0ebff88'; rr(g, -20, -26 + y0, 40, 24, 5); g.fill(); g.strokeStyle = '#ffffffaa'; g.lineWidth = 1; g.strokeRect(-20, -26 + y0, 40, 24);
       g.save(); g.translate(-16, -14 + y0); g.rotate(flap); g.fillStyle = '#4263eb'; g.beginPath(); g.moveTo(0, 0); g.lineTo(-9, -9); g.lineTo(-6, 0); g.lineTo(-9, 9); g.closePath(); g.fill(); g.restore();
@@ -619,7 +667,7 @@ function frame() {
   const t = now(), dt = Math.min(.1, (t - lastT) / 1000); lastT = t;
   inputTick(t);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.fillStyle = MAP ? ({ arena4: '#081426', arena5: '#1c1408', royale: '#2b8a3e', altar: '#1d1830', arena1: '#22301a', arena2: '#1a0d0a', arena3: '#141020', cave: '#1a1218', street: '#25262b', gym: '#343a40', hall: '#868e96', sauna: '#99e9f2' }[MAP.theme] || '#2b8a3e') : '#2b8a3e'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = MAP ? ({ arena4: '#081426', arena5: '#1c1408', royale: '#2b8a3e', altar: '#1d1830', arena1: '#22301a', arena2: '#1a0d0a', arena3: '#141020', cave: '#1a1218', street: '#25262b', gym: '#343a40', hall: '#868e96', sauna: '#99e9f2', station: '#495057', market: '#5c3d2e', lake: '#2b8a3e', forest: '#1b4332', sewer: '#1a2418', factory: '#212529', tunnel: '#0b0b12', castle: '#1a0a10' }[MAP.theme] || '#2b8a3e') : '#2b8a3e'; ctx.fillRect(0, 0, W, H);
   const m = me();
   if (MAP && mapCv) {
     for (const e of ents.values()) { const k = Math.min(1, dt * 14); e.rx += (e.x - e.rx) * k; e.ry += (e.y - e.ry) * k; }
@@ -679,14 +727,17 @@ function frame() {
         const J = D.JOBS[e.j], fc = FACS[e.f] ? FACS[e.f][1] : '#fff', enemy = MAP.id === 'royale' ? e.i !== myId : e.f !== faction;
         ctx.font = '11px Jua'; const label = (e.ad ? '👑 ' : '') + (J ? J.icon : '') + ' ' + e.n + ' Lv' + e.l;
         ctx.fillStyle = '#000'; ctx.fillText(label, x + 1, y + 14); ctx.fillStyle = e.i === myId ? '#fff' : fc; ctx.fillText(label, x, y + 13);
-        if (enemy) { ctx.font = '9px Jua'; ctx.fillStyle = '#ff6b6b'; ctx.fillText(MAP.id === 'royale' ? '⚔ 적' : '⚔ 적 진영 ' + FACS[e.f][0], x, y + 24); }
+        const TT = e.tt && D.TITLES && D.TITLES[e.tt];
+        if (TT) { ctx.font = 'bold 10px Jua'; ctx.fillStyle = '#000'; ctx.fillText('«' + TT.n + '»', x + 1, y + 26); ctx.fillStyle = TT.c; ctx.fillText('«' + TT.n + '»', x, y + 25); }
+        if (enemy) { ctx.font = '9px Jua'; ctx.fillStyle = '#ff6b6b'; ctx.fillText(MAP.id === 'royale' ? '⚔ 적' : '⚔ 적 진영 ' + FACS[e.f][0], x, y + (TT ? 36 : 24)); }
         const up = e.mt ? 15 : 0;
         if (e.h < e.H) hpBar(ctx, x, y - 50 - up, 26, e.h / e.H, enemy ? '#ff6b6b' : '#51cf66');
         if (e.bb) bubble(ctx, x, y - 58 - up, e.bb);
       } else {
         const M = D.MON[e.t], S = M.boss ? (M.big || 1.9) : 1;
         if (M.raid) { if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 10, e.mb, e.loud); if (['zarm', 'tentacle', 'clockclone'].includes(M.id)) hpBar(ctx, x, y - 40 * S, 40, e.h / e.H, '#fa5252'); }
-        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
+        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : M.s === 'zombie' ? ' 🧟' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
+        else if (e.fl & 64) { ctx.font = '9px Jua'; ctx.fillStyle = '#000'; ctx.fillText('🧟 아군 좀비', x + 1, y + 11); ctx.fillStyle = '#94d82d'; ctx.fillText('🧟 아군 좀비', x, y + 10); }
         else { if (e.h < e.H) hpBar(ctx, x, y - 30, 22, e.h / e.H, '#fa5252'); if (m && Math.hypot(e.x - m.x, e.y - m.y) < 4) { ctx.font = '9px Jua'; ctx.fillStyle = '#fff'; ctx.fillText(M.n + ' Lv' + M.lv, x, y + 10); } }
       }
     }
@@ -709,6 +760,12 @@ function frame() {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (MOOD === 'lava') { const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .25, W / 2, H / 2, Math.max(W, H) * .7); gr.addColorStop(0, 'rgba(255,80,0,0)'); gr.addColorStop(1, `rgba(200,30,0,${.35 + .1 * Math.sin(t / 300)})`); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ffa94d'; for (let k = 0; k < 18; k++) { const ex = (k * 97 + t / 20 * (1 + k % 3)) % W, ey = H - ((t / 12 * (1 + k % 4) + k * 53) % H); ctx.globalAlpha = .6; ctx.fillRect(ex, ey, 2, 2); } ctx.globalAlpha = 1; }
     if (MOOD === 'dark') { const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .18, W / 2, H / 2, Math.max(W, H) * .6); gr.addColorStop(0, 'rgba(10,0,30,0)'); gr.addColorStop(1, 'rgba(10,0,30,.82)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); }
+    if (MOOD === 'zombie') {
+      ctx.fillStyle = `rgba(40,150,40,${.17 + .05 * Math.sin(t / 700)})`; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(160,240,140,.07)'; for (let k = 0; k < 7; k++) { const fx2 = ((k * 211 + t / (30 + k * 6)) % (W + 400)) - 200, fy = H * (.15 + (k % 4) * .22) + Math.sin(t / 900 + k) * 30; ctx.beginPath(); ctx.ellipse(fx2, fy, 200 + k * 20, 50 + k * 6, 0, 0, 7); ctx.fill(); }
+      const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .22, W / 2, H / 2, Math.max(W, H) * .68); gr.addColorStop(0, 'rgba(10,40,5,0)'); gr.addColorStop(1, 'rgba(6,30,4,.7)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#8ce99a'; for (let k = 0; k < 24; k++) { const ex = (k * 137 + Math.sin(t / 900 + k) * 40 + W) % W, ey = H - ((t / (14 + k % 5 * 4) + k * 71) % H); ctx.globalAlpha = .25 + .35 * Math.abs(Math.sin(t / 500 + k)); ctx.beginPath(); ctx.arc(ex, ey, 1.5 + k % 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+    }
     if (MOOD === 'quake') { ctx.fillStyle = `rgba(80,60,40,${.12 + .05 * Math.sin(t / 200)})`; ctx.fillRect(0, 0, W, H); }
     const MINI = ['zarm', 'tentacle', 'clockclone'];
     const rb = [...ents.values()].filter(e => e.kind === 'm' && D.MON[e.t].raid && !MINI.includes(D.MON[e.t].id));
@@ -716,6 +773,16 @@ function frame() {
     rb.forEach((e, k) => { const M = D.MON[e.t], bw = Math.min(460, W - 40), x0 = (W - bw) / 2, y0 = 92 + k * 30; ctx.fillStyle = '#000b'; rr(ctx, x0 - 4, y0 - 15, bw + 8, 28, 8); ctx.fill(); ctx.fillStyle = '#3b0d0d'; ctx.fillRect(x0, y0, bw, 9); ctx.fillStyle = (e.fl & 32) ? '#ffd43b' : (e.fl & 16) ? '#74c0fc' : '#fa5252'; ctx.fillRect(x0, y0, bw * Math.max(0, e.h / e.H), 9); ctx.font = '12px Jua'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(`👑 ${M.n}${(e.fl & 32) ? ' 💫 그로기! 피해 1.5배' : (e.fl & 16) ? (arms0 && M.id === 'zbody' && !(PLATES.l && PLATES.l.length) ? ' (무적 · 팔을 먼저 부수세요)' : ' 🛡 보호막 · 발판을 밟으세요') : ''}`, x0, y0 - 3); ctx.textAlign = 'right'; ctx.fillText(`${Math.max(0, Math.round(e.h / e.H * 100))}%`, x0 + bw, y0 - 3); });
     if (PLATES.l && PLATES.l.length) { const emo = ['🔴', '🔵', '🟢', '🟡', '🟣'], yy = 92 + rb.length * 30 + 26; ctx.font = '15px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000a'; const txt = PLATES.sim ? `🗼 3명이 동시에 밟기: ${PLATES.l.filter(p => p[3]).length}/${PLATES.l.length}${PLATES.hold ? ' · 유지 ' + (PLATES.hold / 1000).toFixed(1) + '/2초' : ''}` : PLATES.seq ? '순서대로 밟기: ' + PLATES.seq.map((c, k) => (k < PLATES.i ? '✅' : emo[c])).join(' → ') : `🧊 냉각 발판 ${PLATES.l.filter(p => p[3]).length}/${PLATES.l.length} (10초 유지)`; const tw = ctx.measureText(txt).width + 20; rr(ctx, W / 2 - tw / 2, yy - 18, tw, 26, 8); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillText(txt, W / 2, yy); }
     const arms = [...ents.values()].filter(e => e.kind === 'm' && MINI.includes(D.MON[e.t].id)).length; if (arms) { ctx.font = '13px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#ced4da'; ctx.fillText(`${MAP.id === 'raid4' ? '🐙 남은 촉수' : MAP.id === 'raid5' ? '👥 남은 분신' : '🦾 남은 팔'}: ${arms}`, W / 2, 92 + rb.length * 30 + 6); }
+    if (ZBAN && t - ZBAN.t < ZBAN.ms) {
+      const p = (t - ZBAN.t) / ZBAN.ms, a = p < .08 ? p / .08 : p > .8 ? (1 - p) / .2 : 1, fs = Math.min(ZBAN.small ? 34 : 50, W / (ZBAN.small ? 12 : 11)), cy = H * .3;
+      ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#04140488'; ctx.fillRect(0, cy - fs * 1.2, W, fs * 2.6);
+      ctx.fillStyle = '#69db7c'; ctx.fillRect(0, cy - fs * 1.2, W, 2); ctx.fillRect(0, cy + fs * 1.4, W, 2);
+      ctx.textAlign = 'center'; ctx.font = `bold ${fs}px Jua`; ctx.lineWidth = 8; ctx.strokeStyle = '#051a05'; const jx = Math.sin(t / 40) * (p < .3 ? 3 : 1);
+      ctx.strokeText(ZBAN.txt, W / 2 + jx, cy + fs * .2); const tg = ctx.createLinearGradient(0, cy - fs, 0, cy + fs * .3); tg.addColorStop(0, '#d3f9d8'); tg.addColorStop(1, '#40c057'); ctx.fillStyle = tg; ctx.fillText(ZBAN.txt, W / 2 + jx, cy + fs * .2);
+      ctx.fillStyle = '#69db7c'; for (let k = 0; k < 9; k++) { const dx = W / 2 + (k - 4) * fs * .9, dy = cy + fs * .3 + ((t / 8 + k * 37) % (fs * 1.1)); ctx.beginPath(); ctx.ellipse(dx, dy, 2.5, 4, 0, 0, 7); ctx.fill(); }
+      ctx.font = `${Math.max(13, fs * .36)}px Jua`; ctx.lineWidth = 4; ctx.strokeStyle = '#000'; ctx.strokeText(ZBAN.sub, W / 2, cy + fs * 1.05); ctx.fillStyle = '#d3f9d8'; ctx.fillText(ZBAN.sub, W / 2, cy + fs * 1.05);
+      ctx.restore();
+    }
     if (t < FLASH) { ctx.fillStyle = `rgba(255,255,255,${(FLASH - t) / 250 * .55})`; ctx.fillRect(0, 0, W, H); }
     if (COUNT && t < COUNT + 900) { const left = (COUNT - t) / 1000, txt = left > 0 ? String(Math.ceil(Math.min(3, left))) : '시작!!', ph2 = left > 0 ? left % 1 : (t - COUNT) / 900; ctx.save(); ctx.fillStyle = '#0006'; ctx.fillRect(0, 0, W, H); ctx.font = `bold ${120 + ph2 * 60}px Jua`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 10; ctx.strokeStyle = '#000'; ctx.globalAlpha = Math.min(1, .3 + ph2); ctx.strokeText(txt, W / 2, H / 2); ctx.fillStyle = left > 0 ? '#ffd43b' : '#ff6b6b'; ctx.fillText(txt, W / 2, H / 2); ctx.restore(); }
     if (MAP.id === 'royale' && ROYN) { ctx.font = 'bold 18px Jua'; ctx.textAlign = 'center'; const txt = `🔥 무한장 · 생존 ${ROYN}명`; const tw = ctx.measureText(txt).width + 24; ctx.fillStyle = '#c92a2acc'; rr(ctx, W / 2 - tw / 2, 54, tw, 30, 10); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillText(txt, W / 2, 75); }
@@ -738,7 +805,7 @@ function drawMinimap(m) {
   const s = 3, mw = MAP.w * s, mh = MAP.h * s, x0 = W - mw - 12, y0 = 52;
   ctx.globalAlpha = .85; ctx.drawImage(mapCv, x0, y0, mw, mh); ctx.globalAlpha = 1; ctx.strokeStyle = '#5b4d8a'; ctx.lineWidth = 2; ctx.strokeRect(x0, y0, mw, mh);
   for (const e of ents.values()) {
-    if (e.kind === 'm') { ctx.fillStyle = D.MON[e.t].boss ? '#ffe600' : '#fa5252'; const r = D.MON[e.t].boss ? 4 : 1.5; ctx.fillRect(x0 + e.x * s - r / 2, y0 + e.y * s - r / 2, r, r); }
+    if (e.kind === 'm') { ctx.fillStyle = (e.fl & 64) ? '#94d82d' : D.MON[e.t].zev ? '#69db7c' : D.MON[e.t].boss ? '#ffe600' : '#fa5252'; const r = D.MON[e.t].boss ? 4 : 1.5; ctx.fillRect(x0 + e.x * s - r / 2, y0 + e.y * s - r / 2, r, r); }
     else { ctx.fillStyle = e.i === myId ? '#fff' : FACS[e.f][1]; ctx.fillRect(x0 + e.x * s - 2, y0 + e.y * s - 2, 4, 4); }
   }
 }
@@ -824,7 +891,7 @@ const SLOTN = { weapon: '무기', armor: '갑옷', helm: '투구' };
 function itemName(it) { return isEq(it) ? `<span style="color:${D.RAR[it.r].c}">[${D.RAR[it.r].n}] ${esc(it.n)}${it.plus ? ' +' + it.plus : ''}</span>` : esc(it.n) + (it.q > 1 ? ' x' + it.q : ''); }
 function itemDesc(it) {
   if (isEq(it)) {
-    const stat = it.type === 'weapon' ? `공격력 +${power(it)} · 사거리 ${D.WB[it.b].r}${D.WB[it.b].aoe ? `<br><span style="color:#a5d8ff">🐟 휘두르면 반경 ${D.WB[it.b].aoe}칸 광역 공격!</span>` : ''}` : `방어력 +${power(it)}`;
+    const stat = it.type === 'weapon' ? `공격력 +${power(it)} · 사거리 ${D.WB[it.b].r}${D.WB[it.b].aoe ? `<br><span style="color:#a5d8ff">🐟 휘두르면 반경 ${D.WB[it.b].aoe}칸 광역 공격!</span>` : ''}${D.WB[it.b].zsum ? '<br><span style="color:#94d82d">🧟 평타를 치면 아군 좀비 소환! (최대 3마리 · 20초 · 사냥터에서만)</span>' : ''}` : `방어력 +${power(it)}`;
     const bon = [it.atkb ? `공격 +${it.atkb}` : '', it.defb ? `방어 +${it.defb}` : '', it.hpb ? `HP +${it.hpb}` : ''].filter(Boolean).join(' · ');
     return `${SLOTN[it.type]} · 아이템레벨 ${it.il}<br>${stat}${bon ? `<br><span style="color:#ffe066">✨ 특수 옵션: ${bon}</span>` : ''}<br><span class="small">강화 +${it.plus}→+${it.plus + 1}: 성공 ${enhRate(it.plus)}% (축복 ${Math.min(100, enhRate(it.plus) + 15)}%) · 실패 시 파괴 ${boomRate(it.plus)}% → <b style="color:${boomRate(it.plus) ? '#ff8787' : '#69db7c'}">💥 터질 확률 ${((100 - enhRate(it.plus)) * boomRate(it.plus) / 100).toFixed(1)}%</b> · ${(it.plus + 1) * 100}G</span>`;
   }
@@ -950,7 +1017,22 @@ function renderHelp() {
 /* ============ 접속자 목록 (오른쪽 서랍) ============ */
 function renderWho() {
   $('#whotab').textContent = `👥 ${WHO.length}`;
-  $('#wholist').innerHTML = `<div style="font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">👥 접속자 ${WHO.length}명<button onclick="setWho(false)">✕</button></div>` + WHO.map(([n, f, j, l, mp, ad]) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j]; return `<div class="wrow"><div><span style="color:${F[1]}">[${F[0]}]</span> ${ad ? '👑' : ''}${esc(n)} <span class="small">Lv${l}</span></div><div class="small">${J ? J.icon + J.n : ''} · 📍${esc(mp)}</div></div>`; }).join('');
+  $('#wholist').innerHTML = `<div style="font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">👥 접속자 ${WHO.length}명<button onclick="setWho(false)">✕</button></div>` + WHO.map(([n, f, j, l, mp, ad, tt]) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j], TT = tt && D && D.TITLES[tt]; return `<div class="wrow"><div><span style="color:${F[1]}">[${F[0]}]</span> ${ad ? '👑' : ''}${esc(n)} <span class="small">Lv${l}</span>${TT ? ` <span class="small" style="color:${TT.c}">${esc(TT.n)}</span>` : ''}</div><div class="small">${J ? J.icon + J.n : ''} · 📍${esc(mp)}</div></div>`; }).join('')
+    + (ZR && ZR.list && ZR.list.length ? `<div style="margin-top:12px;color:#8ce99a">🧟 지난 좀비 습격 랭킹</div>` + ZR.list.map(([n, f, k], i) => `<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '.'} <span style="color:${(FACS[f] || ['', '#fff'])[1]}">${esc(n)}</span></span><b>${k}</b></div>`).join('') : '');
+}
+function renderZRank() {
+  let el = $('#zrank'); if (!el) { el = document.createElement('div'); el.id = 'zrank'; document.body.appendChild(el); el.onclick = () => el.classList.toggle('mini'); }
+  if (!ZST) { el.style.display = 'none'; return; } el.style.display = 'block';
+  const left = Math.max(0, ZST.left - (now() - ZST.at)), sec = Math.ceil(left / 1000), mm = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, '0');
+  el.innerHTML = `<div class="zh">🧟 좀비 습격 <b>${mm}:${ss}</b></div><div class="zs">웨이브 ${ZST.wave} · 내 점수 <b>${ZST.me}</b> · 탭해서 접기</div>` + (ZST.top.length ? ZST.top.map(([n, f, k], i) => `<div class="zr ${ME && n === ME.name ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '.'}</span><span style="color:${(FACS[f] || ['', '#fff'])[1]}">${esc(n)}</span><b>${k}</b></div>`).join('') : '<div class="zs">아직 아무도 못 잡았어요!</div>');
+}
+setInterval(() => { if (ZST) renderZRank(); }, 1000);
+function showZRes(m) {
+  let el = $('#zres'); if (!el) { el = document.createElement('div'); el.id = 'zres'; document.body.appendChild(el); }
+  const L = m.list || [], rw = i => i === 0 ? '💀 좀비 군주의 지팡이 · 칭호 [🧟 좀비 학살자] · 100만G' : i < 3 ? `칭호 [🧟 좀비 사냥꾼] · ${i === 1 ? '50' : '30'}만G` : '10만G';
+  el.innerHTML = `<h3 style="margin:0 0 4px;color:#8ce99a">🧟 좀비 습격 결과</h3>${m.reason ? `<div class="small">${esc(m.reason)}</div>` : ''}<div style="margin:8px 0">` + (L.length ? L.map(([n, f, k], i) => `<div class="zr ${ME && n === ME.name ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '위'} <b style="color:${(FACS[f] || ['', '#fff'])[1]}">${esc(n)}</b> · ${k}점</span><span class="small">${rw(i)}</span></div>`).join('') : '<div class="small">아무도 좀비를 잡지 못했어요…</div>') + `</div><button id="zresx" class="pri">닫기</button>`;
+  el.style.display = 'block'; $('#zresx').onclick = () => el.style.display = 'none';
+  LOG.push(`<span style="color:#8ce99a">🧟 좀비 습격 결과: ${L.map(([n, , k], i) => `${i + 1}위 ${esc(n)}(${k})`).join(', ') || '없음'}</span>`);
 }
 const whoEl = () => $('#who');
 function setWho(open) { whoEl().classList.toggle('open', open); $('#whotab').classList.toggle('open', open); }
@@ -964,8 +1046,10 @@ $('#whotab').onclick = () => setWho(!whoEl().classList.contains('open'));
 }
 /* ============ 월드맵 ============ */
 const WMAP = [ // [맵id, x, y]  (0~100 좌표)
-  ['bucheon', 14, 60], ['bosshub', 30, 34], ['raid1', 9, 8], ['raid2', 25, 8], ['raid4', 41, 8], ['raid3', 57, 8], ['raid5', 73, 8], ['pub', 38, 72], ['sauna', 38, 91], ['gym', 56, 56], ['hall', 72, 68], ['cave1', 88, 50], ['cave2', 90, 28]];
-const WLINK = [['bucheon', 'bosshub'], ['bosshub', 'raid1'], ['bosshub', 'raid2'], ['bosshub', 'raid3'], ['bosshub', 'raid4'], ['bosshub', 'raid5'], ['bucheon', 'pub'], ['pub', 'sauna'], ['pub', 'gym'], ['gym', 'hall'], ['hall', 'cave1'], ['cave1', 'cave2']];
+  ['bucheon', 10, 48], ['bosshub', 24, 28], ['raid1', 7, 8], ['raid2', 19, 8], ['raid4', 31, 8], ['raid3', 43, 8], ['raid5', 55, 8], ['pub', 22, 66], ['sauna', 9, 84], ['gym', 36, 54], ['hall', 48, 66], ['cave1', 60, 54], ['cave2', 72, 66],
+  ['station', 88, 80], ['market', 72, 92], ['dodang', 55, 92], ['lake', 38, 92], ['sewer', 90, 62], ['factory', 88, 44], ['wonmi', 90, 30], ['tunnel', 78, 19], ['castle', 92, 7]];
+const WLINK = [['bucheon', 'bosshub'], ['bosshub', 'raid1'], ['bosshub', 'raid2'], ['bosshub', 'raid3'], ['bosshub', 'raid4'], ['bosshub', 'raid5'], ['bucheon', 'pub'], ['pub', 'sauna'], ['pub', 'gym'], ['gym', 'hall'], ['hall', 'cave1'], ['cave1', 'cave2'],
+  ['cave2', 'station'], ['bucheon', 'station'], ['station', 'market'], ['market', 'dodang'], ['dodang', 'lake'], ['station', 'sewer'], ['sewer', 'factory'], ['factory', 'wonmi'], ['wonmi', 'tunnel'], ['tunnel', 'castle']];
 function renderWorld() {
   const P = $('#pworld'), seen = (ME && ME.seen) || {}, info = id => D.MAPLIST.find(m => m.id === id) || { n: id };
   const pos = Object.fromEntries(WMAP.map(([id, x, y]) => [id, [x, y]]));
@@ -1015,17 +1099,20 @@ function renderAdm() {
   h += `<div class="small" style="margin-top:6px">무적 ON이면 피해 없음 + 스킬 쿨타임/MP 없음</div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 경험치 이벤트 (전체)</h4><div class="acts">${[1, 2, 5, 10].map(v => `<button data-ev="${v}" class="${EVT === v ? 'pri' : ''}">${v === 1 ? '이벤트 끄기' : v + '배'}</button>`).join('')}<button data-a="raidreset">🧹 레이드 초기화</button></div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 무한장 (배틀로얄)</h4><div class="acts"><button class="pri" data-a="royale">🔥 무한장 시작 (접속자 전원)</button><button data-a="royalestop">종료</button></div><div class="small">관리자를 뺀 접속자 전원이 무한장으로 이동 → 3초 카운트 → 진영 상관없이 싸워서 마지막 1명에게 골드</div>`;
+  h += `<h4 style="margin:12px 0 4px">🧟 좀비 습격 이벤트</h4><div class="acts">${[3, 5, 10, 15].map(v => `<button data-zev="${v}" class="${v === 5 ? 'pri' : ''}">🧟 ${v}분 시작</button>`).join('')}<button data-a="zstop" class="red">종료</button><button data-a="zstaff">💀 좀비 지팡이 받기</button><button data-ttl="zslayer">칭호: 학살자</button><button data-ttl="">칭호 없애기</button></div><div class="small">모든 사냥터 몬스터가 사라지고 화면이 초록색으로 변하며 좀비 보스들이 몰려와요 (좀비 1점 · 좀비 킹 5점). 끝나면 1~10위 랭킹, 1위는 좀비 소환 지팡이 + 칭호 [좀비 학살자] (입장 문구도 바뀜). 관리자는 랭킹 제외</div>`;
   h += `<h4 style="margin:12px 0 4px">🧪 다른 사람 레벨 설정 (테스트용)</h4><div class="acts"><input id="admpn" placeholder="이름" style="width:100px;padding:5px"><input id="admpl" type="number" value="40" style="width:60px;padding:5px"><button id="admplgo">설정</button></div>`;
-  h += `<h4 style="margin:12px 0 4px">👹 보스 소환 (내 옆에)</h4><div class="acts">${D.MON.filter(m => m.boss && !m.raid).map(m => `<button data-boss="${m.id}">${m.s === 'human' ? '✨' : ''}${esc(m.n)}</button>`).join('')}<button data-a="allboss" class="red">모든 사냥터 보스</button></div>`;
-  h += `<h4 style="margin:12px 0 4px">🐾 몬스터 소환 (5마리, 죽으면 사라짐)</h4><select id="admmob" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a">${D.MON.filter(m => !m.boss).map(m => `<option value="${m.id}">${esc(m.n)} (Lv${m.lv})</option>`).join('')}</select> <button id="admmobgo">소환</button> <button id="admmat">재료 20개</button>`;
+  h += `<h4 style="margin:12px 0 4px">👹 보스 소환 (내 옆에)</h4><div class="acts">${D.MON.filter(m => m.boss && !m.raid && !m.zev).map(m => `<button data-boss="${m.id}">${m.s === 'human' ? '✨' : ''}${esc(m.n)}</button>`).join('')}<button data-a="allboss" class="red">모든 사냥터 보스</button></div>`;
+  h += `<h4 style="margin:12px 0 4px">🐾 몬스터 소환 (5마리, 죽으면 사라짐)</h4><select id="admmob" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a">${D.MON.filter(m => !m.boss && !m.pet).map(m => `<option value="${m.id}">${esc(m.n)} (Lv${m.lv})</option>`).join('')}</select> <button id="admmobgo">소환</button> <button id="admmat">재료 20개</button>`;
   h += `<h4 style="margin:12px 0 4px">🗺️ 순간이동</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-go="${k}" style="color:${c}">🏠${n}마을</button>`).join('')}${D.MAPLIST.filter(m => m.id !== 'bucheon').map(m => `<button data-go="${m.id}">${esc(m.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📜 퀘스트 / NPC</h4><div class="acts"><button data-a="qnext">⏩ 현재 퀘스트 바로 달성</button><button data-a="qreset">🔄 퀘스트 초기화</button>${Object.entries(D.NPCS).map(([k, n]) => `<button data-npc="${k}">🧑 ${esc(n.n)}</button>`).join('')}</div>`;
-  h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="99" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
+  h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="100" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
   h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급</h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🏳️ 진영 변경</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-fac="${k}" style="color:${c}">${n}</button>`).join('')}</div>`;
   const P = $('#padm'); P.innerHTML = h;
   P.querySelectorAll('[data-a]').forEach(b => b.onclick = () => adm({ op: b.dataset.a }));
+  P.querySelectorAll('[data-zev]').forEach(b => b.onclick = () => adm({ op: 'zstart', min: +b.dataset.zev }));
+  P.querySelectorAll('[data-ttl]').forEach(b => b.onclick = () => adm({ op: 'title', v: b.dataset.ttl }));
   P.querySelectorAll('[data-boss]').forEach(b => b.onclick = () => adm({ op: 'boss', id: b.dataset.boss }));
   P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { adm({ op: 'expev', v: +b.dataset.ev }); setTimeout(renderAdm, 300); });
   P.querySelectorAll('[data-go]').forEach(b => b.onclick = () => adm({ op: 'go', map: b.dataset.go }));
