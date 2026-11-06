@@ -28,6 +28,7 @@ const fxs = [], dmgs = [];
 const cds = {};
 let ws = null, myId = 0, faction = '', WHO = [], EVT = 1;
 const WARN = [], HZ = [];
+let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [];
 
 /* ============ 로그인 ============ */
 const FACS = { sangdong: ['상동', '#ff6b6b', '🔥 빨간 망토 · 공격력 +8%'], jungdong: ['중동', '#4dabf7', '🎒 파란 백팩 · 방어력 +15%'], wonjong: ['원종', '#51cf66', '🌱 머리 새싹 · 최대 HP +12%'], yeokgok: ['역곡', '#ffd43b', '🎧 노란 헤드폰 · 이동속도 +10%'], sosa: ['소사', '#da77f2', '🐱 고양이귀 · MP +20%, 골드 +15%'] };
@@ -92,6 +93,10 @@ function onMsg(m) {
     case 'evt': EVT = m.mult; $('#evbadge').classList.toggle('hidden', EVT <= 1); $('#evbadge').textContent = `🔥 경험치 ${EVT}배 이벤트`; break;
     case 'warn': WARN.push({ tiles: m.tiles, t0: now(), until: now() + m.ms, c: m.c }); break;
     case 'hz': HZ.push({ tiles: m.tiles, t0: now(), c: m.c }); break;
+    case 'plates': PLATES = m; break;
+    case 'mood': MOOD = m.m; break;
+    case 'shake': SHAKE = now() + (m.ms || 600); break;
+    case 'tiles': if (MAP && mapCv) { const g = mapCv.getContext('2d'), fl = FLOOR[MAP.theme] || FLOOR.grass; for (const [x, y] of m.set) { MAP.rows[y] = MAP.rows[y].slice(0, x) + m.ch + MAP.rows[y].slice(x + 1); g.fillStyle = fl[(x + y) & 1]; g.fillRect(x * T, y * T, T, T); drawTile(g, m.ch, x * T, y * T, MAP.theme, rnd(x, y, 1)); } scanLava(); } break;
     case 'mtalk': { const e = ents.get('m' + m.id); if (e) { e.mb = m.m; e.mbT = now() + (m.loud ? 2600 : 3800); e.loud = m.loud; } const nm = e ? D.MON[e.t].n : m.n; if (nm && m.loud) addChat({ ch: 'sys', m: `💬 ${nm}: ${m.m}`, c: '#ffa8a8' }); break; }
   }
 }
@@ -119,8 +124,9 @@ function onState(m) {
 /* ============ 맵 ============ */
 function rnd(x, y, s) { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v); }
 const FLOOR = { altar: ['#4c4466', '#554c70'], arena1: ['#6b8f4e', '#749957'], arena2: ['#5a3a32', '#634038'], arena3: ['#3f3a4f', '#47415a'], cave: ['#5c4b51', '#64535a'], forest: ['#4c9a52', '#55a65b'], grass: ['#7cc96a', '#86d174'], street: ['#4a4e57', '#50545d'], gym: ['#c9a27a', '#d1ab84'], hall: ['#e9e4dc', '#f3efe8'], sauna: ['#b9e6f0', '#c8eef5'] };
+function scanLava() { LAVA = []; if (!MAP) return; for (let y = 0; y < MAP.h; y++) for (let x = 0; x < MAP.w; x++) if (MAP.rows[y][x] === 'L') LAVA.push([x, y]); }
 function loadMap(m) {
-  MAP = m; ents.clear(); ground = []; WARN.length = 0; HZ.length = 0; if (typeof dlg !== 'undefined' && dlg) { dlg = null; drawDlg(); }
+  MAP = m; ents.clear(); ground = []; WARN.length = 0; HZ.length = 0; PLATES = { l: [], seq: null, i: 0 }; MOOD = ''; setTimeout(scanLava, 0); if (typeof dlg !== 'undefined' && dlg) { dlg = null; drawDlg(); }
   $('#mapname').textContent = '📍 ' + m.name + (m.lvr && m.lvr !== '휴식' ? ' · Lv' + m.lvr : '');
   mapCv = document.createElement('canvas'); mapCv.width = m.w * T; mapCv.height = m.h * T;
   const g = mapCv.getContext('2d'), th = m.theme, floor = FLOOR[th] || FLOOR.grass;
@@ -158,6 +164,8 @@ function drawTile(g, c, px, py, th, r) {
     case 'w': g.fillStyle = '#4dabf7'; g.fillRect(px, py, T, T); g.fillStyle = '#a5d8ff'; g.fillRect(px + 5 + r * 10, py + 10, 8, 2); g.fillRect(px + 14, py + 22 - r * 6, 9, 2); break;
     case '#': g.fillStyle = '#3b2c35'; g.fillRect(px, py, T, T); g.fillStyle = '#4e3b47'; g.fillRect(px + 2, py + 2, T - 4, T - 10); g.fillStyle = '#2a1f26'; g.fillRect(px, py + T - 6, T, 6); break;
     case 'Y': { sh(15); g.fillStyle = '#fff4e6'; g.fillRect(px + 4, py + 12, 24, 16); g.fillStyle = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#9c36b5'][(px / T * 7 + py / T) % 5 | 0]; g.beginPath(); g.moveTo(px, py + 14); g.lineTo(px + 16, py + 1); g.lineTo(px + 32, py + 14); g.fill(); g.fillStyle = '#8d5a3b'; g.fillRect(px + 13, py + 19, 7, 9); g.fillStyle = '#74c0fc'; g.fillRect(px + 6, py + 16, 5, 5); g.fillRect(px + 22, py + 16, 5, 5); break; }
+    case 'L': { g.fillStyle = '#c92a2a'; g.fillRect(px, py, T, T); g.fillStyle = '#ff6b00'; g.fillRect(px + 2, py + 2, T - 4, T - 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.ellipse(px + 10 + r * 10, py + 12, 5, 3, r, 0, 7); g.ellipse(px + 20, py + 22 - r * 6, 4, 2.5, 0, 0, 7); g.fill(); g.strokeStyle = '#7a1a00'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px + 4, py + 28); g.lineTo(px + 14, py + 18); g.lineTo(px + 26, py + 26); g.stroke(); break; }
+    case 'V': { g.fillStyle = '#05030a'; g.fillRect(px, py, T, T); g.fillStyle = '#2b1d4a'; g.fillRect(px, py, T, 3); g.fillStyle = '#1a1030'; g.fillRect(px + 4 + r * 10, py + 10, 3, 3); break; }
     case 'W': { const lava = th === 'arena2'; g.fillStyle = lava ? '#3b1f1a' : '#2b2540'; g.fillRect(px, py, T, T); g.fillStyle = lava ? '#5c2c22' : '#3d3459'; g.fillRect(px + 2, py + 2, 13, 12); g.fillRect(px + 17, py + 2, 13, 12); g.fillRect(px + 9, py + 17, 14, 12); if (lava && r < .3) { g.fillStyle = '#ff6b00aa'; g.fillRect(px + 4, py + 26, 24, 3); } break; }
     // 술집거리
     case 'B': { g.fillStyle = ['#5c3d6e', '#3d4f6e', '#6e3d48'][(px / T + py / T) % 3 | 0]; g.fillRect(px, py, T, T); g.fillStyle = r < .5 ? '#ffe066' : '#ffa8a8'; g.fillRect(px + 5, py + 6, 8, 8); g.fillRect(px + 19, py + 6, 8, 8); g.fillStyle = '#0004'; g.fillRect(px, py + T - 5, T, 5); break; }
@@ -390,6 +398,8 @@ function drawMob(g, cx, cy, e, t) {
     else { g.fillStyle = '#111'; rr(g, -9, top + 9, 8, 4, 2); g.fill(); rr(g, 1, top + 9, 8, 4, 2); g.fill(); g.fillRect(-1, top + 10, 2, 1); }
   }
   g.restore();
+  if (M.raid && (e.fl & 16) && M.s !== 'statue') { g.save(); g.strokeStyle = '#74c0fc'; g.fillStyle = '#74c0fc22'; g.globalAlpha = .6 + .25 * Math.sin(t / 160); g.lineWidth = 3; g.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + t / 1500; g.lineTo(cx + Math.cos(a) * 16 * S, cy - 14 * S + Math.sin(a) * 18 * S); } g.closePath(); g.fill(); g.stroke(); g.restore(); }
+  if (e.fl & 32) { g.font = `bold ${14 + 2 * Math.sin(t / 120)}px Jua`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#000'; g.strokeText('💫 그로기!', cx, cy - 34 * S - 14); g.fillStyle = '#ffe066'; g.fillText('💫 그로기!', cx, cy - 34 * S - 14); for (let i = 0; i < 5; i++) { const a = t / 250 + i * 1.26; g.font = '14px sans-serif'; g.fillText('⭐', cx + Math.cos(a) * 14 * S, cy - 30 * S + Math.sin(a) * 4 * S); } }
   if (e.fl & 1) { for (let i = 0; i < 3; i++) { const a = t / 200 + i * 2.1; g.fillStyle = '#ffe066'; g.font = '10px sans-serif'; g.fillText('★', cx + Math.cos(a) * 11 * S - 4, cy - 28 * S + Math.sin(a) * 3); } }
   if (e.fl & 2) { g.font = '11px sans-serif'; g.fillText('🐌', cx + 10, cy - 22 * S); }
 }
@@ -520,7 +530,7 @@ $('#pickb').onclick = () => actionKey();
 
 function me() { return ents.get('p' + myId); }
 function blockedAt(x, y) {
-  if (!MAP || x < 0 || y < 0 || x >= MAP.w || y >= MAP.h || MAP.rows[y][x] !== '.') return true;
+  if (!MAP || x < 0 || y < 0 || x >= MAP.w || y >= MAP.h || (MAP.rows[y][x] !== '.' && MAP.rows[y][x] !== 'L')) return true;
   return false;
 }
 function inputTick(t) {
@@ -566,7 +576,8 @@ function frame() {
   if (MAP && mapCv) {
     for (const e of ents.values()) { const k = Math.min(1, dt * 14); e.rx += (e.x - e.rx) * k; e.ry += (e.y - e.ry) * k; }
     if (m) { cam.x = tc(m.rx); cam.y = tc(m.ry); }
-    ctx.setTransform(DPR * ZOOM, 0, 0, DPR * ZOOM, DPR * (W / 2 - cam.x * ZOOM), DPR * (H / 2 - cam.y * ZOOM));
+    const sk = t < SHAKE ? 7 * ((SHAKE - t) / 600) : 0, sx = (Math.random() - .5) * sk, sy = (Math.random() - .5) * sk;
+    ctx.setTransform(DPR * ZOOM, 0, 0, DPR * ZOOM, DPR * (W / 2 - cam.x * ZOOM + sx), DPR * (H / 2 - cam.y * ZOOM + sy));
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(mapCv, 0, 0);
     // 포탈
@@ -584,6 +595,15 @@ function frame() {
       else { ctx.fillStyle = rc; ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 7); ctx.lineTo(x - 5, y); ctx.fill(); }
       ctx.restore();
       if ((gi[6] === 2 && gi[3] >= 2) || (m && Math.abs(gi[1] - m.x) <= 1 && Math.abs(gi[2] - m.y) <= 1)) { ctx.font = '10px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000'; ctx.fillText(gi[4], x + 1, y - 11); ctx.fillStyle = rc; ctx.fillText(gi[4], x, y - 12); }
+    }
+    for (const [x, y] of LAVA) { const a = .25 + .2 * Math.sin(t / 250 + x * 1.3 + y); ctx.fillStyle = `rgba(255,212,59,${a})`; ctx.beginPath(); ctx.arc(x * T + 16 + Math.sin(t / 400 + y) * 5, y * T + 16, 5 + 3 * Math.sin(t / 300 + x), 0, 7); ctx.fill(); }
+    for (const [x, y, ci, on] of PLATES.l || []) {
+      const cx2 = x * T + 16, cy2 = y * T + 16, col = ['#ff6b6b', '#4dabf7', '#51cf66', '#ffd43b', '#da77f2'][ci], pul = Math.sin(t / 180) * 3;
+      ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = on ? 22 : 12; ctx.globalAlpha = on ? 1 : .85;
+      ctx.fillStyle = col + (on ? 'ee' : '66'); ctx.beginPath(); ctx.ellipse(cx2, cy2 + 4, 15 + pul, 8 + pul / 2, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      if (!on) { ctx.save(); ctx.globalAlpha = .5 + .5 * Math.sin(t / 200); ctx.fillStyle = col; ctx.fillRect(cx2 - 1.5, cy2 - 40, 3, 34); ctx.beginPath(); ctx.moveTo(cx2 - 7, cy2 - 12); ctx.lineTo(cx2 + 7, cy2 - 12); ctx.lineTo(cx2, cy2 - 3); ctx.fill(); ctx.restore(); }
+      ctx.font = 'bold 13px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText(on ? '✓' : (PLATES.seq ? '' : '밟기'), cx2, cy2 + 8);
     }
     // NPC
     for (const n of MAP.npcs || []) {
@@ -635,8 +655,13 @@ function frame() {
       ctx.lineWidth = 3; ctx.strokeStyle = '#000'; const s = (d.c === '#69db7c' ? '+' : '') + d.v + (d.cr && typeof d.v === 'number' ? '!' : ''); ctx.strokeText(s, x, y); ctx.fillStyle = d.c; ctx.fillText(s, x, y); ctx.globalAlpha = 1;
     }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (MOOD === 'lava') { const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .25, W / 2, H / 2, Math.max(W, H) * .7); gr.addColorStop(0, 'rgba(255,80,0,0)'); gr.addColorStop(1, `rgba(200,30,0,${.35 + .1 * Math.sin(t / 300)})`); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#ffa94d'; for (let k = 0; k < 18; k++) { const ex = (k * 97 + t / 20 * (1 + k % 3)) % W, ey = H - ((t / 12 * (1 + k % 4) + k * 53) % H); ctx.globalAlpha = .6; ctx.fillRect(ex, ey, 2, 2); } ctx.globalAlpha = 1; }
+    if (MOOD === 'dark') { const gr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .18, W / 2, H / 2, Math.max(W, H) * .6); gr.addColorStop(0, 'rgba(10,0,30,0)'); gr.addColorStop(1, 'rgba(10,0,30,.82)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); }
+    if (MOOD === 'quake') { ctx.fillStyle = `rgba(80,60,40,${.12 + .05 * Math.sin(t / 200)})`; ctx.fillRect(0, 0, W, H); }
     const rb = [...ents.values()].filter(e => e.kind === 'm' && D.MON[e.t].raid && D.MON[e.t].id !== 'zarm');
-    rb.forEach((e, k) => { const M = D.MON[e.t], bw = Math.min(460, W - 40), x0 = (W - bw) / 2, y0 = 92 + k * 30; ctx.fillStyle = '#000b'; rr(ctx, x0 - 4, y0 - 15, bw + 8, 28, 8); ctx.fill(); ctx.fillStyle = '#3b0d0d'; ctx.fillRect(x0, y0, bw, 9); ctx.fillStyle = (e.fl & 16) ? '#868e96' : '#fa5252'; ctx.fillRect(x0, y0, bw * Math.max(0, e.h / e.H), 9); ctx.font = '12px Jua'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(`👑 ${M.n}${(e.fl & 16) ? ' (무적 · 팔을 먼저 부수세요)' : ''}`, x0, y0 - 3); ctx.textAlign = 'right'; ctx.fillText(`${Math.max(0, Math.round(e.h / e.H * 100))}%`, x0 + bw, y0 - 3); });
+    const arms0 = [...ents.values()].some(e => e.kind === 'm' && D.MON[e.t].id === 'zarm');
+    rb.forEach((e, k) => { const M = D.MON[e.t], bw = Math.min(460, W - 40), x0 = (W - bw) / 2, y0 = 92 + k * 30; ctx.fillStyle = '#000b'; rr(ctx, x0 - 4, y0 - 15, bw + 8, 28, 8); ctx.fill(); ctx.fillStyle = '#3b0d0d'; ctx.fillRect(x0, y0, bw, 9); ctx.fillStyle = (e.fl & 32) ? '#ffd43b' : (e.fl & 16) ? '#74c0fc' : '#fa5252'; ctx.fillRect(x0, y0, bw * Math.max(0, e.h / e.H), 9); ctx.font = '12px Jua'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(`👑 ${M.n}${(e.fl & 32) ? ' 💫 그로기! 피해 1.5배' : (e.fl & 16) ? (arms0 && M.id === 'zbody' && !(PLATES.l && PLATES.l.length) ? ' (무적 · 팔을 먼저 부수세요)' : ' 🛡 보호막 · 발판을 밟으세요') : ''}`, x0, y0 - 3); ctx.textAlign = 'right'; ctx.fillText(`${Math.max(0, Math.round(e.h / e.H * 100))}%`, x0 + bw, y0 - 3); });
+    if (PLATES.l && PLATES.l.length) { const emo = ['🔴', '🔵', '🟢', '🟡', '🟣'], yy = 92 + rb.length * 30 + 26; ctx.font = '15px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#000a'; const txt = PLATES.seq ? '순서대로 밟기: ' + PLATES.seq.map((c, k) => (k < PLATES.i ? '✅' : emo[c])).join(' → ') : `🧊 냉각 발판 ${PLATES.l.filter(p => p[3]).length}/${PLATES.l.length} (10초 유지)`; const tw = ctx.measureText(txt).width + 20; rr(ctx, W / 2 - tw / 2, yy - 18, tw, 26, 8); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillText(txt, W / 2, yy); }
     const arms = [...ents.values()].filter(e => e.kind === 'm' && D.MON[e.t].id === 'zarm').length; if (arms) { ctx.font = '13px Jua'; ctx.textAlign = 'center'; ctx.fillStyle = '#ced4da'; ctx.fillText(`🦾 남은 팔: ${arms}`, W / 2, 92 + rb.length * 30 + 6); }
     drawMinimap(m);
   }
