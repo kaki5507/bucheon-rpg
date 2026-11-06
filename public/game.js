@@ -28,7 +28,7 @@ const fxs = [], dmgs = [];
 const cds = {};
 let ws = null, myId = 0, faction = '', WHO = [], EVT = 1;
 const WARN = [], HZ = [];
-let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, STAG = null;
+let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, STAG = null, GTS = null, GTOFF = 0;
 const MARKS = {};
 
 /* ============ 로그인 ============ */
@@ -101,6 +101,8 @@ function onMsg(m) {
     case 'roy': ROYN = m.st === 'idle' ? 0 : m.n; break;
     case 'mood': MOOD = m.m; break;
     case 'stag': STAG = m; break;
+    case 'gt': GTS = m; GTOFF = m.sn - Date.now(); renderGT(); break;
+    case 'gtq': gtQuizUI(m); break;
     case 'zev':
       if (m.st === 'start') { ZBAN = { t: now(), ms: 4500, txt: '🧟 좀비들이 몰려옵니다…', sub: `${m.min}분 동안 좀비 보스를 가장 많이 잡아라! (좀비 1점 · 좀비 킹 5점)` }; SHAKE = now() + 900; }
       else if (m.st === 'wave') ZBAN = { t: now(), ms: 2600, txt: `🧟 ${m.wave}번째 웨이브!`, sub: '좀비가 더 몰려옵니다…', small: 1 };
@@ -136,7 +138,7 @@ function onState(m) {
 
 /* ============ 맵 ============ */
 function rnd(x, y, s) { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v); }
-const FLOOR = { arena4: ['#1f3a5f', '#234269'], arena5: ['#4a3b1f', '#544324'], altar: ['#4c4466', '#554c70'], arena1: ['#6b8f4e', '#749957'], arena2: ['#5a3a32', '#634038'], arena3: ['#3f3a4f', '#47415a'], cave: ['#5c4b51', '#64535a'], forest: ['#4c9a52', '#55a65b'], grass: ['#7cc96a', '#86d174'], street: ['#4a4e57', '#50545d'], gym: ['#c9a27a', '#d1ab84'], hall: ['#e9e4dc', '#f3efe8'], sauna: ['#b9e6f0', '#c8eef5'], station: ['#9aa5b1', '#a3aebb'], market: ['#b08968', '#b8916f'], lake: ['#7cc96a', '#86d174'], sewer: ['#3d4a3a', '#435140'], factory: ['#5c5f66', '#63666d'], tunnel: ['#2a2a35', '#30303c'], castle: ['#3a1f2b', '#422431'], temple1: ['#16324f', '#1a3a5c'], temple2: ['#d8dde3', '#e3e7ec'], temple3: ['#5c1a1a', '#66201f'], temple4: ['#1f3530', '#243d37'], arena7: ['#2b2b2f', '#323236'], arena6: ['#e7f5ff', '#f1f8ff'], bunker: ['#3b3f45', '#41454c'], comic: ['#fff9db', '#fff3bf'], ruins: ['#6b5d4b', '#74654f'] };
+const FLOOR = { arena4: ['#1f3a5f', '#234269'], arena5: ['#4a3b1f', '#544324'], altar: ['#4c4466', '#554c70'], arena1: ['#6b8f4e', '#749957'], arena2: ['#5a3a32', '#634038'], arena3: ['#3f3a4f', '#47415a'], cave: ['#5c4b51', '#64535a'], forest: ['#4c9a52', '#55a65b'], grass: ['#7cc96a', '#86d174'], street: ['#4a4e57', '#50545d'], gym: ['#c9a27a', '#d1ab84'], hall: ['#e9e4dc', '#f3efe8'], sauna: ['#b9e6f0', '#c8eef5'], station: ['#9aa5b1', '#a3aebb'], market: ['#b08968', '#b8916f'], lake: ['#7cc96a', '#86d174'], sewer: ['#3d4a3a', '#435140'], factory: ['#5c5f66', '#63666d'], tunnel: ['#2a2a35', '#30303c'], castle: ['#3a1f2b', '#422431'], temple1: ['#16324f', '#1a3a5c'], temple2: ['#d8dde3', '#e3e7ec'], temple3: ['#5c1a1a', '#66201f'], temple4: ['#1f3530', '#243d37'], arena7: ['#2b2b2f', '#323236'], stadium: ['#2f9e44', '#37b24d'], abyss: ['#0b2a4a', '#0d3157'], void: ['#1b1033', '#21143d'], inferno: ['#3b0a0a', '#450d0d'], arena6: ['#e7f5ff', '#f1f8ff'], bunker: ['#3b3f45', '#41454c'], comic: ['#fff9db', '#fff3bf'], ruins: ['#6b5d4b', '#74654f'] };
 function scanLava() { LAVA = []; if (!MAP) return; for (let y = 0; y < MAP.h; y++) for (let x = 0; x < MAP.w; x++) if (MAP.rows[y][x] === 'L') LAVA.push([x, y]); }
 function loadMap(m) {
   MAP = m; ents.clear(); ground = []; WARN.length = 0; HZ.length = 0; PLATES = { l: [], seq: null, i: 0 }; MOOD = ''; STAG = null; setTimeout(scanLava, 0); if (typeof dlg !== 'undefined' && dlg) { dlg = null; drawDlg(); }
@@ -161,6 +163,10 @@ function loadMap(m) {
     else if (th === 'tunnel') { if (y % 6 === 3) { g.fillStyle = '#5c4b51'; for (let k = 0; k < 4; k++) g.fillRect(px + k * 8 + 1, py + 6, 5, 20); g.fillStyle = '#adb5bd'; g.fillRect(px, py + 9, T, 2); g.fillRect(px, py + 21, T, 2); } else if (r < .05) { g.fillStyle = '#7048e833'; g.beginPath(); g.arc(px + 16, py + 16, 4, 0, 7); g.fill(); } }
     else if (th === 'castle') { g.strokeStyle = '#00000044'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .05) { g.fillStyle = '#e0313133'; g.beginPath(); g.ellipse(px + 16, py + 16, 9, 5, 0, 0, 7); g.fill(); } if (y % 10 === 5) { g.fillStyle = '#7a0f1f'; g.fillRect(px, py + 4, T, T - 8); } }
     else if (th && th.startsWith('temple')) { g.strokeStyle = '#ffffff14'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .05) { g.fillStyle = { temple1: '#74c0fc33', temple2: '#ffffff55', temple3: '#ff6b0033', temple4: '#3bc9db33' }[th]; g.beginPath(); g.arc(px + 16, py + 16, 4, 0, 7); g.fill(); } }
+    else if (th === 'stadium') { if (x % 10 === 0 || y === 15) { g.fillStyle = '#ffffff88'; g.fillRect(px + (x % 10 === 0 ? 15 : 0), py + (y === 15 ? 15 : 0), x % 10 === 0 ? 2 : T, y === 15 ? 2 : T); } }
+    else if (th === 'abyss') { if (r < .08) { g.fillStyle = '#4dabf722'; g.beginPath(); g.arc(px + 16, py + 16, 4 + r * 30, 0, 7); g.fill(); } if (r > .97) { g.fillStyle = '#74c0fc55'; g.beginPath(); g.arc(px + 10, py + 12, 2, 0, 7); g.fill(); } }
+    else if (th === 'void') { g.strokeStyle = '#7048e822'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .05) { g.fillStyle = '#e599f755'; g.fillRect(px + 14, py + 14, 3, 3); } }
+    else if (th === 'inferno') { if (r < .1) { g.fillStyle = '#ff6b0022'; g.beginPath(); g.ellipse(px + 16, py + 18, 10, 5, 0, 0, 7); g.fill(); } }
     else if (th === 'arena6') { g.strokeStyle = '#a5d8ff55'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .1) { g.fillStyle = '#fff'; g.fillRect(px + 8 + r * 80, py + 12, 2, 2); } }
     else if (th === 'bunker') { g.strokeStyle = '#0004'; g.lineWidth = 1; g.strokeRect(px + .5, py + .5, T - 1, T - 1); if (r < .05) { g.fillStyle = ['#f783ac55', '#74c0fc55', '#ffd43b55'][Math.floor(r * 60) % 3]; g.fillRect(px + 6, py + 6, 20, 20); } }
     else if (th === 'comic') { g.strokeStyle = '#21252922'; g.lineWidth = 2; if (x % 6 === 0) { g.beginPath(); g.moveTo(px, py); g.lineTo(px, py + T); g.stroke(); } if (y % 5 === 0) { g.beginPath(); g.moveTo(px, py); g.lineTo(px + T, py); g.stroke(); } if (r < .04) { g.fillStyle = '#21252955'; for (let k = 0; k < 9; k++) g.fillRect(px + 4 + (k % 3) * 9, py + 4 + (k / 3 | 0) * 9, 3, 3); } }
@@ -190,7 +196,7 @@ function drawTile(g, c, px, py, th, r) {
     case 'Y': { sh(15); g.fillStyle = '#fff4e6'; g.fillRect(px + 4, py + 12, 24, 16); g.fillStyle = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#9c36b5'][(px / T * 7 + py / T) % 5 | 0]; g.beginPath(); g.moveTo(px, py + 14); g.lineTo(px + 16, py + 1); g.lineTo(px + 32, py + 14); g.fill(); g.fillStyle = '#8d5a3b'; g.fillRect(px + 13, py + 19, 7, 9); g.fillStyle = '#74c0fc'; g.fillRect(px + 6, py + 16, 5, 5); g.fillRect(px + 22, py + 16, 5, 5); break; }
     case 'L': { g.fillStyle = '#c92a2a'; g.fillRect(px, py, T, T); g.fillStyle = '#ff6b00'; g.fillRect(px + 2, py + 2, T - 4, T - 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.ellipse(px + 10 + r * 10, py + 12, 5, 3, r, 0, 7); g.ellipse(px + 20, py + 22 - r * 6, 4, 2.5, 0, 0, 7); g.fill(); g.strokeStyle = '#7a1a00'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px + 4, py + 28); g.lineTo(px + 14, py + 18); g.lineTo(px + 26, py + 26); g.stroke(); break; }
     case 'V': { g.fillStyle = '#05030a'; g.fillRect(px, py, T, T); g.fillStyle = '#2b1d4a'; g.fillRect(px, py, T, 3); g.fillStyle = '#1a1030'; g.fillRect(px + 4 + r * 10, py + 10, 3, 3); break; }
-    case 'W': { const lava = th === 'arena2' || th === 'castle', WP = { temple1: ['#0b2540', '#16406b'], temple2: ['#868e96', '#ced4da'], temple3: ['#3b0d0d', '#6b1a1a'], temple4: ['#0b2b26', '#1d4a40'], arena7: ['#1a1a1d', '#5c1a1a'], arena6: ['#74c0fc', '#d0ebff'] }[th] || (lava ? ['#3b1f1a', '#5c2c22'] : ['#2b2540', '#3d3459']); g.fillStyle = WP[0]; g.fillRect(px, py, T, T); g.fillStyle = WP[1]; g.fillRect(px + 2, py + 2, 13, 12); g.fillRect(px + 17, py + 2, 13, 12); g.fillRect(px + 9, py + 17, 14, 12); if (lava && r < .3) { g.fillStyle = '#ff6b00aa'; g.fillRect(px + 4, py + 26, 24, 3); } break; }
+    case 'W': { const lava = th === 'arena2' || th === 'castle', WP = { temple1: ['#0b2540', '#16406b'], temple2: ['#868e96', '#ced4da'], temple3: ['#3b0d0d', '#6b1a1a'], temple4: ['#0b2b26', '#1d4a40'], arena7: ['#1a1a1d', '#5c1a1a'], abyss: ['#062038', '#0b3a5e'], void: ['#120a24', '#3b2a6b'], inferno: ['#2a0505', '#7a1a0a'], arena6: ['#74c0fc', '#d0ebff'] }[th] || (lava ? ['#3b1f1a', '#5c2c22'] : ['#2b2540', '#3d3459']); g.fillStyle = WP[0]; g.fillRect(px, py, T, T); g.fillStyle = WP[1]; g.fillRect(px + 2, py + 2, 13, 12); g.fillRect(px + 17, py + 2, 13, 12); g.fillRect(px + 9, py + 17, 14, 12); if (lava && r < .3) { g.fillStyle = '#ff6b00aa'; g.fillRect(px + 4, py + 26, 24, 3); } break; }
     case 'X': g.strokeStyle = '#00000018'; g.lineWidth = 1; g.beginPath(); g.moveTo(px + 9, py + 11); g.lineTo(px + 15, py + 17); g.lineTo(px + 13, py + 23); g.stroke(); break;
     case 'D': { g.fillStyle = '#5c3d2e'; g.fillRect(px, py, T, T); g.fillStyle = '#fab005'; g.fillRect(px, py + 2, T, 4); g.fillRect(px, py + T - 6, T, 4); g.fillStyle = '#c92a2a'; rr(g, px + 7, py + 8, 18, 16, 3); g.fill(); g.fillStyle = '#ffe066'; g.font = 'bold 12px serif'; g.textAlign = 'center'; g.fillText('封', px + 16, py + 21); break; }
     // 술집거리
@@ -425,6 +431,18 @@ function drawMob(g, cx, cy, e, t) {
     case 'kraken': { const y0 = Math.sin(t / 400) * 1.5; g.fillStyle = c; for (let k = 0; k < 6; k++) { const a = Math.PI * (.15 + k * .14), sw = Math.sin(t / 300 + k) * .25; g.save(); g.translate(Math.cos(a) * 7 * (k < 3 ? -1 : 1) * 0 + (k - 2.5) * 4, -6 + y0); g.rotate((k - 2.5) * .35 + sw); g.beginPath(); g.ellipse(0, 6, 2.5, 8, 0, 0, 7); g.fill(); g.restore(); } g.beginPath(); g.ellipse(0, -18 + y0, 13, 14, 0, 0, 7); g.fill(); g.fillStyle = '#9775fa'; for (const [sx, sy] of [[-6, -26], [5, -28], [0, -22]]) { g.beginPath(); g.arc(sx, sy + y0, 2, 0, 7); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.ellipse(-5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.ellipse(5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.fillRect(-5.6, -17 + y0, 1.3, 4); g.fillRect(4.4, -17 + y0, 1.3, 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(-8, -31 + y0); g.lineTo(-6, -37 + y0); g.lineTo(-2, -33 + y0); g.lineTo(0, -39 + y0); g.lineTo(2, -33 + y0); g.lineTo(6, -37 + y0); g.lineTo(8, -31 + y0); g.fill(); break; }
     case 'tentacle': { const sw = Math.sin(t / 220 + ph) * .45; g.save(); g.rotate(sw); g.fillStyle = c; g.beginPath(); g.moveTo(-5, 0); g.quadraticCurveTo(-7, -18, 0, -32); g.quadraticCurveTo(7, -18, 5, 0); g.fill(); g.fillStyle = '#e5dbff'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(1, -5 - k * 5.5, 1.6, 0, 7); g.fill(); } g.restore(); break; }
     case 'clock': { const y0 = Math.sin(t / 500), fake = M.id === 'clockclone'; if (fake) g.globalAlpha = .6 + .2 * Math.sin(t / 150); g.fillStyle = '#5c3d2e'; rr(g, -9, -10 + y0, 18, 10, 2); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(0, -22 + y0, 13, 0, 7); g.fill(); g.fillStyle = '#fff9db'; g.beginPath(); g.arc(0, -22 + y0, 10.5, 0, 7); g.fill(); g.fillStyle = '#212529'; for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; g.fillRect(Math.cos(a) * 8.5 - .6, -22 + y0 + Math.sin(a) * 8.5 - .6, 1.2, 1.2); } g.strokeStyle = '#212529'; g.lineWidth = 1.6; g.lineCap = 'round'; const a1 = t / 600, a2 = t / 60; g.beginPath(); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a1) * 5, -22 + y0 + Math.sin(a1) * 5); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a2) * 8, -22 + y0 + Math.sin(a2) * 8); g.stroke(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(-4, -26 + y0, 1.6, 0, 7); g.arc(4, -26 + y0, 1.6, 0, 7); g.fill(); g.fillStyle = '#7048e8'; g.beginPath(); g.moveTo(-13, -30 + y0); g.lineTo(-17, -40 + y0); g.lineTo(-8, -33 + y0); g.moveTo(13, -30 + y0); g.lineTo(17, -40 + y0); g.lineTo(8, -33 + y0); g.fill(); g.globalAlpha = 1; break; }
+    case 'toad': { const y0 = -Math.abs(bob) * 2.5, king = M.id === 'goldtoad';
+      g.fillStyle = '#e67700'; g.beginPath(); g.ellipse(-11, -2, 5, 3, -.3, 0, 7); g.ellipse(11, -2, 5, 3, .3, 0, 7); g.fill();
+      const gr = g.createRadialGradient(-4, -15 + y0, 2, 0, -10 + y0, 16); gr.addColorStop(0, '#fff9db'); gr.addColorStop(.45, c); gr.addColorStop(1, '#e67700'); g.fillStyle = gr; g.beginPath(); g.ellipse(0, -10 + y0, 14, 11, 0, 0, 7); g.fill();
+      g.fillStyle = '#fff9dbcc'; for (const [dx, dy, r2] of [[-7, -8, 2.2], [6, -6, 1.8], [-1, -3, 1.6], [9, -12, 1.5], [-10, -13, 1.4]]) { g.beginPath(); g.arc(dx, dy + y0, r2, 0, 7); g.fill(); }
+      g.fillStyle = c; g.beginPath(); g.arc(-6, -20 + y0, 4.6, 0, 7); g.arc(6, -20 + y0, 4.6, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(-6, -20.5 + y0, 3, 0, 7); g.arc(6, -20.5 + y0, 3, 0, 7); g.fill(); g.fillStyle = '#222'; g.beginPath(); g.arc(-5.5, -20 + y0, 1.6, 0, 7); g.arc(6.5, -20 + y0, 1.6, 0, 7); g.fill();
+      g.strokeStyle = '#a0522d'; g.lineWidth = 1.4; g.beginPath(); g.arc(0, -13 + y0, 7, .25, Math.PI - .25); g.stroke(); g.fillStyle = '#ff8787aa'; g.beginPath(); g.ellipse(-9, -11 + y0, 2.5, 1.5, 0, 0, 7); g.ellipse(9, -11 + y0, 2.5, 1.5, 0, 0, 7); g.fill();
+      if (king) { g.fillStyle = '#ffd43b'; g.strokeStyle = '#e67700'; g.lineWidth = .8; g.beginPath(); g.moveTo(-7, -24 + y0); g.lineTo(-6, -31 + y0); g.lineTo(-3, -27 + y0); g.lineTo(0, -33 + y0); g.lineTo(3, -27 + y0); g.lineTo(6, -31 + y0); g.lineTo(7, -24 + y0); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(0, -28 + y0, 1.2, 0, 7); g.fill(); }
+      if (king && (e.fl & 16)) { g.strokeStyle = `rgba(255,212,59,${.5 + .4 * Math.sin(t / 90)})`; g.lineWidth = 2.5; g.beginPath(); g.ellipse(0, -13 + y0, 18, 16, 0, 0, 7); g.stroke(); g.font = 'bold 7px Jua'; g.textAlign = 'center'; g.fillStyle = '#fff3bf'; g.fillText('무적', 0, -36 + y0); }
+      if (e.fl & 32) { g.font = '9px sans-serif'; for (let k = 0; k < 3; k++) g.fillText('💫', Math.cos(t / 200 + k * 2.1) * 10 - 4, -34 + Math.sin(t / 200 + k * 2.1) * 3); }
+      g.fillStyle = '#ffd43b'; for (let k = 0; k < 4; k++) { g.globalAlpha = .4 + .5 * Math.abs(Math.sin(t / 180 + k * 1.7 + ph)); g.fillRect(Math.cos(t / 600 + k * 1.57) * 16, -12 + Math.sin(t / 600 + k * 1.57) * 9 + y0, 2, 2); } g.globalAlpha = 1;
+      break; }
     case 'warlord': { const y0 = Math.sin(t / 400) * 1.2, sw = Math.sin(t / 300) * .2;
       g.fillStyle = '#212529'; g.fillRect(-8, -8, 6, 8); g.fillRect(2, -8, 6, 8);
       g.fillStyle = '#7a0f1f'; g.beginPath(); g.moveTo(-12, -30 + y0); g.lineTo(-16, -4); g.lineTo(16, -4); g.lineTo(12, -30 + y0); g.fill();
@@ -653,6 +671,7 @@ const DIRK = { ArrowDown: 0, ArrowLeft: 1, ArrowRight: 2, ArrowUp: 3, s: 0, a: 1
 addEventListener('keydown', e => {
   if (!ME) return;
   const k = e.key;
+  if (document.activeElement && document.activeElement.id === 'gtin') { if (k === 'Enter') gtSubmit(); else if (k === 'Escape') document.activeElement.blur(); return; }
   if (document.activeElement === $('#chatin')) {
     if (k === 'Enter') { const v = $('#chatin').value.trim(); if (v) send({ t: 'chat', m: v }); $('#chatin').value = ''; closeChat(); }
     else if (k === 'Escape') closeChat();
@@ -725,7 +744,7 @@ function frame() {
   const t = now(), dt = Math.min(.1, (t - lastT) / 1000); lastT = t;
   inputTick(t);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.fillStyle = MAP ? ({ arena4: '#081426', arena5: '#1c1408', royale: '#2b8a3e', altar: '#1d1830', arena1: '#22301a', arena2: '#1a0d0a', arena3: '#141020', cave: '#1a1218', street: '#25262b', gym: '#343a40', hall: '#868e96', sauna: '#99e9f2', station: '#495057', market: '#5c3d2e', lake: '#2b8a3e', forest: '#1b4332', sewer: '#1a2418', factory: '#212529', tunnel: '#0b0b12', castle: '#1a0a10', temple1: '#061526', temple2: '#495057', temple3: '#1f0505', temple4: '#06140f', arena7: '#0d0d10', arena6: '#a5d8ff', bunker: '#1a1c1f', comic: '#f8f9fa', ruins: '#2b2219' }[MAP.theme] || '#2b8a3e') : '#2b8a3e'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = MAP ? ({ arena4: '#081426', arena5: '#1c1408', royale: '#2b8a3e', altar: '#1d1830', arena1: '#22301a', arena2: '#1a0d0a', arena3: '#141020', cave: '#1a1218', street: '#25262b', gym: '#343a40', hall: '#868e96', sauna: '#99e9f2', station: '#495057', market: '#5c3d2e', lake: '#2b8a3e', forest: '#1b4332', sewer: '#1a2418', factory: '#212529', tunnel: '#0b0b12', castle: '#1a0a10', temple1: '#061526', temple2: '#495057', temple3: '#1f0505', temple4: '#06140f', arena7: '#0d0d10', stadium: '#1b4332', abyss: '#04121f', void: '#0a0517', inferno: '#1a0303', arena6: '#a5d8ff', bunker: '#1a1c1f', comic: '#f8f9fa', ruins: '#2b2219' }[MAP.theme] || '#2b8a3e') : '#2b8a3e'; ctx.fillRect(0, 0, W, H);
   const m = me();
   if (MAP && mapCv) {
     for (const e of ents.values()) { const k = Math.min(1, dt * 14); e.rx += (e.x - e.rx) * k; e.ry += (e.y - e.ry) * k; }
@@ -794,7 +813,7 @@ function frame() {
       } else {
         const M = D.MON[e.t], S = M.boss ? (M.big || 1.9) : 1;
         if (M.raid) { if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 10, e.mb, e.loud); if (['zarm', 'tentacle', 'clockclone'].includes(M.id) || M.guard) hpBar(ctx, x, y - 40 * S, M.guard ? 26 : 40, e.h / e.H, '#fa5252'); if (M.guard && m && Math.hypot(e.x - m.x, e.y - m.y) < 5) { ctx.font = '9px Jua'; ctx.fillStyle = '#ffd43b'; ctx.fillText(M.n, x, y + 10); } }
-        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : M.s === 'zombie' ? ' 🧟' : M.hw ? ' 🐲' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
+        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : M.s === 'zombie' ? ' 🧟' : M.hw ? ' 🐲' : M.s === 'toad' ? ' 🐸' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
         else if (e.fl & 64) { ctx.font = '9px Jua'; ctx.fillStyle = '#000'; ctx.fillText('🧟 아군 좀비', x + 1, y + 11); ctx.fillStyle = '#94d82d'; ctx.fillText('🧟 아군 좀비', x, y + 10); }
         else { if (e.h < e.H) hpBar(ctx, x, y - 30, 22, e.h / e.H, '#fa5252'); if (m && Math.hypot(e.x - m.x, e.y - m.y) < 4) { ctx.font = '9px Jua'; ctx.fillStyle = '#fff'; ctx.fillText(M.n + ' Lv' + M.lv, x, y + 10); } }
       }
@@ -1082,6 +1101,30 @@ function renderWho() {
   $('#wholist').innerHTML = `<div style="font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">👥 접속자 ${WHO.length}명<button onclick="setWho(false)">✕</button></div>` + WHO.map(([n, f, j, l, mp, ad, tt]) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j], TT = tt && D && D.TITLES[tt]; return `<div class="wrow"><div><span style="color:${F[1]}">[${F[0]}]</span> ${ad ? '👑' : ''}${esc(n)} <span class="small">Lv${l}</span>${TT ? ` <span class="small" style="color:${TT.c}">${esc(TT.n)}</span>` : ''}</div><div class="small">${J ? J.icon + J.n : ''} · 📍${esc(mp)}</div></div>`; }).join('')
     + (ZR && ZR.list && ZR.list.length ? `<div style="margin-top:12px;color:#8ce99a">🧟 지난 좀비 습격 랭킹</div>` + ZR.list.map(([n, f, k], i) => `<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '.'} <span style="color:${(FACS[f] || ['', '#fff'])[1]}">${esc(n)}</span></span><b>${k}</b></div>`).join('') : '');
 }
+function renderGT() {
+  let el = $('#gtw'); if (!el) { el = document.createElement('div'); el.id = 'gtw'; document.body.appendChild(el); el.onclick = () => el.classList.toggle('mini'); }
+  if (!GTS) { el.style.display = 'none'; return; } el.style.display = 'block';
+  const sn = Date.now() + GTOFF, hms = ms => { const s2 = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s2 / 3600)).padStart(2, '0')}:${String(Math.floor(s2 / 60) % 60).padStart(2, '0')}:${String(s2 % 60).padStart(2, '0')}`; };
+  if (GTS.st === 'on') { el.className = 'on' + (el.classList.contains('mini') ? ' mini' : ''); el.innerHTML = `<b>🐸 황금떡두꺼비 군단 출현!!</b><div>📍 ${esc(GTS.map)}</div><div class="gs">체력 ${GTS.hp}% · 도망까지 ${hms(GTS.end - sn)}</div>`; }
+  else { const left = GTS.at - sn; el.className = (left < 600000 ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : ''); el.innerHTML = `<b>🐸 황금떡두꺼비 군단</b><div class="gs">매일 오후 8시 · 장소는 랜덤</div><div class="gd">D-${hms(left)}</div>`; }
+}
+setInterval(() => { if (GTS) renderGT(); }, 1000);
+let gtTimer = null;
+function gtSubmit() { const i = $('#gtin'); if (!i) return; const v = i.value.trim(); if (v) send({ t: 'chat', m: v }); i.value = ''; }
+function gtQuizUI(m) {
+  let el = $('#gtq'); if (!el) { el = document.createElement('div'); el.id = 'gtq'; document.body.appendChild(el); }
+  clearTimeout(gtTimer);
+  if (m.end) { el.style.display = 'none'; return; }
+  if (m.q) {
+    el.style.display = 'block'; el.className = '';
+    el.innerHTML = `<div class="gh">🐸 황금떡두꺼비 퀴즈! <span class="small">📍 ${esc(m.map || '')}</span></div><div class="gq">${esc(m.q)}</div><div class="gbar"><i style="animation-duration:${m.ms}ms"></i></div><div class="acts"><input id="gtin" maxlength="30" placeholder="정답 입력 후 Enter" autocomplete="off"><button class="pri" id="gtgo">정답!</button></div>`;
+    $('#gtgo').onclick = gtSubmit; if (!('ontouchstart' in window)) setTimeout(() => { const i = $('#gtin'); if (i) i.focus(); }, 30);
+    return;
+  }
+  el.style.display = 'block'; el.className = m.ok ? 'ok' : 'no';
+  el.innerHTML = m.ok ? `<div class="gq">⭕ 정답!! <b>${esc(m.who)}</b> — "${esc(m.a)}"</div><div class="small">대왕 떡두꺼비 12초 기절! 지금 공격!!</div>` : `<div class="gq">❌ 땡!! 정답은 "${esc(m.a)}"</div><div class="small">대왕 떡두꺼비가 무적 상태로 날뛴다!!</div>`;
+  gtTimer = setTimeout(() => { el.style.display = 'none'; }, 2600);
+}
 function renderZRank() {
   let el = $('#zrank'); if (!el) { el = document.createElement('div'); el.id = 'zrank'; document.body.appendChild(el); el.onclick = () => el.classList.toggle('mini'); }
   if (!ZST) { el.style.display = 'none'; return; } el.style.display = 'block';
@@ -1109,9 +1152,9 @@ $('#whotab').onclick = () => setWho(!whoEl().classList.contains('open'));
 /* ============ 월드맵 ============ */
 const WMAP = [ // [맵id, x, y]  (0~100 좌표)
   ['bucheon', 10, 48], ['bosshub', 24, 28], ['raid1', 7, 8], ['raid2', 19, 8], ['raid4', 31, 8], ['raid3', 43, 8], ['raid5', 55, 8], ['pub', 22, 66], ['sauna', 9, 84], ['gym', 36, 54], ['hall', 48, 66], ['cave1', 60, 54], ['cave2', 72, 66],
-  ['station', 88, 80], ['market', 72, 92], ['dodang', 55, 92], ['lake', 38, 92], ['sewer', 90, 62], ['factory', 88, 44], ['wonmi', 90, 30], ['tunnel', 78, 19], ['castle', 92, 7], ['raid6', 67, 8], ['raid7', 58, 26], ['temple1', 4, 19], ['temple2', 13, 19], ['temple3', 36, 21], ['temple4', 46, 21], ['bunker', 78, 42], ['comic', 66, 36], ['ruins', 54, 40]];
+  ['station', 88, 80], ['market', 72, 92], ['dodang', 55, 92], ['lake', 38, 92], ['sewer', 90, 62], ['factory', 88, 44], ['wonmi', 90, 30], ['tunnel', 78, 19], ['castle', 92, 7], ['raid6', 67, 8], ['raid7', 58, 26], ['temple1', 4, 19], ['temple2', 13, 19], ['temple3', 36, 21], ['temple4', 46, 21], ['bunker', 78, 42], ['comic', 66, 36], ['ruins', 54, 40], ['stadium', 44, 46], ['abyss', 33, 41], ['void', 21, 39], ['inferno', 7, 66]];
 const WLINK = [['bucheon', 'bosshub'], ['bosshub', 'raid1'], ['bosshub', 'raid2'], ['bosshub', 'raid3'], ['bosshub', 'raid4'], ['bosshub', 'raid5'], ['bucheon', 'pub'], ['pub', 'sauna'], ['pub', 'gym'], ['gym', 'hall'], ['hall', 'cave1'], ['cave1', 'cave2'],
-  ['cave2', 'station'], ['bucheon', 'station'], ['station', 'market'], ['market', 'dodang'], ['dodang', 'lake'], ['station', 'sewer'], ['sewer', 'factory'], ['factory', 'wonmi'], ['wonmi', 'tunnel'], ['tunnel', 'castle'], ['bosshub', 'raid6'], ['bosshub', 'raid7'], ['bosshub', 'temple1'], ['bosshub', 'temple2'], ['bosshub', 'temple3'], ['bosshub', 'temple4'], ['castle', 'bunker'], ['bunker', 'comic'], ['comic', 'ruins']];
+  ['cave2', 'station'], ['bucheon', 'station'], ['station', 'market'], ['market', 'dodang'], ['dodang', 'lake'], ['station', 'sewer'], ['sewer', 'factory'], ['factory', 'wonmi'], ['wonmi', 'tunnel'], ['tunnel', 'castle'], ['bosshub', 'raid6'], ['bosshub', 'raid7'], ['bosshub', 'temple1'], ['bosshub', 'temple2'], ['bosshub', 'temple3'], ['bosshub', 'temple4'], ['castle', 'bunker'], ['bunker', 'comic'], ['comic', 'ruins'], ['ruins', 'stadium'], ['stadium', 'abyss'], ['abyss', 'void'], ['void', 'inferno']];
 function renderWorld() {
   const P = $('#pworld'), seen = (ME && ME.seen) || {}, info = id => D.MAPLIST.find(m => m.id === id) || { n: id };
   const pos = Object.fromEntries(WMAP.map(([id, x, y]) => [id, [x, y]]));
@@ -1158,6 +1201,7 @@ function renderAdm() {
   const A = ME.admin, mapNm = id => (D.MAPLIST.find(m => m.id === id) || {}).n || id;
   let h = head('👑 관리자 모드');
   h += `<div class="acts"><button data-a="god" class="${A.god ? 'pri' : ''}">🛡 무적 ${A.god ? 'ON' : 'OFF'}</button><button data-a="onehit" class="${A.onehit ? 'pri' : ''}">💥 한방 ${A.onehit ? 'ON' : 'OFF'}</button><button data-a="fast" class="${A.fast ? 'pri' : ''}">⚡ 초고속 ${A.fast ? 'ON' : 'OFF'}</button><button data-a="heal">❤️ 완전회복</button><button data-a="clear">🧹 맵 몬스터 제거</button><button data-a="kill">☠️ 주변 몬스터 처치</button><button data-a="pickall">🧲 맵 아이템 다 줍기</button><button data-a="mount">🐶 밥풀이 탑승 ${ME.mount ? 'OFF' : 'ON'}</button><button data-a="tunabag">🐟 냉동참치 보따리</button><button data-a="tunamats">🧩 참치 재료</button><button data-a="hwangbag">🐲 황룡의 부적</button><button data-a="beastmats">🧩 4신수 재료</button><button data-a="gbuff">🐉 신수 버프 4종</button><button data-a="santabuff">🎅 산타 버프</button><button data-a="topdps">📊 신수 체력 계산</button></div>`;
+  h += `<h4 style="margin:12px 0 4px">🐸 황금떡두꺼비 군단 (매일 오후 8시 자동)</h4><div class="acts"><button data-a="gtnow" class="pri">🐸 지금 출현 (랜덤 맵)</button><button id="gthere">🐸 이 맵에 출현</button><button data-a="gtquiz">❓ 퀴즈 바로 내기</button><button data-a="gtstop" class="red">돌려보내기</button></div>`;
   h += `<div class="small" style="margin-top:6px">무적 ON이면 피해 없음 + 스킬 쿨타임/MP 없음</div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 경험치 이벤트 (전체)</h4><div class="acts">${[1, 2, 5, 10].map(v => `<button data-ev="${v}" class="${EVT === v ? 'pri' : ''}">${v === 1 ? '이벤트 끄기' : v + '배'}</button>`).join('')}<button data-a="raidreset">🧹 레이드 초기화</button></div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 무한장 (배틀로얄)</h4><div class="acts"><button class="pri" data-a="royale">🔥 무한장 시작 (접속자 전원)</button><button data-a="royalestop">종료</button></div><div class="small">관리자를 뺀 접속자 전원이 무한장으로 이동 → 3초 카운트 → 진영 상관없이 싸워서 마지막 1명에게 골드</div>`;
@@ -1167,7 +1211,7 @@ function renderAdm() {
   h += `<h4 style="margin:12px 0 4px">🐾 몬스터 소환 (5마리, 죽으면 사라짐)</h4><select id="admmob" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a">${D.MON.filter(m => !m.boss && !m.pet && !m.guard).map(m => `<option value="${m.id}">${esc(m.n)} (Lv${m.lv})</option>`).join('')}</select> <button id="admmobgo">소환</button> <button id="admmat">재료 20개</button>`;
   h += `<h4 style="margin:12px 0 4px">🗺️ 순간이동</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-go="${k}" style="color:${c}">🏠${n}마을</button>`).join('')}${D.MAPLIST.filter(m => m.id !== 'bucheon').map(m => `<button data-go="${m.id}">${esc(m.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📜 퀘스트 / NPC</h4><div class="acts"><button data-a="qnext">⏩ 현재 퀘스트 바로 달성</button><button data-a="qreset">🔄 퀘스트 초기화</button>${Object.entries(D.NPCS).map(([k, n]) => `<button data-npc="${k}">🧑 ${esc(n.n)}</button>`).join('')}</div>`;
-  h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="150" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
+  h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="99999" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
   h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급</h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🏳️ 진영 변경</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-fac="${k}" style="color:${c}">${n}</button>`).join('')}</div>`;
@@ -1182,6 +1226,7 @@ function renderAdm() {
   P.querySelectorAll('[data-job]').forEach(b => b.onclick = () => adm({ op: 'job', job: b.dataset.job }));
   P.querySelectorAll('[data-fac]').forEach(b => b.onclick = () => adm({ op: 'faction', f: b.dataset.fac }));
   P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv }); sl.value = ''; });
+  $('#gthere').onclick = () => adm({ op: 'gtnow', here: 1 });
   $('#admmobgo').onclick = () => adm({ op: 'mob', id: $('#admmob').value, n: 5 });
   $('#admmat').onclick = () => adm({ op: 'mat', id: $('#admmob').value });
   $('#admlvgo').onclick = () => adm({ op: 'lv', v: +$('#admlv').value });

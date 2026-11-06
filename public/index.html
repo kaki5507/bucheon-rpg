@@ -136,6 +136,16 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 #zres{display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;width:min(380px,92vw);max-height:80vh;overflow-y:auto;background:linear-gradient(#0f2a0f,#071407);border:3px solid #69db7c;border-radius:16px;padding:14px;color:#fff;box-shadow:0 0 40px #2b8a3eaa;text-align:center}
 #zres .zr{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:5px 8px;border-bottom:1px solid #2b8a3e55}
 @media (max-width:700px){#zrank{top:96px;width:155px;font-size:11px;right:6px;padding:6px 8px}}
+#gtw{position:fixed;left:10px;top:128px;z-index:30;background:#2b2108e6;border:2px solid #fab005;border-radius:12px;padding:6px 10px;color:#fff3bf;font-size:12px;box-shadow:0 0 14px #fab00566;cursor:pointer;display:none;min-width:150px}
+#gtw b{color:#ffd43b;font-size:13px}#gtw .gs{font-size:11px;color:#ffe8a3}#gtw .gd{font-size:17px;color:#fff;letter-spacing:1px}
+#gtw.soon{border-color:#ff6b6b;animation:gtp 1s infinite}#gtw.on{border-color:#ff922b;background:#3b1f08ee;animation:gtp .8s infinite}#gtw.mini div{display:none}
+@keyframes gtp{50%{box-shadow:0 0 22px #ff922b}}
+#gtq{display:none;position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:65;width:min(440px,92vw);background:linear-gradient(#4a3608,#2b1f04);border:3px solid #fab005;border-radius:16px;padding:12px 14px;color:#fff;text-align:center;box-shadow:0 0 30px #fab005aa}
+#gtq .gh{color:#ffd43b;font-size:15px}#gtq .gq{font-size:18px;margin:8px 0;line-height:1.35}
+#gtq .gbar{height:8px;background:#0006;border-radius:5px;overflow:hidden;margin-bottom:8px}#gtq .gbar i{display:block;height:100%;background:linear-gradient(90deg,#ff6b6b,#ffd43b);animation:gtbar linear forwards}
+@keyframes gtbar{from{width:100%}to{width:0}}#gtq input{flex:1;padding:8px;font-family:inherit;font-size:16px;border-radius:8px;border:2px solid #fab005;background:#1a1405;color:#fff;min-width:0}
+#gtq .acts{display:flex;gap:6px}#gtq.ok{border-color:#69db7c;background:linear-gradient(#0f3a17,#07220c)}#gtq.no{border-color:#ff6b6b;background:linear-gradient(#3a0f0f,#220707)}
+@media (max-width:700px){#gtw{top:118px;left:6px;font-size:11px;min-width:0}}
 </style>
 </head>
 <body>

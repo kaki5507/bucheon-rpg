@@ -163,7 +163,23 @@ const NEWMON = [ // id, 이름, 모양, 색, lv, 재료, 보스
   // 🕳️ 던전8 성주산 고대유적 (Lv117~130)
   ['y_golem', '고대 석상', 'golem', '#868e96', 117, '고대 석판'], ['y_spirit', '유적 정령', 'ghost', '#20c997', 119, '정령석'], ['y_snake', '고대 뱀', 'snake', '#2b8a3e', 121, '고대 뱀비늘'],
   ['y_knight', '망자의 기사', 'skull', '#5c7cfa', 123, '망자의 검'], ['y_wyvern', '유적 와이번', 'dragon', '#495057', 126, '와이번 발톱'], ['y_mimic', '고대 보물상자', 'mimic', '#fab005', 128, '고대 금화'],
-  ['y_king', '유적의 왕', 'statue', '#20c997', 130, '유적의 왕관', 1], ['y_titan', '성주산 타이탄', 'golem', '#343a40', 129, '타이탄의 심장', 1]
+  ['y_king', '유적의 왕', 'statue', '#20c997', 130, '유적의 왕관', 1], ['y_titan', '성주산 타이탄', 'golem', '#343a40', 129, '타이탄의 심장', 1],
+  // 🕳️ 던전9 부천종합운동장 지하 (Lv130~145)
+  ['u_ball', '폭주 축구공', 'blob', '#f8f9fa', 130, '찢어진 축구공'], ['u_hooligan', '훌리건 유령', 'ghost', '#e03131', 133, '응원 깃발'], ['u_mascot', '광기의 마스코트', 'bunny', '#ffd43b', 136, '마스코트 탈'],
+  ['u_referee', '심판 해골', 'skull', '#212529', 139, '레드카드'], ['u_turf', '인조잔디 골렘', 'golem', '#2f9e44', 142, '인조잔디'], ['u_drone', '중계 드론', 'bat', '#4dabf7', 144, '중계 카메라'],
+  ['u_coach', '지옥의 감독', 'statue', '#1971c2', 146, '감독의 호루라기', 1], ['u_striker', '불꽃 스트라이커', 'golem', '#ff6b00', 145, '황금 축구화', 1],
+  // 🕳️ 던전10 웅진플레이도시 심해 (Lv145~160)
+  ['a_shark', '워터슬라이드 상어', 'whale', '#495057', 145, '상어 이빨'], ['a_tube', '저주받은 튜브', 'blob', '#ff8787', 148, '튜브 조각'], ['a_eel', '심해 뱀장어', 'snake', '#364fc7', 151, '전기 비늘'],
+  ['a_jelly', '심연 해파리', 'ghost', '#cc5de8', 154, '심연 촉수'], ['a_crab', '강철 킹크랩', 'crab', '#c92a2a', 157, '강철 집게'], ['a_angler', '아귀 괴물', 'mimic', '#212529', 159, '아귀 등불'],
+  ['a_kraken2', '파도풀의 군주', 'kraken', '#1864ab', 161, '파도풀의 진주', 1], ['a_leviathan', '리바이어던', 'dragon', '#0b7285', 160, '리바이어던 비늘', 1],
+  // 🕳️ 던전11 중앙공원 시간의 틈 (Lv160~180)
+  ['v_clock', '뒤틀린 시계', 'clock', '#9775fa', 160, '부서진 초침'], ['v_echo', '과거의 메아리', 'ghost', '#adb5bd', 164, '메아리 결정'], ['v_paradox', '역설의 골렘', 'golem', '#7048e8', 168, '역설 조각'],
+  ['v_knight', '시간 기사', 'skull', '#5f3dc4', 172, '시간의 갑옷'], ['v_wyrm', '차원 비룡', 'dragon', '#be4bdb', 176, '차원 비늘'], ['v_eye', '감시자의 눈', 'imp', '#f03e3e', 179, '감시자의 눈알'],
+  ['v_keeper', '시간의 파수꾼', 'statue', '#845ef7', 181, '파수꾼의 모래시계', 1], ['v_chronos', '크로노스', 'golem', '#3b5bdb', 180, '크로노스의 심장', 1],
+  // 🕳️ 던전12 부천 대지옥 (Lv180~200)
+  ['h_imp', '지옥 도깨비', 'imp', '#e03131', 180, '도깨비 방망이'], ['h_hound', '케르베로스', 'fox', '#1a1a1a', 184, '지옥견 송곳니'], ['h_lava', '용암 거인', 'golem', '#ff6b00', 188, '지옥 용암'],
+  ['h_reaper', '저승사자', 'skull', '#141414', 192, '저승 명부'], ['h_bat', '지옥 박쥐왕', 'bat', '#862e9c', 196, '지옥 날개'], ['h_dragon', '지옥룡', 'dragon', '#c92a2a', 199, '지옥룡의 뿔'],
+  ['h_yeomra', '염라대왕', 'statue', '#c92a2a', 202, '염라의 판결문', 1], ['h_satan', '부천 대마왕', 'statue', '#141414', 200, '대마왕의 심장', 1]
 ];
 for (const [id, n, s, c, lv, mat, boss] of NEWMON) { const st = mStat(lv); MON.push({ idx: MON.length, id, n, s, c, lv, mat, boss: boss ? 1 : 0, hp: boss ? st.hp * 22 : st.hp, atk: boss ? Math.round(st.atk * 1.5) : st.atk, xp: boss ? st.xp * 30 : st.xp, g: boss ? st.g * 25 : st.g, big: boss ? (s === 'statue' ? 3.6 : 2.6) : undefined }); }
 // 좀비 습격 이벤트 전용 (능력치는 맵 레벨에 맞춰 소환할 때 정해짐)
@@ -188,6 +204,9 @@ MON.push({ idx: MON.length, id: 'kargon', n: '흑철 군단장 카르곤', s: 'w
 for (let i = 1; i <= 4; i++) MON.push({ idx: MON.length, id: 'kg_o' + i, n: '①②③④'[i - 1], s: 'orb', c: ['#ff6b6b', '#4dabf7', '#51cf66', '#ffd43b'][i - 1], lv: 90, mat: '', boss: 1, hp: 150000, atk: 0, xp: 0, g: 0, big: 2, novar: 1 });
 MON.push({ idx: MON.length, id: 'kg_cl', n: '빛나는 수정', s: 'crystal', c: '#ffd43b', lv: 90, mat: '', boss: 1, hp: 220000, atk: 0, xp: 0, g: 0, big: 2.4, novar: 1 });
 MON.push({ idx: MON.length, id: 'kg_cd', n: '어두운 수정', s: 'crystal', c: '#5f3dc4', lv: 90, mat: '', boss: 1, hp: 220000, atk: 0, xp: 0, g: 0, big: 2.4, novar: 1 });
+// 🐸 황금떡두꺼비 군단 (매일 오후 8시 이벤트)
+MON.push({ idx: MON.length, id: 'goldtoad', n: '대왕 황금떡두꺼비', s: 'toad', c: '#fab005', lv: 100, mat: '황금 떡', boss: 1, hp: 1e7, atk: 950, xp: 30000000, g: 200000, big: 4.4, novar: 1, gtoad: 1 });
+MON.push({ idx: MON.length, id: 'toadling', n: '황금떡두꺼비 졸개', s: 'toad', c: '#ffd43b', lv: 90, mat: '황금 떡', boss: 1, hp: 60000, atk: 650, xp: 400000, g: 20000, big: 1.7, novar: 1, gtoad: 1 });
 MON.push({ idx: MON.length, id: 'zpet', n: '소환된 좀비', s: 'zombie', c: '#94d82d', lv: 1, mat: '', boss: 0, hp: 1, atk: 0, xp: 0, g: 0, pet: 1 });
 const MI = {}; MON.forEach(m => MI[m.id] = m);
 const tp0 = o => MON[o.t];
@@ -225,6 +244,11 @@ Object.assign(BSK, {
   b_curator: { n: '광기의 전시', r: 4, m: 1.8, c: '#be4bdb', stun: 1400 }, b_furnace: { n: '소각로 폭발', r: 4.5, m: 1.9, c: '#e8590c', slow: 4000 },
   k_boss: { n: '최종화 필살기', r: 5, m: 2, c: '#e64980', stun: 1500 }, k_editor: { n: '마감 독촉', r: 4.5, m: 1.7, c: '#ff6b6b', stun: 1800 },
   y_king: { n: '고대의 심판', r: 5, m: 2.1, c: '#20c997', stun: 1600 }, y_titan: { n: '대지 붕괴', r: 5, m: 2.1, c: '#343a40', slow: 5000 },
+  goldtoad: { n: '황금 떡 폭탄', r: 3.6, m: 1.5, c: '#fab005', stun: 1200, cd: [4000, 6000] }, toadling: { n: '혀 날름', r: 2, m: 1.3, c: '#ffd43b', cd: [5000, 8000] },
+  u_coach: { n: '지옥 훈련', r: 5, m: 2.2, c: '#1971c2', stun: 1600 }, u_striker: { n: '불꽃 슛', r: 5, m: 2.3, c: '#ff6b00', slow: 5000 },
+  a_kraken2: { n: '대해일', r: 6, m: 2.3, c: '#1864ab', stun: 1500 }, a_leviathan: { n: '심해의 포효', r: 5.5, m: 2.4, c: '#0b7285', slow: 5000 },
+  v_keeper: { n: '시간 정지', r: 6, m: 2.2, c: '#845ef7', stun: 2200 }, v_chronos: { n: '시간 붕괴', r: 5.5, m: 2.5, c: '#3b5bdb', slow: 6000 },
+  h_yeomra: { n: '염라의 심판', r: 6, m: 2.6, c: '#c92a2a', stun: 2000 }, h_satan: { n: '대마왕의 지옥불', r: 6.5, m: 2.7, c: '#141414', slow: 6000 },
   hwang: { n: '황금 용의 숨결', r: 6, m: 1.6, c: '#fab005', stun: 1500, fx: 'charm', cd: [3500, 5000] }
 });
 for (const k in BSK) MI[k].sk = BSK[k];
@@ -234,6 +258,9 @@ Object.assign(MI.hwang, {
   talk: ['감히… 사방신을 꺾은 자들이냐.', '나는 중앙의 황룡이다.', '네 칼이 곧 너를 벨 것이다.', '황금의 비늘은 꺾이지 않는다…', '더 많은 용사를 데려와라… 그래야 겨우 상대가 되겠지.'],
   stunTalk: ['황금빛에 타올라라!!', '오행이 내 안에 있다!!'], deathLine: '…중앙이… 무너지는가…'
 });
+MI.goldtoad.talk = ['개굴… 개굴… 황금떡 맛 좀 볼래?', '내 문제를 맞혀봐라 개굴!!', '떡두꺼비 같은 아들 딸들아~ 개굴!', '개구울!! 나는 무적이다!!', '퀴즈 못 맞히면 다 깔아뭉갠다 개굴!'];
+MI.goldtoad.stunTalk = ['떡방아 쿵!!', '개구우우울!!']; MI.goldtoad.deathLine = '개굴… 떡이… 다 쉬어버렸다…';
+MI.toadling.talk = ['개굴!', '개굴개굴!', '(황금떡 냠냠)', '대왕님을 지켜라 개굴!'];
 MI.santa.talk = ['호호호~ 나쁜 아이 명단 확인 중…', '선물은 착한 아이에게만!!', '루돌프! 돌진!!', '굴뚝으로 들어가주마~ 호호호!', '메리 크리스마스… 석탄이나 받아라!'];
 MI.rudolph.talk = ['(코가 반짝반짝)', '푸르릉!!', '산타 할아버지 지켜!!'];
 const ZTALK = ['으어어어…', '뇌… 뇌를 줘…', '그르르르…', '출근… 하기… 싫어…', '으아아…', '배고파…', '크르르…'];
@@ -419,7 +446,7 @@ function qReady(p, q) {
 const SHOP = [{ k: 'hp', n: 'HP포션 (40% 회복)', p: 40 }, { k: 'mp', n: 'MP포션 (40% 회복)', p: 40 }, { k: 'hp2', n: '고급 HP포션 (75% 회복)', p: 160 }, { k: 'mp2', n: '고급 MP포션 (75% 회복)', p: 160 },
   { k: 'elixir', n: '엘릭서 (HP·MP 완전 회복)', p: 1200 }, { k: 'enh', n: '강화 주문서', p: 400 }, { k: 'bless', n: '축복 주문서 (강화 성공률 +15%)', p: 3000 }, { k: 'ward', n: '보호 주문서 (파괴 방지)', p: 1500 }];
 const POTS = { hp: [.4, 0], mp: [0, .4], hp2: [.75, 0], mp2: [0, .75], elixir: [1, 1] };
-const MAXLV = 150;
+const MAXLV = 99999; // 사실상 만렙 없음
 const need = lv => Math.floor(30 * Math.pow(lv, 1.7) * (lv >= 30 ? 1 + (lv - 29) * 0.12 : 1) * (lv >= 50 ? 1 + (lv - 49) * 0.25 : 1) * (lv >= 100 ? 1 + (lv - 99) * 0.6 : 1)); // Lv30부터 느리게, Lv50부터 더, Lv100부터 훨씬 더 느리게
 
 /* ===================== 맵 ===================== */
@@ -438,6 +465,7 @@ const THEME = {
   sewer: { edge: '#', obs: [['w', .5], ['#', .3], ['r', .2]] }, factory: { edge: 'G', obs: [['m', .35], ['d', .3], ['k', .35]] },
   tunnel: { edge: '#', obs: [['#', .45], ['r', .55]] },
   arena7: { edge: 'W', obs: [['r', 1]] }, temple1: { edge: 'W', obs: [['r', 1]] }, temple2: { edge: 'W', obs: [['r', 1]] }, temple3: { edge: 'W', obs: [['r', 1]] }, temple4: { edge: 'W', obs: [['r', 1]] }, arena6: { edge: 'W', obs: [['r', 1]] },
+  stadium: { edge: 'G', obs: [['k', .5], ['c', .5]] }, abyss: { edge: 'W', obs: [['w', .6], ['r', .4]] }, void: { edge: 'W', obs: [['c', .4], ['r', .6]] }, inferno: { edge: 'W', obs: [['L', .25], ['r', .75]] },
   bunker: { edge: 'G', obs: [['m', .4], ['k', .3], ['d', .3]] }, comic: { edge: 'H', obs: [['c', .3], ['f', .3], ['k', .4]] }, ruins: { edge: '#', obs: [['c', .45], ['r', .55]] }, castle: { edge: 'W', obs: [['c', .55], ['r', .45]] },                    // 벽, 온탕, 평상
   altar: { edge: 'W', obs: [['r', 1]] }, arena4: { edge: 'W', obs: [['r', 1]] }, arena5: { edge: 'W', obs: [['r', 1]] }, arena1: { edge: 'W', obs: [['r', 1]] }, arena2: { edge: 'W', obs: [['r', 1]] }, arena3: { edge: 'W', obs: [['r', 1]] }
 };
@@ -466,7 +494,7 @@ function mk(id, o) {
   }
   for (const n of o.npcs || []) t[n.y][n.x] = 'N';
   for (const n of o.npcs || []) { clear(n.x, n.y, 1); t[n.y][n.x] = 'N'; }
-  const m = { orig: t.map(r => r.slice()), npcs: (o.npcs || []).map(n => ({ id: n.id, x: n.x, y: n.y })), id, name: o.name, w, h, theme, t, portals: o.portals, safes, sl: o.sl || '', pool: o.pool || [], cnt: o.cnt || 0, boss: o.boss || null, mobs: [], ground: [], spawn: o.spawn || { x: 2, y: 15 }, lvr: o.lvr, regen: o.regen || 1 };
+  const m = { fastBoss: o.fastBoss || 0, orig: t.map(r => r.slice()), npcs: (o.npcs || []).map(n => ({ id: n.id, x: n.x, y: n.y })), id, name: o.name, w, h, theme, t, portals: o.portals, safes, sl: o.sl || '', pool: o.pool || [], cnt: o.cnt || 0, boss: o.boss || null, mobs: [], ground: [], spawn: o.spawn || { x: 2, y: 15 }, lvr: o.lvr, regen: o.regen || 1 };
   MAPS[id] = m;
 }
 // 첫 맵: 부천 들판. 5개 동네 마을(안전지대)이 위/대각선/아래에 있고 바로 밖에서 사냥·진영전
@@ -582,9 +610,15 @@ mk('comic', {
 });
 mk('ruins', {
   name: '🗿 성주산 고대유적', w: 50, h: 30, theme: 'ruins', seed: 312, dens: .1, lvr: '117~130', npcs: SZM(15), safes: SZ(15), spawn: { x: 4, y: 15 },
-  portals: [{ x: 0, y: 15, to: 'comic', tx: 47, ty: 15 }],
+  portals: [{ x: 0, y: 15, to: 'comic', tx: 47, ty: 15 }, { x: 49, y: 15, to: 'stadium', tx: 2, ty: 15 }],
   pool: ['y_golem', 'y_spirit', 'y_snake', 'y_knight', 'y_wyvern', 'y_mimic'], cnt: 40, boss: ['y_king', 'y_titan']
 });
+for (const [id, name, th, lvr, pool, boss, prev, next, seed] of [
+  ['stadium', '🏟️ 부천종합운동장 지하', 'stadium', '130~145', ['u_ball', 'u_hooligan', 'u_mascot', 'u_referee', 'u_turf', 'u_drone'], ['u_coach', 'u_striker'], 'ruins', 'abyss', 313],
+  ['abyss', '🌊 웅진플레이도시 심해', 'abyss', '145~160', ['a_shark', 'a_tube', 'a_eel', 'a_jelly', 'a_crab', 'a_angler'], ['a_kraken2', 'a_leviathan'], 'stadium', 'void', 314],
+  ['void', '🌀 중앙공원 시간의 틈', 'void', '160~180', ['v_clock', 'v_echo', 'v_paradox', 'v_knight', 'v_wyrm', 'v_eye'], ['v_keeper', 'v_chronos'], 'abyss', 'inferno', 315],
+  ['inferno', '🔥 부천 대지옥', 'inferno', '180~200+', ['h_imp', 'h_hound', 'h_lava', 'h_reaper', 'h_bat', 'h_dragon'], ['h_yeomra', 'h_satan'], 'void', null, 316]])
+  mk(id, { name, w: 50, h: 30, theme: th, seed, dens: .09, lvr, npcs: SZM(15), safes: SZ(15), spawn: { x: 4, y: 15 }, portals: [{ x: 0, y: 15, to: prev, tx: 47, ty: 15 }, ...(next ? [{ x: 49, y: 15, to: next, tx: 2, ty: 15 }] : [])], pool, cnt: 40, boss, fastBoss: 1 });
 const inSafe = (m, x, y) => m.safes.some(z => x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1);
 const walk = (m, x, y) => x >= 0 && y >= 0 && x < m.w && y < m.h && (m.t[y][x] === '.' || m.t[y][x] === 'L' || m.t[y][x] === 'X');
 const players = new Map();
@@ -719,6 +753,7 @@ function stats(p) {
   // 방어력 하향: 레벨 0.5, 장비 60%
   p.def = Math.round((p.lv * 0.5 + (a ? power(a) * 0.6 : 0) + (h ? power(h) * 0.6 : 0) + sumB('defb')) * (F.def || 1));
   p.def = Math.round(p.def * (j.def || 1));
+  if (p.lv > 100) p.atk = Math.round(p.atk * (1 + (p.lv - 100) * 0.005)); // Lv100 이후 레벨마다 공격력 +0.5%
   const G = p.gb || {}, SB = p.santa > now() ? 1.15 : 1;
   p.atk = Math.round(p.atk * (G.cr ? 1.12 : 1) * SB); p.def = Math.round(p.def * (G.hm ? 1.25 : 1) * SB); if (G.jj) p.mhp = Math.round(p.mhp * 1.1);
   p.hp = Math.min(p.hp, p.mhp); p.mp = Math.min(p.mp, p.mmp);
@@ -877,6 +912,7 @@ function killMob(p, mo) {
     add(genEquip(tp.lv, true)); if (Math.random() < 0.25) add(genEquip(tp.lv, true));
     add(mkScroll('enh', R(1, 3))); if (Math.random() < 0.3) add(mkScroll('ward', 1)); add(mkPot('hp', R(3, 6))); add(stackItem('mat', tp.mat, tp.mat, R(1, 3)));
     if (Math.random() < 0.01) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
+    if (tp.id === 'goldtoad') gtWin(p, mo, m, add);
     if (tp.id === 'hwang') { add({ id: db.iid++, type: 'weapon', b: 10, r: 5, il: Math.max(100, p.lv), plus: 0, n: '황룡의 천검', atkb: 400, defb: 80, hpb: 1500 }); if (TRANK('hwang') >= TRANK(p.title)) p.title = 'hwang'; sendAll({ t: 'notice', m: `🐲👑 ${p.name}님이 황룡을 쓰러뜨렸다!!! 황룡의 천검 + 칭호 [황룡 토벌자]`, c: '#fab005', big: 1 }); }
     if (tp.id === 'tuna') { add(tunaWeapon()); sendAll({ t: 'notice', m: `🐟 ${p.name}님이 냉동참치를 쓰러뜨렸다!! 🐟 대형 냉동참치가 떨어졌다!!`, c: '#a5d8ff', big: 1 }); }
     if (mo.collapse) { xp = tp.xp; announce(`🍶 보상은 잔소리를 끝까지 버틴 ${p.name}님에게!`); }
@@ -1112,6 +1148,9 @@ function adminCmd(p, m) {
     case 'tpp': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); const x = m.x == null ? p.x : m.x | 0, y = m.y == null ? p.y : m.y | 0; if (o.map !== p.map) warp(o, p.map, x, y); else if (walk(mp, x, y)) { o.x = x; o.y = y; } return ok(`${o.name} 소환`); }
     case 'setlv': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); o.lv = Math.max(1, Math.min(MAXLV, m.v | 0)); o.exp = 0; stats(o); o.hp = o.mhp; o.dirty = 1; return ok(`${o.name} → Lv${o.lv}`); }
     case 'zstart': return zevStart(p, m.min | 0);
+    case 'gtnow': return gtStart(m.here ? mp : null);
+    case 'gtstop': return gtEnd('👑 관리자가 황금떡두꺼비 군단을 돌려보냈어요');
+    case 'gtquiz': if (GT.st === 'on') gtQuiz(now()); return;
     case 'hwangbag': giveItem(p, stackItem('bundle', 'hwang', '황룡의 부적', 1)); return ok('황룡의 부적 지급');
     case 'beastmats': for (const B of Object.values(BEASTS)) giveItem(p, stackItem('mat', B.mat, B.mat, 1)); return ok('4신수 재료 지급');
     case 'gbuff': p.gb = Object.keys(p.gb || {}).length ? {} : { cr: 1, bh: 1, jj: 1, hm: 1 }; stats(p); p.dirty = 1; return ok('신수 버프 ' + (Object.keys(p.gb).length ? 'ON' : 'OFF'));
@@ -1760,6 +1799,117 @@ function kgAttack(Rd, t) {
   if (ph >= 2 && c % 3 === 0) warnT(Rd, randT(m, 6 + ph * 2).flatMap(([x, y]) => circleT(x, y, .9)), 1500, 1300 * D, '#495057');
   Rd.next = t + (ph >= 4 ? 2400 : ph >= 2 ? 3000 : 3400);
 }
+/* ===================== 🐸 황금떡두꺼비 군단 (매일 오후 8시 KST) =====================
+   랜덤 사냥터에 출현. 무적 상태로 날뜀 → 채팅 퀴즈를 GT_QUIZ_MS 안에 맞히면 12초 기절(피해 가능) → 못 맞히면 다시 무적 + 폭주 */
+const GT_HOUR_UTC = 11, GT_QUIZ_MS = 3000, GT_DUR = 30 * 60000;
+const QUIZ = [
+  ['[만화 대사] "해적왕이 될 거야!" 를 외치는 밀짚모자 주인공은?', ['루피', '몽키디루피', '몽키D루피']],
+  ['[만화 대사] "진실은 언제나 하나!" 를 외치는 꼬마 탐정은?', ['코난', '에도가와코난', '남도일']],
+  ['[만화 대사] "카메하메하!" 를 쏘는 주인공은?', ['손오공', '오공']],
+  ['[만화 대사] "피카츄, 너로 정했다!" 를 외치는 주인공은?', ['지우', '한지우', '사토시']],
+  ['[만화 대사] "왼손은 거들 뿐" 의 빨간 머리 농구 천재는?', ['강백호', '백호', '사쿠라기하나미치']],
+  ['[만화 대사] "포기하면 그 순간이 바로 시합 종료예요" 를 말한 감독님은?', ['안선생님', '안감독', '안자이', '안자이선생님']],
+  ['[만화 대사] "달님을 대신해서 혼내주겠다!" 를 외치는 주인공은?', ['세일러문', '세라', '세일러문세라']],
+  ['[만화 대사] "호이~ 호이~" 하는 아기공룡은?', ['둘리', '아기공룡둘리']],
+  ['[만화 대사] "도와줘~ 도라에몽!" 하고 우는 안경 쓴 아이는?', ['진구', '노진구', '노비타']],
+  ['[만화 대사] "다 덤벼라 믹키유천~" 같은 장난꾸러기, 엉덩이춤 추는 5살 주인공은?', ['짱구', '신짱구']],
+  ['[만화 대사] "나는 신세계의 신이 된다" 데스노트 주인공은?', ['라이토', '야가미라이토', '키라']],
+  ['[만화 대사] "Plus Ultra!" 를 외치는 히어로 아카데미아 주인공(별명)은?', ['데쿠', '미도리야', '미도리야이즈쿠']],
+  ['[만화 대사] "다 이루어질지니~" 램프의 요정은?', ['지니']],
+  ['[만화 대사] "내가 바로 나루토다! 포기 안 해!" 닌자 주인공 이름은?', ['나루토', '우즈마키나루토']],
+  ['[만화 대사] "더 월드!! 시간이여 멈춰라!" 를 외치는 악역은?', ['디오', 'dio']],
+  ['[만화] 디지몬 어드벤처에서 아구몬의 파트너 주인공은?', ['태일', '신태일']],
+  ['[만화] 귀멸의 칼날에서 동생 네즈코를 지키는 주인공은?', ['탄지로', '카마도탄지로']],
+  ['[만화] 강철의 연금술사 주인공 형 이름은?', ['에드', '에드워드', '에드워드엘릭']],
+  ['[만화] "검정 고무신" 의 형 이름은?', ['기영이', '기철이', '이기철']],
+  ['[만화] 하니가 달리는 만화 제목은? (달려라 ○○)', ['하니', '달려라하니']],
+  ['[부천RPG] 하프마라톤 러너 직업 이름은?', ['박병문']],
+  ['[부천RPG] 볼펜을 든 드라큘라 보스는?', ['박휘석']],
+  ['[부천RPG] 윤태정이 타는 흰색 말티즈 이름은?', ['밥풀이']],
+  ['[부천RPG] 김승현 보스가 던지는 공은?', ['테니스공', '테니스']],
+  ['[부천RPG] 천현창과 함께 나오는 잘생긴 쌍둥이는?', ['김도현', '도현']],
+  ['[부천RPG] 이소현을 쫓아다니며 잔소리하는 할머니 보스는?', ['김포최명순', '최명순']],
+  ['[부천] 부천역은 지하철 몇 호선? (숫자만)', ['1', '1호선', '일호선']],
+  ['[부천] 부천에서 열리는 판타스틱 영화제 영어 약자는?', ['bifan', '비판', '바이판']],
+  ['[넌센스] 왕이 넘어지면?', ['킹콩']],
+  ['[넌센스] 소가 웃으면?', ['우하하', '우하하하']],
+  ['[넌센스] 세상에서 가장 뜨거운 과일은?', ['천도복숭아']],
+  ['[넌센스] 바나나가 웃으면?', ['바나나킥']],
+  ['[넌센스] 개가 사람을 가르치면?', ['개인지도']],
+  ['[넌센스] 세상에서 가장 빠른 닭은?', ['후다닥']],
+  ['[넌센스] 펭귄이 다니는 중학교는?', ['냉방중', '냉방중학교']],
+  ['[넌센스] 아몬드가 죽으면?', ['다이아몬드']],
+  ['[넌센스] 반성문을 영어로 하면?', ['글로벌', 'global']],
+  ['[계산] 7 × 8 = ?', ['56']], ['[계산] 13 + 29 = ?', ['42']], ['[계산] 100 - 37 = ?', ['63']], ['[계산] 9 × 9 = ?', ['81']]
+].map(([q, a]) => ({ q, a }));
+const gtNorm = x => String(x).toLowerCase().replace(/[\s!?.~,'"·○()]/g, '');
+const gtNext = (t = now()) => { const d = new Date(t), n = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), GT_HOUR_UTC, 0, 0); return n > t ? n : n + 86400000; };
+const GT = { st: 'idle', at: gtNext(), map: null, boss: null, quiz: null, next: 0, end: 0, warn: 0, used: [] };
+function gtMsg() { const b = GT.boss; return { t: 'gt', st: GT.st, at: GT.at, sn: now(), map: GT.map ? MAPS[GT.map].name : '', hp: b && !b.dead ? Math.round(b.hp / b.mhp * 1000) / 10 : 0, end: GT.end }; }
+function gtBlast(m, tiles, ms, dmg, c) {
+  tiles = tiles.filter(([x, y]) => x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1); bc(m.id, { t: 'warn', tiles, ms, c });
+  setTimeout(() => { const set = new Set(tiles.map(([x, y]) => x + ',' + y)); bc(m.id, { t: 'hz', tiles, c }); for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y) && set.has(q.x + ',' + q.y)) damagePlayer(q, Math.max(1, Math.round(dmg - defOf(q) * .3)), null); }, ms);
+}
+function gtStart(here) {
+  if (GT.st === 'on') return;
+  const cand = zMaps().filter(m => m.id !== 'sauna'), m = here && here.pool.length ? here : pick(cand);
+  const b = spawnBoss(m, 'goldtoad'); const hp = Math.round(topDps() * 1500); b.hp = b.mhp = hp; b.inv = 1; b.until = now() + GT_DUR + 60000; b.gtb = 1;
+  for (let i = 0; i < 12; i++) { const o = spawnBoss(m, 'toadling', b); o.until = b.until; }
+  Object.assign(GT, { st: 'on', map: m.id, boss: b, quiz: null, next: now() + 9000, end: now() + GT_DUR });
+  bc(m.id, { t: 'shake', ms: 1200 }); bc(m.id, { t: 'fx', k: 'boom', x: b.x, y: b.y, r: 6, c: '#fab005' });
+  sendAll({ t: 'notice', m: `🐸✨ 황금떡두꺼비 군단이 나타났다!!! 📍 [${m.name}] — 무적 상태로 날뛰는 중! 퀴즈를 맞혀야 피해가 들어가요`, c: '#fab005', big: 1 });
+  announce(`🐸 황금떡두꺼비 군단 출현! 📍 ${m.name} · 채팅에 뜨는 퀴즈를 ${GT_QUIZ_MS / 1000}초 안에 맞히면 대왕 떡두꺼비가 기절해요 (그때만 피해 들어감)`);
+  sendAll(gtMsg());
+}
+function gtEnd(msg) {
+  if (GT.st !== 'on') return; const m = MAPS[GT.map];
+  m.mobs = m.mobs.filter(o => !MON[o.t].gtoad); GT.st = 'idle'; GT.quiz = null; GT.boss = null; GT.map = null; GT.at = gtNext(now() + 3600000); GT.warn = 0;
+  if (msg) sendAll({ t: 'notice', m: msg, c: '#ffe066', big: 1 }); sendAll({ t: 'gtq', end: 1 }); sendAll(gtMsg());
+}
+function gtWin(p, mo, m, add) {
+  for (let i = 0; i < 6; i++) add(mkGold(200000)); add(mkScroll('bless', 3)); add(mkScroll('ward', 3)); add(hiddenEquip(pick(['weapon', 'armor', 'helm']), Math.max(80, p.lv)));
+  for (const q of players.values()) if (q.map === m.id && !q.dead) { q.gold += 500000; q.dirty = 1; say(q, 'loot', '🐸 황금떡두꺼비 군단 토벌 참여 보상 💰500,000G', '#fab005'); }
+  setTimeout(() => gtEnd(`🐸🏆 ${p.name}님이 대왕 황금떡두꺼비를 쓰러뜨렸다!! 황금떡 대잔치!! (참여자 전원 50만G)`), 50);
+}
+function gtQuiz(t) {
+  let i; do { i = R(0, QUIZ.length - 1); } while (GT.used.includes(i) && GT.used.length < QUIZ.length - 1);
+  GT.used.push(i); if (GT.used.length > 25) GT.used.shift();
+  GT.quiz = { ...QUIZ[i], until: t + GT_QUIZ_MS + 300 };
+  sendAll({ t: 'gtq', q: GT.quiz.q, ms: GT_QUIZ_MS, map: MAPS[GT.map].name });
+  announce(`🐸 퀴즈! ${GT.quiz.q} (${GT_QUIZ_MS / 1000}초 · 채팅으로 정답)`);
+  const b = GT.boss; if (b && !b.dead) bc(GT.map, { t: 'mtalk', id: b.id, m: '문제 나간다 개굴!! ' + GT.quiz.q, loud: 1 });
+}
+function gtAnswer(p, s) {
+  const Q = GT.quiz; if (GT.st !== 'on' || !Q || now() > Q.until || !Q.a.some(a => gtNorm(a) === gtNorm(s))) return;
+  const b = GT.boss, t = now(); GT.quiz = null;
+  if (b && !b.dead) { b.inv = 0; b.groggy = t + 12000; b.stun = t + 12000; bc(GT.map, { t: 'fx', k: 'boom', x: b.x, y: b.y, r: 4, c: '#69db7c' }); bc(GT.map, { t: 'mtalk', id: b.id, m: '개굴?! 마, 맞혔다고…?!', loud: 1 }); }
+  p.gold += 100000; p.dirty = 1;
+  sendAll({ t: 'notice', m: `⭕ 정답!! ${p.name}님 — "${Q.a[0]}" · 대왕 떡두꺼비 기절 12초!! 지금 공격!! (정답 보상 10만G)`, c: '#69db7c', big: 1 });
+  sendAll({ t: 'gtq', ok: 1, who: p.name, a: Q.a[0] }); GT.next = t + 12000 + 7000;
+}
+function gtTick(t) {
+  if (GT.st === 'idle') {
+    if (t >= GT.at) return gtStart();
+    const left = GT.at - t;
+    if (left < 600000 && GT.warn < 1) { GT.warn = 1; sendAll({ t: 'notice', m: '🐸 10분 뒤 황금떡두꺼비 군단이 부천 어딘가에 나타납니다!! (오후 8시)', c: '#fab005', big: 1 }); }
+    if (left < 60000 && GT.warn < 2) { GT.warn = 2; sendAll({ t: 'notice', m: '🐸 1분 뒤 황금떡두꺼비 군단 출현!! 준비하세요!!', c: '#fab005', big: 1 }); }
+    if (tk % 300 === 0) sendAll(gtMsg());
+    return;
+  }
+  const b = GT.boss, m = MAPS[GT.map];
+  if (!b || b.dead || !m.mobs.includes(b)) { if (GT.st === 'on' && b && !m.mobs.includes(b) && !b.dead) gtEnd('🐸 황금떡두꺼비 군단이 사라졌어요'); return; }
+  if (t >= GT.end) return gtEnd('🐸💨 황금떡두꺼비 군단이 황금떡을 들고 도망갔다… 내일 오후 8시에 다시!');
+  if (!b.inv && t > b.groggy) { b.inv = 1; bc(m.id, { t: 'mtalk', id: b.id, m: '개구우울!! 다시 무적이다!!', loud: 1 }); }
+  if (GT.quiz && t > GT.quiz.until) {
+    const Q = GT.quiz; GT.quiz = null; GT.next = t + 10000;
+    sendAll({ t: 'notice', m: `❌ 땡!! 정답은 "${Q.a[0]}" — 대왕 떡두꺼비가 무적 상태로 날뛴다!!`, c: '#ff6b6b', big: 1 }); sendAll({ t: 'gtq', ok: 0, a: Q.a[0] });
+    gtBlast(m, circleT(b.x, b.y, 5.5), 1200, 1800, '#fab005'); bc(m.id, { t: 'mtalk', id: b.id, m: '틀렸다 개굴!! 떡방아 대폭주!!', loud: 1 });
+    for (let k = 0; k < 2; k++) { const o = spawnBoss(m, 'toadling', b); o.until = b.until; }
+  }
+  if (!GT.quiz && b.inv && t >= GT.next) gtQuiz(t);
+  if (b.inv && tk % 40 === 0) { gtBlast(m, randT(m, 10).filter(([x, y]) => Math.hypot(x - b.x, y - b.y) < 12).flatMap(([x, y]) => circleT(x, y, 1.2)), 1400, 1300, '#ffd43b'); }
+  if (tk % 20 === 0) sendAll(gtMsg());
+}
 /* ===================== 🎅 산타 레이드 ===================== */
 function santaRudolphs(Rd) { const m = MAPS[Rd.map]; for (const [x, y] of [[4, 4], [m.w - 5, 4], [4, m.h - 5], [m.w - 5, m.h - 5]]) rSpawn(Rd, 'rudolph', x, y, { sz: .3 }); }
 function santaTick(Rd, t) {
@@ -1826,6 +1976,7 @@ function login(ws, m) {
   if (TT) { sendAll({ t: 'notice', m: TT.enter(`[${FAC[p.faction].n}] ${name}`), c: TT.c, big: TT.big || 0 }); setTimeout(() => players.has(p.id) && bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 2.5, c: TT.c, n: TT.n, i: p.id }), 800); }
   else sendAll({ t: 'notice', m: `👋 [${FAC[p.faction].n}] ${name}님이 입장하셨습니다`, c: FAC[p.faction].c, small: 1 });
   if (ZEV.on) setTimeout(zevStatus, 300);
+  setTimeout(() => send(p, gtMsg()), 400);
   sendWho();
 }
 function onMsg(p, m) {
@@ -1846,6 +1997,7 @@ function onMsg(p, m) {
       if (p.admin) { if (s === '/boss') { spawnBoss(mp); return; } if (s.startsWith('/lv ')) { p.lv = Math.min(MAXLV, +s.slice(4) || 1); p.exp = 0; stats(p); p.hp = p.mhp; p.dirty = 1; return; } if (s.startsWith('/go ')) { const mm = MAPS[s.slice(4).trim()]; if (mm) warp(p, mm.id, mm.spawn.x + 6, mm.spawn.y); return; } if (s.startsWith('/give ')) { const o = [...players.values()].find(q => q.name === s.slice(6).trim()); if (o) { o.lv = Math.max(o.lv, 1); giveItem(o, genEquip(20, true)); } return; } if (s === '/gold') { p.gold += 100000; p.dirty = 1; return; } if (s === '/scroll') { giveItem(p, mkScroll('enh', 20)); giveItem(p, mkScroll('ward', 5)); return; } }
       if (s.startsWith('/w ')) { const [, to, ...r] = s.split(' '); const o = [...players.values()].find(q => q.name === to); if (!o) return say(p, 'sys', '그런 사람이 없어요'); const msg = r.join(' '); say(o, 'w', `${p.name} → 나: ${msg}`); say(p, 'w', `나 → ${o.name}: ${msg}`); return; }
       if (s[0] === '!') s = s.slice(1).trim(); if (!s) return;
+      gtAnswer(p, s);
       p.bub = s; p.bubT = t + 4000; sendAll({ t: 'chat', ch: 'all', n: p.name, f: p.faction, m: s, map: mp.name }); break;
     }
     case 'use': {
@@ -1930,11 +2082,11 @@ function tick() {
       } else if (t > o.mvAt && Math.random() < 0.04) {
         o.mvAt = t + 600; const d = R(0, 3); let nx = o.x + DX[d], ny = o.y + DY[d]; if (Math.abs(nx - o.hx) > 8 || Math.abs(ny - o.hy) > 8) { nx = o.x + Math.sign(o.hx - o.x); ny = o.y; }
         if (walk(m, nx, ny) && !occ(m, nx, ny, o) && !inSafe(m, nx, ny)) { o.x = nx; o.y = ny; }
-        if (o.hp < o.mhp && !tp.hwang && !tp.gbeast) o.hp = Math.min(o.mhp, o.hp + Math.ceil(o.mhp * 0.05));
+        if (o.hp < o.mhp && !tp.hwang && !tp.gbeast && !tp.gtoad) o.hp = Math.min(o.mhp, o.hp + Math.ceil(o.mhp * 0.05));
       }
     }
     for (let i = m.ground.length - 1; i >= 0; i--) if (t > m.ground[i].exp) m.ground.splice(i, 1);
-    if (tk % 600 === 0 && m.boss && !ZEV.on && !m.mobs.some(o => o.boss && !o.dead) && Math.random() < 1 / 60) spawnBoss(m); // 약 1시간에 1번 (1분마다 1/60)
+    if (tk % 600 === 0 && m.boss && !ZEV.on && !m.mobs.some(o => o.boss && !o.dead) && Math.random() < (m.fastBoss ? 1 / 20 : 1 / 60)) spawnBoss(m); // 약 1시간에 1번 (1분마다 1/60)
     const ps = []; for (const p of players.values()) if (p.map === m.id && !p.dead) ps.push(pubP(p));
     if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0) | (o.drunk ? 4 : 0) | (o.air ? 8 : 0) | (o.inv ? 16 : 0) | (o.groggy > t ? 32 : 0) | (o.ally ? 64 : 0) | (o.inv ? 16 : 0), o.fa != null ? Math.round(o.fa * 100) / 100 : undefined]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it), t < g.ownT ? g.own : 0, g.it.type === 'gold' ? 1 : isEq(g.it) ? 2 : 0]) });
   }
@@ -1944,7 +2096,7 @@ function tick() {
     if (p.dirty) { p.dirty = 0; send(p, mePayload(p)); }
     if (p.vdirty && tk % 3 === 0) { p.vdirty = 0; send(p, { t: 'v', hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, exp: p.exp, need: need(p.lv), lv: p.lv, gold: p.gold }); }
   }
-  raidTick(t); royaleTick(t); zevTick(t);
+  raidTick(t); royaleTick(t); zevTick(t); if (tk % 2 === 0) gtTick(t);
   if (tk % 50 === 0) sendWho();
   if (tk % 300 === 0) flush();
 }
