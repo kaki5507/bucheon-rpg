@@ -2043,6 +2043,12 @@ function onMsg(p, m) {
     case 'pk': pkMsg(p, m); break;
     case 'adm': if (p.admin) adminCmd(p, m); break;
     case 'raid': raidOp(p, String(m.id), String(m.op)); break;
+    case 'rexit': { // 레이드/신전 어디서든 언제든 나가기
+      if (p.dead || !/^(raid|temple)/.test(p.map)) break;
+      const Rd = Object.values(RAIDS).find(r => r.map === p.map);
+      if (Rd) { Rd.mem.delete(p.id); for (const q of rmem(Rd)) say(q, 'sys', `🚪 ${p.name}님이 레이드에서 나갔어요`); }
+      p.stun = 0; warp(p, 'bosshub', 13, 12); say(p, 'sys', '🚪 레이드에서 나왔어요'); break;
+    }
   }
 }
 wss.on('connection', ws => {
