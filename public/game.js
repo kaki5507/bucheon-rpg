@@ -1106,7 +1106,7 @@ function renderGT() {
   if (!GTS) { el.style.display = 'none'; return; } el.style.display = 'block';
   const sn = Date.now() + GTOFF, hms = ms => { const s2 = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s2 / 3600)).padStart(2, '0')}:${String(Math.floor(s2 / 60) % 60).padStart(2, '0')}:${String(s2 % 60).padStart(2, '0')}`; };
   if (GTS.st === 'on') { el.className = 'on' + (el.classList.contains('mini') ? ' mini' : ''); el.innerHTML = `<b>🐸 황금떡두꺼비 군단 출현!!</b><div>📍 ${esc(GTS.map)}</div><div class="gs">체력 ${GTS.hp}% · 도망까지 ${hms(GTS.end - sn)}</div>`; }
-  else { const left = GTS.at - sn; el.className = (left < 600000 ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : ''); el.innerHTML = `<b>🐸 황금떡두꺼비 군단</b><div class="gs">매일 오후 8시 · 장소는 랜덤</div><div class="gd">D-${hms(left)}</div>`; }
+  else { const left = GTS.at - sn; el.className = (left < 600000 ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : ''); const s3 = Math.max(0, Math.floor(left / 1000)), hh = Math.floor(s3 / 3600), mi = Math.floor(s3 / 60) % 60; el.innerHTML = `🐸 ${hh ? hh + '시간 ' + mi + '분' : mi + '분 ' + (s3 % 60) + '초'} 남음`; }
 }
 setInterval(() => { if (GTS) renderGT(); }, 1000);
 let gtTimer = null;
