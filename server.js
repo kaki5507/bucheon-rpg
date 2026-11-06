@@ -1531,11 +1531,12 @@ function rPlateTick(Rd, t) {
   }
   let changed = false;
   for (const pl of Rd.plates) {
-    if (pl.on > t) continue;
-    const q = rAlive(Rd).find(q => q.x === pl.x && q.y === pl.y); if (!q) continue;
+    const q = rAlive(Rd).find(q => q.x === pl.x && q.y === pl.y);
+    if (!q) { pl.bad = 0; continue; }           // 발판에서 내려오면 다시 판정
+    if (pl.on > t || pl.bad) continue;           // 틀린 발판 위에 계속 서 있어도 한 번만 판정 (무한 기절 버그 수정)
     if (Rd.seq) {
       if (Rd.seq[Rd.seqI] === pl.ci) { pl.on = Infinity; Rd.seqI++; changed = true; bc(Rd.map, { t: 'fx', k: 'ring', x: pl.x, y: pl.y, r: 1, c: PCOL[pl.ci] }); }
-      else if (!pl.on) { for (const x of Rd.plates) x.on = 0; Rd.seqI = 0; changed = true; warnT(Rd, donutT(q.x, q.y, 0, 2.5), 700, Rd.ph === 3 ? 500 : 400, '#e03131', { stun: 800 }); rTalk(Rd, b, '틀렸다!! 처음부터 다시!!'); }
+      else if (!pl.on && t > (Rd.wrongCd || 0)) { for (const x of Rd.plates) x.on = 0; pl.bad = 1; Rd.wrongCd = t + 2500; Rd.seqI = 0; changed = true; warnT(Rd, donutT(q.x, q.y, 0, 2.5), 700, Rd.ph === 3 ? 500 : 400, '#e03131', { stun: 800 }); rTalk(Rd, b, '틀렸다!! 처음부터 다시!!'); }
     } else { pl.on = t + 10000; changed = true; bc(Rd.map, { t: 'fx', k: 'ring', x: pl.x, y: pl.y, r: 1, c: '#4dabf7' }); }
   }
   for (const pl of Rd.plates) if (!Rd.seq && pl.on && pl.on <= t && pl.on !== 1) { pl.on = 0; changed = true; }
