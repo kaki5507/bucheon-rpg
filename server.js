@@ -44,7 +44,9 @@ const WB = [
   { n: '나무검', s: 'sword', r: 1, a: 6, cd: 500 }, { n: '프라이팬', s: 'pan', r: 1, a: 8, cd: 500 },
   { n: '야구방망이', s: 'bat', r: 1, a: 10, cd: 550 }, { n: '단궁', s: 'bow', r: 5, a: 9, cd: 600 },
   { n: '지팡이', s: 'staff', r: 4, a: 10, cd: 600 }, { n: '장창', s: 'spear', r: 2, a: 12, cd: 600 },
-  { n: '도끼', s: 'axe', r: 1, a: 14, cd: 700 }, { n: '대검', s: 'great', r: 1, a: 18, cd: 750 }];
+  { n: '도끼', s: 'axe', r: 1, a: 14, cd: 700 }, { n: '대검', s: 'great', r: 1, a: 18, cd: 750 },
+  { n: '대형 냉동참치', s: 'tuna', r: 1, a: 26, cd: 800, aoe: 3 }]; // 마지막(냉동참치)은 드랍 X, 냉동참치 보스 전용
+const WB_NORMAL = 8;
 const AB = [{ n: '후드티', d: 3, c: '#74c0fc' }, { n: '가죽조끼', d: 4, c: '#a9744f' }, { n: '패딩', d: 5, c: '#f783ac' },
 { n: '정장', d: 6, c: '#495057' }, { n: '철갑옷', d: 7, c: '#adb5bd' }];
 const HB = [{ n: '야구모자', d: 2, s: 'cap' }, { n: '털모자', d: 2, s: 'beanie' }, { n: '헬멧', d: 4, s: 'helm' },
@@ -103,6 +105,7 @@ const MON = [
   ['hyunchang', '천현창', 'human', '#ff8cc6', 16000, 70, 11500, 2600, 21, '천현창의 손거울', 1], ['dohyun', '김도현', 'human', '#ffe066', 16000, 66, 11500, 2600, 21, '도리스타 별조각', 1],
   ['seunghyun', '김승현', 'tennis', '#c0eb75', 1800, 14, 2000, 900, 9, '김승현의 테니스공', 1],
   ['babpuli', '밥풀이', 'dog', '#ffffff', 2400, 20, 1200, 600, 6, '밥풀이 털뭉치', 1],
+  ['tuna', '냉동참치', 'tuna', '#a5d8ff', 450000, 135, 80000, 30000, 60, '참치 뱃살', 1],
   ['hwiseok', '박휘석', 'human', '#c92a2a', 52000, 160, 40000, 9000, 31, '박휘석의 볼펜', 1],
   ['grandma', '김포최명순', 'human', '#b197fc', 20000, 72, 13500, 3000, 22, '최명순의 마이크', 1],
   ['queenspider', '여왕거미', 'spider', '#862e9c', 25000, 120, 18000, 4000, 25, '여왕거미줄', 1], ['crystalking', '수정왕', 'golem', '#3bc9db', 26000, 115, 19000, 4200, 24, '왕수정', 1],
@@ -120,6 +123,7 @@ const BSK = {
   hyunchang: { n: '잘생김 광선', r: 3.5, m: 1.7, c: '#ff8cc6', stun: 1200, fx: 'charm' }, dohyun: { n: '도리스타', r: 3.5, m: 1.3, c: '#ffe066', stun: 2200, fx: 'doristar' },
   seunghyun: { n: '스매시 난타', r: 3.2, m: 0.8, c: '#c0eb75', fx: 'tennis', cd: [5500, 8000] },
   babpuli: { n: '왈왈 짖기', r: 2.5, m: 1.2, c: '#ffc9c9', stun: 800, fx: 'charm', cd: [5000, 7000] },
+  tuna: { n: '얼음 꼬리치기', r: 4.2, m: 1.3, c: '#74c0fc', stun: 1200, fx: 'tunafx', cd: [4500, 6500] },
   hwiseok: { n: '엑소시즘 볼펜 찌르기', r: 2.8, m: 1.5, c: '#4c6ef5', stun: 1200, fx: 'pen', cd: [4000, 6000] },
   grandma: { n: '마이크 샤우팅', r: 3.8, m: 1.15, c: '#ff6b6b', stun: 1600, fx: 'mic', cd: [3200, 4800] },
   queenspider: { n: '거미줄 감옥', r: 3, m: 1.5, c: '#862e9c', slow: 4000 }, crystalking: { n: '수정 파편', r: 3, m: 1.7, c: '#3bc9db' },
@@ -149,6 +153,13 @@ Object.assign(MI.seunghyun, {
   talk: ['15-0!', '아웃 아니야! 인이야!!', '러브 게임 가자~', '듀스!', '에이스!!', '라켓 줄 끊어졌잖아!', '내 서브 받아봐!', '테니스 칠 사람~?', '발리! 발리!', '포핸드는 자신 있다고!', '오늘 코트 예약했어?', '공 주워 와!'],
   stunTalk: ['스매시!!!', '받아라 서브 에이스!!', '게임 셋!!'],
   deathLine: '…40-0… 내가 졌다… 다음엔 복식으로 하자…'
+});
+// 냉동참치: 보따리로만 소환되는 필드 보스. HP 매우 많음. 처치 시 대형 냉동참치(평타 광역 무기) 확정
+Object.assign(MI.tuna, {
+  novar: 1, big: 5.6,
+  talk: ['…(꽁꽁 얼어 있다)', '참치는 신선함이 생명이다!!', '해동되기 전에 끝내주지!', '뱃살은 못 준다!!', '❄️ 얼어붙어라!', '나는 원양어선 출신이다…', '초밥이 될 생각은 없다!!'],
+  stunTalk: ['❄️ 냉동 꼬리치기!!', '얼음 파도!!', '꽁꽁 얼어라!!'],
+  deathLine: '…해동… 되어버렸다…'
 });
 // 밥풀이: 흰색 말티즈. 윤태정(ytj) 직업이 다가오면 주인으로 따르며 영구 탈것이 됨
 Object.assign(MI.babpuli, {
@@ -423,10 +434,32 @@ Object.values(MAPS).forEach(m => { if (m.pool.length) for (let i = 0; i < m.cnt;
 const power = it => { const arr = it.type === 'weapon' ? WB : it.type === 'armor' ? AB : HB; const base = arr[it.b][it.type === 'weapon' ? 'a' : 'd']; return Math.round(base * (1 + it.il * 0.22) * RAR[it.r].m * (1 + it.plus * 0.1) + it.plus); };
 const ADMIN_TIP = '👑 관리자 모드 (👑 버튼)';
 const isEq = it => it.type === 'weapon' || it.type === 'armor' || it.type === 'helm';
-function rollRarity(boss) { const w = boss ? [0, 0, 500, 350, 150] : [600, 250, 100, 40, 10]; let r = Math.random() * w.reduce((a, b) => a + b); for (let i = 0; i < 5; i++) { if ((r -= w[i]) < 0) return i; } return 0; }
+// 등급 확률 (일반/고급/희귀/영웅/에픽). 크게 하향
+function rollRarity(boss) { const w = boss ? [300, 420, 210, 62, 8] : [820, 155, 22, 2.7, 0.3]; let r = Math.random() * w.reduce((a, b) => a + b); for (let i = 0; i < 5; i++) { if ((r -= w[i]) < 0) return i; } return 0; }
+const tunaWeapon = () => ({ id: db.iid++, type: 'weapon', b: 8, r: 5, il: 70, plus: 0, n: '대형 냉동참치', atkb: 160, hpb: 600 });
+const TUNA_RECIPE = { '합체 포자': 2, '메가 공룡 비늘': 2, '문어왕의 먹물': 1, '분노의 핵': 1 }, TUNA_GOLD = 500000;
+function craftTuna(p) {
+  const cnt = k => (p.inv.find(i => i.type === 'mat' && i.k === k) || { q: 0 }).q;
+  const lack = Object.entries(TUNA_RECIPE).filter(([k, n]) => cnt(k) < n).map(([k, n]) => `${k} ${cnt(k)}/${n}`);
+  if (lack.length) return say(p, 'sys', '재료가 부족해요: ' + lack.join(', '));
+  if (p.gold < TUNA_GOLD) return say(p, 'sys', `골드가 부족해요 (${TUNA_GOLD.toLocaleString()}G)`);
+  for (const [k, n] of Object.entries(TUNA_RECIPE)) { const it = p.inv.find(i => i.type === 'mat' && i.k === k); it.q -= n; if (it.q <= 0) p.inv.splice(p.inv.indexOf(it), 1); }
+  p.gold -= TUNA_GOLD; giveItem(p, stackItem('bundle', 'tuna', '냉동참치 보따리', 1)); p.dirty = 1;
+  say(p, 'loot', '🧊 냉동참치 보따리 제작 완료! 가방에서 사용하면 그 자리에 냉동참치 보스가 나타나요', '#a5d8ff');
+  sendAll({ t: 'notice', m: `🧊 ${p.name}님이 냉동참치 보따리를 만들었다…!`, c: '#a5d8ff' });
+}
+function useTunaBag(p, it) {
+  const m = MAPS[p.map];
+  if (inSafe(m, p.x, p.y) || m.id.startsWith('raid') || ['royale', 'bosshub', 'sauna'].includes(m.id)) return say(p, 'sys', '여기서는 냉동참치를 꺼낼 수 없어요 (사냥터에서 사용하세요)');
+  if (Object.values(MAPS).some(mm => mm.mobs.some(o => !o.dead && MON[o.t].id === 'tuna'))) return say(p, 'sys', '이미 어딘가에 냉동참치가 있어요!');
+  if (--it.q <= 0) p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1;
+  const o = spawnBoss(m, 'tuna', p); o.until = now() + 60 * 60000;
+  bc(m.id, { t: 'fx', k: 'boom', x: o.x, y: o.y, r: 5, c: '#a5d8ff' }); bc(m.id, { t: 'shake', ms: 1000 });
+  sendAll({ t: 'notice', m: `🐟 [${m.name}] ${p.name}님이 냉동참치 보따리를 풀었다!! 거대한 냉동참치 보스 등장!!`, c: '#a5d8ff', big: 1 });
+}
 function buildEquip(type, il, r) {
   const arr = type === 'weapon' ? WB : type === 'armor' ? AB : HB;
-  const b = R(0, Math.min(arr.length, 2 + Math.floor(il / (type === 'weapon' ? 4 : 6))) - 1);
+  const b = R(0, Math.min(type === 'weapon' ? WB_NORMAL : arr.length, 2 + Math.floor(il / (type === 'weapon' ? 4 : 6))) - 1);
   const pf = pick(PF[Math.min(r, 4)]); let nm = null;
   if (r >= 3) { const h = HID[type + '|' + pf + '|' + b]; if (h) { r = 5; nm = h; } }
   return { id: db.iid++, type, b, r, il, plus: 0, n: nm || (pf + ' ' + arr[b].n) };
@@ -602,18 +635,19 @@ function killMob(p, mo) {
   const loot = [mkGold(mo.boss ? gold * 3 : gold)];
   const add = it => loot.push(it);
   if (mo.boss) {
-    for (let i = R(2, 3); i > 0; i--)add(genEquip(tp.lv, true));
-    add(mkScroll('enh', R(3, 6))); add(mkScroll('ward', R(1, 2))); add(mkPot('hp', R(5, 10))); add(stackItem('mat', tp.mat, tp.mat, R(2, 4)));
-    if (Math.random() < 0.05) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
+    add(genEquip(tp.lv, true)); if (Math.random() < 0.25) add(genEquip(tp.lv, true));
+    add(mkScroll('enh', R(1, 3))); if (Math.random() < 0.3) add(mkScroll('ward', 1)); add(mkPot('hp', R(3, 6))); add(stackItem('mat', tp.mat, tp.mat, R(1, 3)));
+    if (Math.random() < 0.01) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
+    if (tp.id === 'tuna') { add(tunaWeapon()); sendAll({ t: 'notice', m: `🐟 ${p.name}님이 냉동참치를 쓰러뜨렸다!! 🐟 대형 냉동참치가 떨어졌다!!`, c: '#a5d8ff', big: 1 }); }
     if (mo.collapse) { xp = tp.xp; announce(`🍶 보상은 잔소리를 끝까지 버틴 ${p.name}님에게!`); }
     else { xp = tp.xp; announce(`🏆 ${p.name}님이 ${mo.v == null ? '' : VAR[mo.v].p + ' '}${tp.n}을(를) 처치했어요!`); }
     if (tp.deathLine && !mo.collapse) { bc(m.id, { t: 'mtalk', id: mo.id, m: tp.deathLine, loud: 1, x: mo.x, y: mo.y, n: tp.n }); announce(`🎤 ${tp.n}: "${tp.deathLine}"`); }
     sendAll({ t: 'kill', a: who(p), boss: (mo.v == null ? '' : VAR[mo.v].p + ' ') + tp.n, map: m.name });
   } else {
     if (Math.random() < 0.12) add(mkPot('hp', 1)); if (Math.random() < 0.06) add(mkPot('mp', 1));
-    if (Math.random() < 0.07) add(mkScroll('enh', 1)); if (Math.random() < 0.015) add(mkScroll('ward', 1));
+    if (Math.random() < 0.035) add(mkScroll('enh', 1)); if (Math.random() < 0.005) add(mkScroll('ward', 1));
     if (Math.random() < 0.35) add(stackItem('mat', tp.mat, tp.mat, R(1, 2)));
-    if (Math.random() < 0.09) add(genEquip(tp.lv, false));
+    if (Math.random() < 0.04) add(genEquip(tp.lv, false));
   }
   spreadDrop(m, mo.x, mo.y, loot, p.id);
   const rare = loot.filter(it => isEq(it) && it.r >= 2);
@@ -627,8 +661,9 @@ function basicAttack(p) {
   const t = now(); if (p.dead || t < p.atkAt || t < p.stun) return;
   const w = p.eq.weapon, wb = w ? WB[w.b] : { r: 1, cd: 500, s: 'fist' };
   p.atkAt = t + wb.cd;
-  const e = nearest(p, wb.r); if (!e) return;
+  const e = nearest(p, wb.aoe || wb.r); if (!e) return;
   face(p, e.o);
+  if (wb.aoe) { bc(p.map, { t: 'fx', k: 'ring', i: p.id, x: p.x, y: p.y, r: wb.aoe, c: '#a5d8ff', f: 'tunaswing' }); bc(p.map, { t: 'fx', k: 'slash', i: p.id, x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, c: '#a5d8ff' }); enemiesOf(p).filter(q => edist(p, q.o) <= wb.aoe + .42).slice(0, 15).forEach(q => hit(p, q, 1.1)); return; }
   bc(p.map, { t: 'fx', k: wb.r > 1 ? 'proj' : 'slash', i: p.id, x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, c: w ? RAR[w.r].c : '#fff' });
   hit(p, e, 1);
 }
@@ -819,6 +854,8 @@ function adminCmd(p, m) {
     case 'pickall': { for (const g of mp.ground) { g.x = p.x; g.y = p.y; g.own = 0; } pickUp(p); return; }
     case 'kill': { for (const o of [...mp.mobs]) if (!o.dead && !o.inv && dist(o, p) <= (mp.id.startsWith('raid') ? 60 : 6)) { damageMob(p, o, o.hp, true); } return; }
     case 'tpnpc': { for (const mm of Object.values(MAPS)) { const n = (mm.npcs || []).find(x => x.id === m.id); if (n) return warp(p, mm.id, n.x, n.y + 1); } return; }
+    case 'tunabag': giveItem(p, stackItem('bundle', 'tuna', '냉동참치 보따리', 1)); return ok('냉동참치 보따리 지급');
+    case 'tunamats': for (const [k, n] of Object.entries(TUNA_RECIPE)) giveItem(p, stackItem('mat', k, k, n)); return ok('냉동참치 재료 지급');
     case 'royale': return royaleStart(p);
     case 'royalestop': if (ROY.st !== 'idle') royaleEnd('👑 관리자가 무한장을 종료했어요'); return;
     case 'tpp': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); const x = m.x == null ? p.x : m.x | 0, y = m.y == null ? p.y : m.y | 0; if (o.map !== p.map) warp(o, p.map, x, y); else if (walk(mp, x, y)) { o.x = x; o.y = y; } return ok(`${o.name} 소환`); }
@@ -884,11 +921,11 @@ function sendWho() { sendAll({ t: 'who', l: [...players.values()].map(p => [p.na
 
 /* ===================== 레이드 (보스 대기실) ===================== */
 const RAIDS = {
-  r10: { n: '버섯브로콜리', lv: 10, map: 'raid1', exp: 60000, ilv: 14, items: 6 },
-  r30: { n: '티라노', lv: 30, map: 'raid2', exp: 600000, ilv: 34, items: 10 },
-  r50: { n: '석상왕', lv: 50, map: 'raid3', exp: 5000000, ilv: 55, items: 18 },
-  r40: { n: '심연의 문어왕', lv: 40, map: 'raid4', exp: 1800000, ilv: 45, items: 12, lives: 4, min3: 1 },
-  r70: { n: '시계탑 마왕', lv: 70, map: 'raid5', exp: 18000000, ilv: 75, items: 24, lives: 5, min3: 1 }
+  r10: { n: '버섯브로콜리', lv: 10, map: 'raid1', exp: 60000, ilv: 14, items: 2, mat: '합체 포자' },
+  r30: { n: '티라노', lv: 30, map: 'raid2', exp: 600000, ilv: 34, items: 3, mat: '메가 공룡 비늘' },
+  r50: { n: '석상왕', lv: 50, map: 'raid3', exp: 5000000, ilv: 55, items: 5, mat: '분노의 핵' },
+  r40: { n: '심연의 문어왕', lv: 40, map: 'raid4', exp: 1800000, ilv: 45, items: 4, lives: 4, min3: 1, mat: '문어왕의 먹물' },
+  r70: { n: '시계탑 마왕', lv: 70, map: 'raid5', exp: 18000000, ilv: 75, items: 6, lives: 5, min3: 1, mat: '시간의 톱니' }
 };
 for (const k in RAIDS) Object.assign(RAIDS[k], { id: k, st: 'idle', mem: new Set(), haz: [], ph: 0 });
 const LOBBY_MS = 20000;
@@ -1003,14 +1040,15 @@ function raidMobDied(mo, p) {
 function raidWin(Rd, p, mo) {
   const m = MAPS[Rd.map], ps = rmem(Rd).filter(q => q.map === m.id);
   const each = Math.round(Rd.exp / Math.max(1, ps.length));
+  for (const q of ps) { giveItem(q, stackItem('mat', Rd.mat, Rd.mat, 1)); say(q, 'loot', `🧩 레이드 재료 [${Rd.mat}] 획득! (냉동참치 보따리 재료)`, '#a5d8ff'); }
   for (const q of ps) { addExp(q, each); q.gold += Math.round(Rd.exp / 20 / Math.max(1, ps.length)); q.dirty = 1; say(q, 'loot', `🏆 레이드 클리어! +${Math.round(each * EXPM)}exp (참여자 ${ps.length}명 분배)`); }
   m.mobs.length = 0; Rd.haz = [];
-  const items = []; for (let i = 0; i < Rd.items; i++) items.push(buildEquip(pick(['weapon', 'armor', 'helm']), Rd.ilv, Rd.id === 'r50' ? R(3, 4) : rollRarity(true)));
-  items.push(mkScroll('enh', Rd.items), mkScroll('ward', Math.ceil(Rd.items / 3)), mkGold(Rd.exp / 30 | 0));
-  if (Rd.id !== 'r10' && Math.random() < (Rd.id === 'r50' ? 1 : .3)) items.push(hiddenEquip(pick(['weapon', 'armor']), Rd.ilv));
-  if (Rd.id === 'r50') items.push({ id: db.iid++, type: 'helm', b: 4, r: 5, il: 60, plus: 0, n: '석상왕의 왕관', atkb: 120, defb: 40, hpb: 800 });
+  const items = []; for (let i = 0; i < Rd.items; i++) items.push(buildEquip(pick(['weapon', 'armor', 'helm']), Rd.ilv, rollRarity(true)));
+  items.push(mkScroll('enh', Math.ceil(Rd.items / 2)), mkGold(Rd.exp / 60 | 0)); if (Math.random() < .4) items.push(mkScroll('ward', 1));
+  if (Rd.id !== 'r10' && Math.random() < ({ r30: .03, r40: .05, r50: .08, r70: .12 }[Rd.id] || 0)) items.push(hiddenEquip(pick(['weapon', 'armor']), Rd.ilv));
+  if (Rd.id === 'r50' && Math.random() < .3) items.push({ id: db.iid++, type: 'helm', b: 4, r: 5, il: 60, plus: 0, n: '석상왕의 왕관', atkb: 120, defb: 40, hpb: 800 });
   if (Rd.id === 'r50') { for (const it of items) dropGround(m, R(2, m.w - 3), R(2, m.h - 3), it, 0); } else spreadDrop(m, mo.x, mo.y, items, 0);
-  sendAll({ t: 'notice', m: `🏆 ${Rd.n} 레이드 클리어!! (${ps.map(q => q.name).join(', ')})${Rd.id === 'r50' ? ' 👑 석상왕의 왕관이 떨어졌다!' : ''}`, c: '#ffe066', big: 1 });
+  sendAll({ t: 'notice', m: `🏆 ${Rd.n} 레이드 클리어!! (${ps.map(q => q.name).join(', ')})${items.some(i => i.n === '석상왕의 왕관') ? ' 👑 석상왕의 왕관이 떨어졌다!' : ''}`, c: '#ffe066', big: 1 });
   sendAll({ t: 'kill', a: who(p), boss: Rd.n + ' 레이드', map: m.name });
   Rd.st = 'done'; Rd.endAt = now() + 45000; Rd.ph = 0;
   for (const q of ps) say(q, 'sys', '45초 안에 바닥의 보상을 주우세요! (F키)');
@@ -1180,7 +1218,7 @@ function raidTick(t) {
 /* ===================== 접속/메시지 ===================== */
 const app = express(); app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app); const wss = new WebSocketServer({ server, maxPayload: 8192 });
-const INIT = { t: 'init', TIER1_LV, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), MON: MON.map(m => ({ raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), MON: MON.map(m => ({ raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
@@ -1239,7 +1277,9 @@ function onMsg(p, m) {
       p.bub = s; p.bubT = t + 4000; sendAll({ t: 'chat', ch: 'all', n: p.name, f: p.faction, m: s, map: mp.name }); break;
     }
     case 'use': {
-      const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || it.type !== 'potion' || p.dead) return;
+      const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.dead) return;
+      if (it.type === 'bundle') { useTunaBag(p, it); break; }
+      if (it.type !== 'potion') return;
       const [hr, mr] = POTS[it.k] || [0, 0];
       if (hr) { const v = Math.max(100, Math.round(p.mhp * hr)); p.hp = Math.min(p.mhp, p.hp + v); bc(p.map, { t: 'dm', x: p.x, y: p.y, v, c: '#69db7c' }); }
       if (mr) p.mp = Math.min(p.mmp, p.mp + Math.max(60, Math.round(p.mmp * mr)));
@@ -1253,6 +1293,7 @@ function onMsg(p, m) {
     case 'unequip': { const sl = m.slot; if (!p.eq[sl] || p.inv.length >= MAXINV) return; p.inv.push(p.eq[sl]); p.eq[sl] = null; stats(p); p.dirty = 1; break; }
     case 'enh': enhance(p, m.id | 0, !!m.ward, !!m.bless); break;
     case 'compose': compose(p, (m.ids || []).map(Number).slice(0, 3)); break;
+    case 'craft': if (m.k === 'tuna') craftTuna(p); break;
     case 'sell': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id)) return; p.gold += sellPrice(it); p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1; break; }
     case 'drop': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id) || p.dead) return; p.inv.splice(p.inv.indexOf(it), 1); dropGround(mp, p.x, p.y, it, 0); p.dirty = 1; say(p, 'sys', `🗑️ ${itemLabel(it)}을(를) 바닥에 버렸어요 (누구나 주울 수 있어요)`);
       if (isEq(it) && it.r >= 3) sendAll({ t: 'notice', m: `🗑️ ${p.name}님이 ${itemLabel(it)}을(를) 바닥에 버렸다!`, c: RAR[it.r].c }, p.map); break; }
