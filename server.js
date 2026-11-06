@@ -1216,7 +1216,13 @@ function royaleTick(t) {
 }
 
 /* ===================== 접속자 목록 ===================== */
-function sendWho() { sendAll({ t: 'who', l: [...players.values()].map(p => [p.name, p.faction, p.job, p.lv, MAPS[p.map].name, p.admin ? 1 : 0, p.title || '']), zr: db.zrank || null }); }
+function sendWho() { sendAll({ t: 'who', l: [...players.values()].map(p => [p.name, p.faction, p.job, p.lv, MAPS[p.map].name, p.admin ? 1 : 0, p.title || '']), zr: db.zrank || null, top: lvTop() }); }
+// 레벨 랭킹 TOP3 (오프라인 포함, 관리자 제외)
+function lvTop() {
+  const on = new Map([...players.values()].filter(p => !p.admin).map(p => [p.name, p])), L = [];
+  for (const [n, a] of Object.entries(db.acc)) { if (n === ADMIN) continue; const c = on.get(n) || a.ch; if (c && c.lv) L.push([n, c.faction, c.job, c.lv, on.has(n) ? 1 : 0, c.title || '', c.exp || 0]); }
+  return L.sort((x, y) => y[3] - x[3] || y[6] - x[6]).slice(0, 3).map(r => r.slice(0, 6));
+}
 
 /* ===================== 🧟 좀비 습격 이벤트 (관리자) ===================== */
 const TITLES = {

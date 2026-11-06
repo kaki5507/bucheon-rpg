@@ -28,7 +28,7 @@ const fxs = [], dmgs = [];
 const cds = {};
 let ws = null, myId = 0, faction = '', WHO = [], EVT = 1;
 const WARN = [], HZ = [];
-let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, STAG = null, GTS = null, GTOFF = 0;
+let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, LTOP = [], STAG = null, GTS = null, GTOFF = 0;
 const MARKS = {};
 
 /* ============ 로그인 ============ */
@@ -90,7 +90,7 @@ function onMsg(m) {
     case 'dlg': showDlg(m); break;
     case 'notice': notice(m.m, m.c, m.big, m.small); if (!m.small) LOG.push(`<span style="color:${m.c || '#fff'}">${esc(m.m)}</span>`); break;
     case 'kill': killFeed(m); break;
-    case 'who': WHO = m.l; ZR = m.zr || null; renderWho(); break;
+    case 'who': WHO = m.l; ZR = m.zr || null; LTOP = m.top || []; renderWho(); break;
     case 'evt': EVT = m.mult; $('#evbadge').classList.toggle('hidden', EVT <= 1); $('#evbadge').textContent = `🔥 경험치 ${EVT}배 이벤트`; break;
     case 'warn': WARN.push({ tiles: m.tiles, t0: now(), until: now() + m.ms, c: m.c }); break;
     case 'hz': HZ.push({ tiles: m.tiles, t0: now(), c: m.c }); break;
@@ -1098,7 +1098,9 @@ function renderHelp() {
 /* ============ 접속자 목록 (오른쪽 서랍) ============ */
 function renderWho() {
   $('#whotab').textContent = `👥 ${WHO.length}`;
-  $('#wholist').innerHTML = `<div style="font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">👥 접속자 ${WHO.length}명<button onclick="setWho(false)">✕</button></div>` + WHO.map(([n, f, j, l, mp, ad, tt]) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j], TT = tt && D && D.TITLES[tt]; return `<div class="wrow"><div><span style="color:${F[1]}">[${F[0]}]</span> ${ad ? '👑' : ''}${esc(n)} <span class="small">Lv${l}</span>${TT ? ` <span class="small" style="color:${TT.c}">${esc(TT.n)}</span>` : ''}</div><div class="small">${J ? J.icon + J.n : ''} · 📍${esc(mp)}</div></div>`; }).join('')
+  $('#wholist').innerHTML = `<div style="font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">👥 접속자 ${WHO.length}명<button onclick="setWho(false)">✕</button></div>`
+    + (LTOP.length ? `<div style="color:#ffd43b;margin-bottom:4px">🏆 레벨 랭킹</div>` + LTOP.map(([n, f, j, l, on, tt], i) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j], TT = tt && D && D.TITLES[tt]; return `<div class="wrow" style="border-color:${['#ffd43b', '#ced4da', '#e8590c'][i]}"><div>${['🥇', '🥈', '🥉'][i]} <span style="color:${F[1]}">[${F[0]}]</span> ${esc(n)} <span class="small">Lv${l}</span>${TT ? ` <span class="small" style="color:${TT.c}">${esc(TT.n)}</span>` : ''}</div><div class="small">${J ? J.icon + J.n + ' · ' : ''}${on ? '🟢 접속 중' : '⚫ 오프라인'}</div></div>`; }).join('') + `<div style="margin:10px 0 4px;color:#adb5bd">👥 지금 접속 중</div>` : '')
+    + WHO.map(([n, f, j, l, mp, ad, tt]) => { const F = FACS[f] || ['?', '#fff'], J = D && D.JOBS[j], TT = tt && D && D.TITLES[tt]; return `<div class="wrow"><div><span style="color:${F[1]}">[${F[0]}]</span> ${ad ? '👑' : ''}${esc(n)} <span class="small">Lv${l}</span>${TT ? ` <span class="small" style="color:${TT.c}">${esc(TT.n)}</span>` : ''}</div><div class="small">${J ? J.icon + J.n : ''} · 📍${esc(mp)}</div></div>`; }).join('')
     + (ZR && ZR.list && ZR.list.length ? `<div style="margin-top:12px;color:#8ce99a">🧟 지난 좀비 습격 랭킹</div>` + ZR.list.map(([n, f, k], i) => `<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '.'} <span style="color:${(FACS[f] || ['', '#fff'])[1]}">${esc(n)}</span></span><b>${k}</b></div>`).join('') : '');
 }
 function renderGT() {
