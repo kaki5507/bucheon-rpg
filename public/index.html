@@ -36,7 +36,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 .bar i{display:block;height:100%;transition:width .2s}
 .bar span{position:absolute;inset:0;text-align:center;font-size:11px;line-height:14px;text-shadow:0 1px 1px #000}
 #hpb i{background:linear-gradient(#ff8787,#e03131)} #mpb i{background:linear-gradient(#74c0fc,#1c7ed6)} #xpb i{background:linear-gradient(#ffe066,#f59f00)}
-#mapname{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 14px;font-size:16px;white-space:nowrap}
+#mapname{cursor:pointer;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 14px;font-size:16px;white-space:nowrap}
 #menu{position:fixed;right:10px;top:10px;z-index:5;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:50vw}
 #menu button{padding:4px 8px;font-size:13px}
 /* 스킬바 */
@@ -48,9 +48,24 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 .sk.pot{font-size:20px}.sk .pq{position:absolute;right:3px;bottom:1px;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
 /* 채팅 */
 #chat{position:fixed;left:10px;bottom:10px;width:min(380px,calc(100vw - 20px));z-index:6}
-#log{height:170px;overflow-y:auto;background:#0d0a1ccc;border:2px solid var(--line);border-radius:12px 12px 0 0;padding:6px 8px;font-size:13px;line-height:1.35;user-select:text}
-#log div{word-break:break-all}
-#chatin{width:100%;border-radius:0 0 12px 12px;font-size:14px;padding:7px 9px}
+#cfeed{position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:8;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;width:min(520px,90vw)}
+#cfeed div{background:#0008;border-radius:8px;padding:1px 9px;font-size:13px;text-shadow:0 1px 2px #000;transition:opacity .5s;max-width:100%;word-break:break-all}
+#sfeed{position:fixed;left:10px;bottom:62px;z-index:6;display:flex;flex-direction:column;gap:2px;pointer-events:none;max-width:min(360px,60vw)}
+#sfeed div{font-size:12px;text-shadow:0 1px 2px #000,0 0 3px #000;transition:opacity .5s}
+#chatbtns{position:fixed;left:10px;bottom:12px;z-index:7;display:flex;gap:6px}#chatbtns button{font-size:18px;padding:4px 10px;opacity:.85}
+#chatwrap{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);z-index:30;display:flex;gap:6px;width:min(520px,94vw)}#chatwrap input{flex:1}
+.logbox{max-height:55vh;overflow-y:auto;font-size:13px;line-height:1.45;user-select:text}
+.notice.sm{font-size:13px;padding:3px 10px;border-width:1px}
+#evbadge{position:fixed;top:10px;left:250px;z-index:6;background:#e8590c;color:#fff;border-radius:10px;padding:4px 10px;font-size:13px;animation:pop .4s}
+#whotab.open{right:min(260px,78vw)}
+#whotab{transition:right .25s;position:fixed;right:0;top:45%;z-index:36;border-radius:10px 0 0 10px;padding:8px 6px;font-size:13px;writing-mode:horizontal-tb}
+#who{position:fixed;right:0;top:0;bottom:0;width:min(260px,78vw);z-index:35;background:var(--panel);border-left:3px solid var(--line);transform:translateX(100%);transition:transform .25s;overflow-y:auto;padding:12px}
+#who.open{transform:none;box-shadow:-6px 0 20px #0008}
+.wrow{border-bottom:1px solid #4a3f72;padding:6px 0;font-size:14px}
+.wmap{position:relative;height:min(52vh,420px);background:#120e22;border-radius:12px;border:2px solid var(--line)}
+.wmap svg{position:absolute;inset:0;width:100%;height:100%}
+.wnode{position:absolute;transform:translate(-50%,-50%);background:#3b3163;border:2px solid #b197fc;border-radius:10px;padding:3px 7px;font-size:12px;text-align:center;white-space:nowrap}
+.wnode .small{font-size:10px}.wnode.dim{opacity:.35;border-color:#5b4d8a;filter:grayscale(1)}.wnode.cur{border-color:#ffd43b;box-shadow:0 0 10px #ffd43b}
 .c-sys{color:#ffe066}.c-loot{color:#8ce99a}.c-w{color:#f783ac}.c-all{color:#91a7ff}
 /* 패널 */
 .panel{position:fixed;z-index:20;background:var(--panel);border:3px solid var(--line);border-radius:16px;padding:12px;max-height:calc(100vh - 20px);overflow:auto;width:min(460px,calc(100vw - 20px));left:50%;top:50%;transform:translate(-50%,-50%)}
@@ -100,7 +115,7 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
  #hud{width:168px;font-size:11px;padding:6px 8px;left:6px;top:6px}
  #menu{top:6px;right:6px;max-width:150px}#menu button{font-size:17px;padding:3px 7px}#menu button span{display:none}
  #mapname{top:auto;bottom:182px;left:12px;transform:none;font-size:12px;padding:2px 8px}
- #chat{top:134px;bottom:auto;left:6px;width:min(250px,64vw)}#log{height:72px;font-size:11px;background:#0d0a1c99}#chatin{font-size:13px;padding:5px 7px}
+ #chatbtns{left:12px;bottom:226px}#chatbtns button{font-size:16px;padding:3px 8px}#sfeed{top:120px;bottom:auto;left:6px}#sfeed div{font-size:11px}#cfeed{top:26%}#cfeed div{font-size:12px}#chatwrap{bottom:auto;top:70px}#evbadge{left:6px;top:150px;font-size:11px}#notices{top:176px!important}
  #skills{left:auto;right:8px;bottom:110px;transform:none;flex-wrap:wrap;justify-content:flex-end;width:170px}
  .sk{width:46px;height:46px;font-size:10px}.sk.pot{font-size:17px}
  #skills{width:200px}
@@ -144,10 +159,16 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
   <div id="mapname"></div>
   <div id="menu">
     <button data-p="inv">🎒<span>가방(I)</span></button><button data-p="eq">🛡️<span>장비(E)</span></button><button data-p="quest">📜<span>퀘스트(Q)</span></button>
-    <button data-p="shop">🏪<span>상점(B)</span></button><button data-p="job">🌟<span>직업(J)</span></button><button data-p="help">❓<span>도움말</span></button><button data-p="adm" id="admbtn" class="hidden" style="background:#7048e8">👑<span>관리자(P)</span></button>
+    <button data-p="shop">🏪<span>상점(B)</span></button><button data-p="job">🌟<span>직업(J)</span></button><button data-p="world">🗺️<span>월드맵(M)</span></button><button data-p="help">❓<span>도움말</span></button><button data-p="adm" id="admbtn" class="hidden" style="background:#7048e8">👑<span>관리자(P)</span></button>
   </div>
   <div id="skills"></div>
-  <div id="chat"><div id="log"></div><input id="chatin" placeholder="Enter: 채팅 · !전체채팅 · /w 이름 귓말" maxlength="80"></div>
+  <div id="cfeed"></div>
+  <div id="sfeed"></div>
+  <div id="chatbtns"><button id="chatbtn">💬</button><button id="logbtn">📜</button></div>
+  <div id="chatwrap" class="hidden"><input id="chatin" placeholder="모두에게 채팅 (/w 이름 내용 = 귓속말)" maxlength="80"><button id="chatsend" class="pri">전송</button></div>
+  <div id="evbadge" class="hidden"></div>
+  <button id="whotab">👥 0</button>
+  <div id="who"><div id="wholist"></div></div>
   <div id="pad">
     <button data-d="3" style="left:52px;top:0">▲</button><button data-d="1" style="left:0;top:52px">◀</button>
     <button data-d="2" style="left:104px;top:52px">▶</button><button data-d="0" style="left:52px;top:104px">▼</button>
@@ -163,6 +184,8 @@ input{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;bor
 <div id="pjob" class="panel hidden"></div>
 <div id="phelp" class="panel hidden"></div>
 <div id="padm" class="panel hidden"></div>
+<div id="plog" class="panel hidden"></div>
+<div id="pworld" class="panel hidden" style="width:min(640px,calc(100vw - 20px))"></div>
 <div id="pdlg" class="panel hidden" style="top:auto;bottom:90px;transform:translateX(-50%);z-index:25"></div>
 <div id="ppk" class="panel hidden"></div>
 <div id="tip" class="hidden"></div>
