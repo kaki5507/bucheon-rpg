@@ -92,6 +92,8 @@ const MON = [
   ['rmushbroc', '버섯브로콜리', 'mushbroc', '#74b816', 16000, 34, 0, 0, 14, '합체 포자', 1],
   ['rdino', '티라노', 'dino', '#5c940d', 45000, 72, 0, 0, 32, '공룡 이빨', 1], ['rdino2', '메가 티라노', 'dino', '#c92a2a', 80000, 96, 0, 0, 34, '메가 공룡 비늘', 1],
   ['zarm', '석상왕의 팔', 'arm', '#868e96', 12000, 92, 0, 0, 50, '석상 파편', 1], ['zbody', '석상왕', 'statue', '#adb5bd', 160000, 120, 0, 0, 52, '석상왕의 핵', 1],
+  ['kraken', '심연의 문어왕', 'kraken', '#5f3dc4', 90000, 112, 0, 0, 42, '문어왕의 먹물', 1], ['tentacle', '문어 촉수', 'tentacle', '#7048e8', 9000, 82, 0, 0, 40, '촉수 조각', 1],
+  ['clockking', '시계탑 마왕', 'clock', '#fab005', 220000, 185, 0, 0, 72, '시간의 톱니', 1], ['clockclone', '마왕의 분신', 'clock', '#868e96', 25000, 140, 0, 0, 70, '분신 파편', 1],
   ['zbody2', '분노한 석상왕', 'statue', '#c92a2a', 160000, 150, 0, 0, 55, '분노의 핵', 1],
   // ===== 보스 =====
   ['kingslime', '대왕슬라임', 'blob', '#7ed957', 1100, 16, 600, 300, 4, '왕젤리', 1], ['bunnyking', '대왕토끼', 'bunny', '#ffffff', 1500, 19, 800, 380, 5, '황금당근', 1],
@@ -108,7 +110,7 @@ const MON = [
 ].map((a, i) => ({ idx: i, id: a[0], n: a[1], s: a[2], c: a[3], hp: a[4], atk: a[5], xp: a[6], g: a[7], lv: a[8], mat: a[9], boss: a[10] || 0 }));
 const MI = {}; MON.forEach(m => MI[m.id] = m);
 const tp0 = o => MON[o.t];
-for (const [k, b] of [['rmush', 3.0], ['rbroc', 3.0], ['rmushbroc', 4.4], ['rdino', 3.8], ['rdino2', 4.8], ['zarm', 1.9], ['zbody', 5.2], ['zbody2', 5.6]]) Object.assign(MI[k], { raid: 1, big: b, novar: 1 });
+for (const [k, b] of [['kraken', 5.0], ['tentacle', 1.8], ['clockking', 5.4], ['clockclone', 3.4], ['rmush', 3.0], ['rbroc', 3.0], ['rmushbroc', 4.4], ['rdino', 3.8], ['rdino2', 4.8], ['zarm', 1.9], ['zbody', 5.2], ['zbody2', 5.6]]) Object.assign(MI[k], { raid: 1, big: b, novar: 1 });
 // 보스 스킬 (주변 범위 공격, stun/slow 가능)
 const BSK = {
   kingslime: { n: '점프 착지', r: 2, m: 1.5, c: '#7ed957' }, bunnyking: { n: '당근 폭격', r: 2.5, m: 1.4, c: '#ff922b' },
@@ -262,6 +264,9 @@ const QUESTS = [
 const NPCS = {
   gate10: { n: '🍄 Lv10 레이드 안내원', look: { ar: [1, 2], he: [1, 2], w: [5, 2, 0] }, hi: [] },
   gate30: { n: '🦖 Lv30 레이드 안내원', look: { ar: [4, 3], he: [2, 3], w: [6, 3, 0] }, hi: [] },
+  merchant: { n: '🛒 잡화상인', look: { ar: [1, 0], he: [0, 0] }, hi: ['포션이랑 주문서 있어요~'] },
+  gate40: { n: '🐙 Lv40 레이드 안내원 (3인↑)', look: { ar: [1, 3], he: [3, 3], w: [5, 3, 0] }, hi: [] },
+  gate70: { n: '🕰️ Lv70 레이드 안내원 (3인↑)', look: { ar: [3, 5], he: [4, 5], w: [4, 5, 0] }, hi: [] },
   gate50: { n: '🗿 Lv50 레이드 안내원', look: { ar: [3, 4], he: [4, 4], w: [7, 4, 0] }, hi: [] },
   chief: { n: '이장님', look: { ar: [3, 0], he: [1, 0] }, hi: ['오늘도 평화로운 동네일세.', '마을 오른쪽 포탈로 나가면 상동역 술집거리야.'] },
   pocha: { n: '포차 이모', look: { ar: [2, 0], he: [1, 1], w: [1, 0, 0] }, hi: ['어서 와~ 오늘 꼬치 맛있어!', '위쪽 포탈로 가면 사우나야. 피로 풀고 와~'] },
@@ -283,8 +288,10 @@ function qReady(p, q) {
   if (q.to) return false;
   return p.q[q.id] >= q.cnt;
 }
-const SHOP = [{ k: 'enh', n: '강화 주문서', p: 400 }, { k: 'ward', n: '보호 주문서', p: 1500 }, { k: 'hp', n: 'HP포션', p: 40 }, { k: 'mp', n: 'MP포션', p: 40 }];
-const need = lv => Math.floor(30 * Math.pow(lv, 1.7));
+const SHOP = [{ k: 'hp', n: 'HP포션 (40% 회복)', p: 40 }, { k: 'mp', n: 'MP포션 (40% 회복)', p: 40 }, { k: 'hp2', n: '고급 HP포션 (75% 회복)', p: 160 }, { k: 'mp2', n: '고급 MP포션 (75% 회복)', p: 160 },
+  { k: 'elixir', n: '엘릭서 (HP·MP 완전 회복)', p: 1200 }, { k: 'enh', n: '강화 주문서', p: 400 }, { k: 'bless', n: '축복 주문서 (강화 성공률 +15%)', p: 3000 }, { k: 'ward', n: '보호 주문서 (파괴 방지)', p: 1500 }];
+const POTS = { hp: [.4, 0], mp: [0, .4], hp2: [.75, 0], mp2: [0, .75], elixir: [1, 1] };
+const need = lv => Math.floor(30 * Math.pow(lv, 1.7) * (lv >= 30 ? 1 + (lv - 29) * 0.12 : 1)); // Lv30부터 점점 느리게
 
 /* ===================== 맵 ===================== */
 function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -297,7 +304,7 @@ const THEME = {
   gym: { edge: 'G', obs: [['m', .5], ['d', .3], ['k', .2]] },          // 벽, 운동기구, 덤벨랙, 벤치
   hall: { edge: 'H', obs: [['c', .35], ['f', .35], ['k', .3]] },        // 벽, 기둥, 화분, 책상
   sauna: { edge: 'S', obs: [['h', .7], ['k', .3]] },                    // 벽, 온탕, 평상
-  altar: { edge: 'W', obs: [['r', 1]] }, arena1: { edge: 'W', obs: [['r', 1]] }, arena2: { edge: 'W', obs: [['r', 1]] }, arena3: { edge: 'W', obs: [['r', 1]] }
+  altar: { edge: 'W', obs: [['r', 1]] }, arena4: { edge: 'W', obs: [['r', 1]] }, arena5: { edge: 'W', obs: [['r', 1]] }, arena1: { edge: 'W', obs: [['r', 1]] }, arena2: { edge: 'W', obs: [['r', 1]] }, arena3: { edge: 'W', obs: [['r', 1]] }
 };
 function mk(id, o) {
   const { w, h, theme, seed, dens } = o, rnd = mulberry(seed), t = [], TH = THEME[theme];
@@ -338,20 +345,21 @@ mk('bucheon', {
   name: '부천 들판', w: VW, h: VH, theme: 'grass', seed: 101, dens: .06, lvr: '1~7',
   portals: [{ x: 26, y: VH - 1, to: 'pub', tx: 4, ty: 17 }, { x: 26, y: 20, to: 'bosshub', tx: 13, ty: 12 }],
   safes: FK.map(f => ({ x0: VILLAGE[f].x, y0: VILLAGE[f].y, x1: VILLAGE[f].x + 10, y1: VILLAGE[f].y + 7, f, label: '🏠 ' + FAC[f].n + ' 마을' })),
-  npcs: FK.map(f => ({ id: 'chief', x: VILLAGE[f].x + 5, y: VILLAGE[f].y + 1 })),
+  npcs: FK.flatMap(f => [{ id: 'chief', x: VILLAGE[f].x + 5, y: VILLAGE[f].y + 1 }, { id: 'merchant', x: VILLAGE[f].x + 8, y: VILLAGE[f].y + 3 }]),
   pool: ['slime', 'bunny', 'mush', 'bee', 'crab', 'cat', 'pigeon'], cnt: 55, boss: ['kingslime', 'bunnyking', 'babpuli', 'babpuli']
 });
 // 보스 대기실 + 레이드 맵 (한 번에 한 팀만)
 mk('bosshub', {
   name: '⚔️ 보스 대기실', w: 27, h: 16, theme: 'altar', seed: 5, dens: 0, lvr: '레이드',
   portals: [{ x: 13, y: 15, to: 'bucheon', tx: 26, ty: 22 }], safes: [{ all: 1, label: '⚔️ 보스 대기실 · 안내원에게 말 걸어 레이드 참여' }], spawn: { x: 13, y: 12 },
-  npcs: [{ id: 'gate10', x: 6, y: 5 }, { id: 'gate30', x: 13, y: 4 }, { id: 'gate50', x: 20, y: 5 }]
+  npcs: [{ id: 'gate10', x: 4, y: 5 }, { id: 'gate30', x: 9, y: 4 }, { id: 'gate40', x: 13, y: 3 }, { id: 'gate50', x: 17, y: 4 }, { id: 'gate70', x: 22, y: 5 }]
 });
-for (const [id, nm, w, h, th] of [['raid1', '🍄 버섯브로콜리 레이드', 30, 20, 'arena1'], ['raid2', '🦖 티라노 레이드', 32, 22, 'arena2'], ['raid3', '🗿 석상왕 레이드', 34, 24, 'arena3']])
+for (const [id, nm, w, h, th] of [['raid1', '🍄 버섯브로콜리 레이드', 30, 20, 'arena1'], ['raid2', '🦖 티라노 레이드', 32, 22, 'arena2'], ['raid3', '🗿 석상왕 레이드', 34, 24, 'arena3'], ['raid4', '🐙 심연의 문어왕 레이드', 34, 24, 'arena4'], ['raid5', '🕰️ 시계탑 마왕 레이드', 36, 26, 'arena5']])
   mk(id, { name: nm, w, h, theme: th, seed: 9, dens: 0, lvr: '레이드', portals: [{ x: 0, y: h - 3, to: 'bosshub', tx: 13, ty: 12 }], spawn: { x: w >> 1, y: h - 3 } });
+mk('royale', { name: '🔥 무한장', w: 44, h: 32, theme: 'grass', seed: 77, dens: .05, lvr: '이벤트', portals: [], spawn: { x: 22, y: 16 } });
 const SZ = (cy, label) => [{ x0: 1, y0: cy - 3, x1: 7, y1: cy + 3, label: label || '🏕️ 안전지대' }];
 mk('pub', {
-  name: '상동역 술집거리', w: 50, h: 34, theme: 'street', seed: 7, dens: .08, lvr: '8~13', npcs: [{ id: 'pocha', x: 4, y: 15 }], safes: SZ(17), spawn: { x: 4, y: 17 },
+  name: '상동역 술집거리', w: 50, h: 34, theme: 'street', seed: 7, dens: .08, lvr: '8~13', npcs: [{ id: 'pocha', x: 4, y: 15 }, { id: 'merchant', x: 6, y: 19 }], safes: SZ(17), spawn: { x: 4, y: 17 },
   portals: [{ x: 0, y: 17, to: 'bucheon', tx: 38, ty: VH - 3 }, { x: 49, y: 17, to: 'gym', tx: 2, ty: 15 }, { x: 25, y: 0, to: 'sauna', tx: 15, ty: 17 }],
   pool: ['bat', 'beer', 'ghost', 'soju', 'skewer', 'pumpkin', 'golbaeng', 'rat'], cnt: 46, boss: ['mushking', 'drunkwhale', 'seunghyun', 'seunghyun']
 });
@@ -429,7 +437,7 @@ function hiddenEquip(type, il) {
 }
 const genEquip = (il, boss, type) => buildEquip(type || pick(['weapon', 'weapon', 'armor', 'helm']), il, rollRarity(boss));
 const stackItem = (type, k, n, q) => ({ id: db.iid++, type, k, n, q });
-const SN = { enh: '강화 주문서', ward: '보호 주문서', hp: 'HP포션', mp: 'MP포션' };
+const SN = { enh: '강화 주문서', ward: '보호 주문서', bless: '축복 주문서', hp: 'HP포션', mp: 'MP포션', hp2: '고급 HP포션', mp2: '고급 MP포션', elixir: '엘릭서' };
 const mkScroll = (k, q) => stackItem('scroll', k, SN[k], q), mkPot = (k, q) => stackItem('potion', k, SN[k], q);
 function giveItem(p, it) {
   if (!isEq(it)) { const s = p.inv.find(i => i.type === it.type && i.k === it.k); if (s) { s.q += it.q; p.dirty = 1; return true; } }
@@ -457,8 +465,9 @@ function pickUp(p) {
 }
 const itemLabel = it => it.type === 'gold' ? `💰 ${it.q}G` : isEq(it) ? `[${RAR[it.r].n}] ${it.n}${it.plus ? ' +' + it.plus : ''}` : `${it.n}${it.q > 1 ? ' x' + it.q : ''}`;
 const sellPrice = it => isEq(it) ? Math.round((20 + it.il * 8) * RAR[it.r].m * RAR[it.r].m) + it.plus * 50 : it.type === 'scroll' ? (it.k === 'enh' ? 100 : 400) * it.q : it.type === 'potion' ? 10 * it.q : 5 * it.q;
-const enhRate = plus => plus <= 2 ? 100 : Math.max(6, 100 - (plus - 2) * 8);
-const boomRate = plus => plus < 5 ? 0 : Math.min(80, (plus - 4) * 10);
+// 강화 확률: 높이 올릴수록 성공률 ↓, 실패 시 파괴 확률 ↑
+const enhRate = plus => plus <= 2 ? 100 : plus <= 5 ? 100 - (plus - 2) * 10 : Math.max(5, 70 - (plus - 5) * 7);
+const boomRate = plus => plus < 4 ? 0 : plus <= 6 ? (plus - 3) * 10 : Math.min(90, 30 + (plus - 6) * 8);
 
 /* ===================== 플레이어 ===================== */
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 32).toString('hex'); }
@@ -496,7 +505,7 @@ function warp(p, mapId, x, y) {
   const m = MAPS[mapId]; p.map = mapId; p.seen = p.seen || {}; if (!p.seen[mapId]) { p.seen[mapId] = 1; p.dirty = 1; }
   let n = 0; while (occ(m, x, y, p) && n < 20) { x += R(-1, 1); y += R(-1, 1); n++; if (!walk(m, x, y)) { x = m.spawn.x; y = m.spawn.y; } }
   p.x = x; p.y = y; send(p, mapMsg(m));
-  const Rd = Object.values(RAIDS || {}).find(r => r.map === mapId); if (Rd) { send(p, { t: 'mood', m: Rd.mood || '' }); send(p, { t: 'plates', l: (Rd.plates || []).map(q => [q.x, q.y, q.ci, q.on > now() ? 1 : 0]), seq: Rd.seq, i: Rd.seqI || 0 }); }
+  const Rd = Object.values(RAIDS || {}).find(r => r.map === mapId); if (Rd) { send(p, { t: 'mood', m: Rd.mood || '' }); send(p, { t: 'plates', l: (Rd.plates || []).map(q => [q.x, q.y, q.ci, q.on > now() ? 1 : 0]), seq: Rd.seq, i: Rd.seqI || 0, sim: Rd.sim ? 1 : 0, hold: 0 }); }
 }
 function save(p) {
   const a = db.acc[p.name]; if (!a) return;
@@ -538,6 +547,7 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const edist = (a, o) => Math.max(0, dist(a, o) - (o.sz || 0));
 function enemiesOf(p) {
   const m = MAPS[p.map], res = [];
+  if (m.id === 'royale') { if (ROY.st === 'fight' && ROY.alive.has(p.id)) for (const q of players.values()) if (q.map === 'royale' && q !== p && !q.dead && ROY.alive.has(q.id)) res.push({ k: 'p', o: q }); return res; }
   for (const o of m.mobs) if (!o.dead) res.push({ k: 'm', o });
   if (!inSafe(m, p.x, p.y)) for (const q of players.values()) if (q.map === p.map && q !== p && !q.dead && q.faction !== p.faction && !inSafe(m, q.x, q.y)) res.push({ k: 'p', o: q });
   return res;
@@ -547,6 +557,7 @@ function face(p, o) { const dx = o.x - p.x, dy = o.y - p.y; if (Math.abs(dx) > M
 function hit(p, e, mult, s) {
   const t = now();
   if (s && s.stun) e.o.stun = t + (e.k === 'p' ? s.stun * 0.6 : s.stun);
+  if (s && s.slow && s.k !== 'adebuff') { if (e.k === 'm') e.o.slow = t + s.slow; else e.o.bf.spd = [0.45, t + s.slow]; }
   if (s && (s.stun || s.slow) && e.k === 'p') e.o.vdirty = 1;
   let dmg = atkOf(p) * mult * (0.85 + Math.random() * 0.3); const crit = Math.random() < 0.1; if (crit) dmg *= 1.6;
   if (e.k === 'm') { dmg = p.onehit ? e.o.hp : Math.max(1, Math.round(dmg - MON[e.o.t].lv * 0.8)); damageMob(p, e.o, dmg, crit); }
@@ -569,7 +580,8 @@ function damagePlayer(v, dmg, att, crit) {
 function die(v, att) {
   v.dead = 1; v.hp = 0; v.streak = 0; const m = MAPS[v.map];
   bc(v.map, { t: 'fx', k: 'die', x: v.x, y: v.y, c: '#ffffff' });
-  if (att && att.name) {
+  if (v.map === 'royale' && ROY.alive.has(v.id)) { royaleOut(v, att); }
+  else if (att && att.name) {
     // 진영전 사망: 랜덤 아이템 1~3개 드랍
     const cand = v.inv.filter(i => !v.lock.has(i.id)); let n = R(1, 3); const lost = [];
     while (n-- > 0 && cand.length) { const it = cand.splice(R(0, cand.length - 1), 1)[0]; v.inv.splice(v.inv.indexOf(it), 1); dropGround(m, v.x + R(-1, 1), v.y + R(-1, 1), it); lost.push(itemLabel(it)); }
@@ -632,7 +644,8 @@ function castSkill(p, i) {
   const buffs = q => { if (!s.dur) return; if (s.atk) q.bf.atk = [s.atk, t + s.dur]; if (s.def) q.bf.def = [s.def, t + s.dur]; if (s.spd) q.bf.spd = [s.spd, t + s.dur]; };
   const heal = q => { if (!s.heal) return; const v = Math.round(q.mhp * s.heal); q.hp = Math.min(q.mhp, q.hp + v); q.vdirty = 1; bc(p.map, { t: 'dm', x: q.x, y: q.y, v, c: '#69db7c' }); };
   if (s.k === 'aoe') {
-    const l = enemiesOf(p).filter(e => edist(p, e.o) <= s.r + 0.42).slice(0, 10); use(); fx({ k: 'ring', x: p.x, y: p.y, r: s.r }); l.forEach(e => hit(p, e, s.m, s));
+    const l = enemiesOf(p).filter(e => edist(p, e.o) <= s.r + 0.42).slice(0, s.ult ? 20 : 10); use(); fx({ k: 'ring', x: p.x, y: p.y, r: s.r }); l.forEach(e => hit(p, e, s.m, s));
+    if (s.healAll || s.buffAll) for (const q of players.values()) if (q.map === p.map && !q.dead && q.faction === p.faction && dist(p, q) <= s.r + 0.42) { if (s.healAll) { const v = Math.round(q.mhp * s.healAll); q.hp = Math.min(q.mhp, q.hp + v); q.vdirty = 1; bc(p.map, { t: 'dm', x: q.x, y: q.y, v, c: '#69db7c' }); } if (s.buffAll) q.bf.atk = [s.buffAll, t + 10000]; }
   } else if (s.k === 'shot' || s.k === 'multi') {
     const e = nearest(p, s.range); if (!e) return say(p, 'sys', '대상이 없어요'); use(); face(p, e.o);
     const n = s.hits || 1; for (let k = 0; k < n; k++)setTimeout(() => { if (p.dead || e.o.dead) return; fx({ k: s.range > 2 ? 'proj' : 'slash', x: p.x, y: p.y, x2: e.o.x, y2: e.o.y, big: 1 }); hit(p, e, s.m, s); }, k * 220);
@@ -645,7 +658,7 @@ function castSkill(p, i) {
     use(); const m = MAPS[p.map], ox = p.x, oy = p.y;
     for (let k = 0; k < s.dist; k++) { const nx = p.x + DX[p.d], ny = p.y + DY[p.d]; if (!walk(m, nx, ny) || occ(m, nx, ny, p) || m.portals.some(q => q.x === nx && q.y === ny)) break; p.x = nx; p.y = ny; }
     fx({ k: 'dash', x: ox, y: oy, x2: p.x, y2: p.y });
-    enemiesOf(p).filter(e => edist(p, e.o) <= 1.5).slice(0, 8).forEach(e => hit(p, e, s.m, s));
+    { const hr = s.hitR || 1.5; enemiesOf(p).filter(e => Math.min(edist(p, e.o), edist({ x: ox, y: oy }, e.o)) <= hr || (s.hitR && Math.abs((e.o.x - ox) * (p.y - oy) - (e.o.y - oy) * (p.x - ox)) / Math.max(1, Math.hypot(p.x - ox, p.y - oy)) <= hr && Math.min(ox, p.x) - hr <= e.o.x && e.o.x <= Math.max(ox, p.x) + hr && Math.min(oy, p.y) - hr <= e.o.y && e.o.y <= Math.max(oy, p.y) + hr)).slice(0, s.ult ? 20 : 8).forEach(e => hit(p, e, s.m, s)); }
   } else if (s.k === 'abuff') {
     use(); fx({ k: 'abuff', x: p.x, y: p.y, r: s.r });
     for (const q of players.values()) if (q.map === p.map && !q.dead && q.faction === p.faction && dist(p, q) <= s.r + 0.42) { heal(q); buffs(q); }
@@ -675,6 +688,7 @@ function talkNpc(p, id) {
   const npc = npcNear(p, id); if (!npc) return say(p, 'sys', 'NPC에게 더 가까이 가세요');
   const N = NPCS[id], dlg = (lines, acts = []) => send(p, { t: 'dlg', npc: id, name: N.n, look: N.look, lines, acts });
   if (id.startsWith('gate')) return raidDlg(p, 'r' + id.slice(4));
+  if (id === 'merchant') return dlg(['어서 오세요! 포션, 강화 주문서, 축복 주문서 다 있어요~', '강화는 +6부터 조심하세요. 높을수록 잘 터져요!'], [{ k: 'shop', label: '🏪 상점 열기' }, { k: 'close', label: '닫기' }]);
   for (const k in p.q) { const q = QUESTS.find(x => x.id === +k); if (q && q.to === id) { questTurn(p, q.id); const nx = QUESTS.find(x => x.giver === id && qAvail(p, x)); return dlg(q.fin, nx ? [{ k: 'talk', label: '이야기를 계속 듣는다' }] : []); } }
   for (const k in p.q) { const q = QUESTS.find(x => x.id === +k); if (q && q.giver === id && !q.to) {
     if (qReady(p, q)) return dlg(['오, 벌써 해냈어?'], [{ k: 'qt', id: q.id, label: `✅ [${q.n}] 완료 보고` }]);
@@ -687,18 +701,19 @@ function talkNpc(p, id) {
   if (lock && p.lv < lock.lv) return dlg([...N.hi.slice(0, 1), `(Lv.${lock.lv}이 되면 다시 찾아와)`]);
   dlg(N.hi);
 }
-function enhance(p, id, ward) {
+function enhance(p, id, ward, bless) {
   const it = p.inv.find(i => i.id === id) || Object.values(p.eq).find(i => i && i.id === id); if (!it || !isEq(it) || p.lock.has(id)) return;
   const sc = p.inv.find(i => i.type === 'scroll' && i.k === 'enh'); if (!sc) return say(p, 'sys', '강화 주문서가 없어요');
   const cost = (it.plus + 1) * 100; if (p.gold < cost) return say(p, 'sys', `골드가 부족해요 (${cost}G)`);
   const wd = ward ? p.inv.find(i => i.type === 'scroll' && i.k === 'ward') : null; if (ward && !wd) return say(p, 'sys', '보호 주문서가 없어요');
+  const bl = bless ? p.inv.find(i => i.type === 'scroll' && i.k === 'bless') : null; if (bless && !bl) return say(p, 'sys', '축복 주문서가 없어요');
   const use = s => { s.q--; if (s.q <= 0) p.inv.splice(p.inv.indexOf(s), 1); };
-  use(sc); p.gold -= cost; if (wd) use(wd);
+  use(sc); p.gold -= cost; if (wd) use(wd); if (bl) use(bl);
   const equipped = Object.keys(p.eq).find(k => p.eq[k] === it);
-  if (Math.random() * 100 < enhRate(it.plus)) { it.plus++; say(p, 'loot', `✨ 강화 성공! ${itemLabel(it)}`, '#ffe600'); send(p, { t: 'enh', ok: 1 }); if (it.plus >= 10) announce(`🔥 ${p.name}님의 ${it.n}이(가) +${it.plus} 강화 성공!`); }
+  if (Math.random() * 100 < Math.min(100, enhRate(it.plus) + (bl ? 15 : 0))) { it.plus++; say(p, 'loot', `✨ 강화 성공! ${itemLabel(it)}`, '#ffe600'); send(p, { t: 'enh', ok: 1 }); if (it.plus >= 10) announce(`🔥 ${p.name}님의 ${it.n}이(가) +${it.plus} 강화 성공!`); }
   else if (Math.random() * 100 < boomRate(it.plus)) {
     if (wd) { say(p, 'sys', '🛡️ 보호 주문서가 아이템을 지켜줬어요! (강화 실패)'); send(p, { t: 'enh', ok: 0 }); }
-    else { if (equipped) p.eq[equipped] = null; else p.inv.splice(p.inv.indexOf(it), 1); say(p, 'sys', `💥 펑! ${it.n}이(가) 터졌어요...`); send(p, { t: 'enh', ok: -1 }); }
+    else { if (equipped) p.eq[equipped] = null; else p.inv.splice(p.inv.indexOf(it), 1); say(p, 'sys', `💥 펑! ${it.n} +${it.plus}이(가) 터졌어요...`); send(p, { t: 'enh', ok: -1 }); if (it.plus >= 8) sendAll({ t: 'notice', m: `💥 ${p.name}님의 ${it.n} +${it.plus}이(가) 강화하다 터졌습니다…`, c: '#ff8787' }); }
   } else { say(p, 'sys', '강화 실패... (아이템은 무사해요)'); send(p, { t: 'enh', ok: 0 }); }
   stats(p); p.dirty = 1;
 }
@@ -804,8 +819,64 @@ function adminCmd(p, m) {
     case 'pickall': { for (const g of mp.ground) { g.x = p.x; g.y = p.y; g.own = 0; } pickUp(p); return; }
     case 'kill': { for (const o of [...mp.mobs]) if (!o.dead && !o.inv && dist(o, p) <= (mp.id.startsWith('raid') ? 60 : 6)) { damageMob(p, o, o.hp, true); } return; }
     case 'tpnpc': { for (const mm of Object.values(MAPS)) { const n = (mm.npcs || []).find(x => x.id === m.id); if (n) return warp(p, mm.id, n.x, n.y + 1); } return; }
+    case 'royale': return royaleStart(p);
+    case 'royalestop': if (ROY.st !== 'idle') royaleEnd('👑 관리자가 무한장을 종료했어요'); return;
+    case 'tpp': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); const x = m.x == null ? p.x : m.x | 0, y = m.y == null ? p.y : m.y | 0; if (o.map !== p.map) warp(o, p.map, x, y); else if (walk(mp, x, y)) { o.x = x; o.y = y; } return ok(`${o.name} 소환`); }
+    case 'setlv': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); o.lv = Math.max(1, Math.min(99, m.v | 0)); o.exp = 0; stats(o); o.hp = o.mhp; o.dirty = 1; return ok(`${o.name} → Lv${o.lv}`); }
     case 'allboss': { for (const mm of Object.values(MAPS)) if (mm.boss) spawnBoss(mm); return ok('모든 사냥터에 보스 소환'); }
   }
+}
+
+/* ===================== 무한장 (배틀로얄) ===================== */
+const ROY = { st: 'idle', alive: new Set(), all: new Set(), startAt: 0, ring: 0, ringAt: 0, prize: 500000 };
+function royaleStart(admin) {
+  if (ROY.st !== 'idle') return say(admin, 'sys', '👑 무한장이 이미 진행 중이에요');
+  const ps = [...players.values()].filter(q => !q.admin && !q.dead && !games.has(q.id));
+  if (ps.length < 2) return say(admin, 'sys', '👑 무한장은 관리자 제외 2명 이상 접속해 있어야 해요 (현재 ' + ps.length + '명)');
+  const m = MAPS.royale; m.t = m.orig.map(r => r.slice()); m.ground.length = 0;
+  ROY.alive = new Set(ps.map(q => q.id)); ROY.all = new Set(ROY.alive); ROY.st = 'count'; ROY.startAt = now() + 3500; ROY.ring = 0; ROY.prize = Math.max(300000, ps.length * 100000);
+  const n = ps.length;
+  ps.forEach((q, i) => { const a = i / n * Math.PI * 2, x = Math.round(22 + Math.cos(a) * 15), y = Math.round(16 + Math.sin(a) * 11); let tx = x, ty = y; for (let k = 0; k < 30 && !walk(m, tx, ty); k++) { tx = x + R(-2, 2); ty = y + R(-2, 2); } stats(q); q.hp = q.mhp; q.mp = q.mmp; q.bf = {}; warp(q, 'royale', walk(m, tx, ty) ? tx : 22, walk(m, tx, ty) ? ty : 16); q.stun = ROY.startAt; q.dirty = 1; send(q, { t: 'count', ms: 3500 }); });
+  for (const q of ps) send(q, { t: 'roy', n, st: 'count' });
+  sendAll({ t: 'notice', m: `🔥 무한장 이벤트!! ${n}명 참가 — 마지막까지 살아남으면 💰${ROY.prize.toLocaleString()}G`, c: '#ff922b', big: 1 });
+}
+function royaleOut(v, att) {
+  ROY.alive.delete(v.id);
+  for (const id of ROY.all) { const q = players.get(id); if (q) send(q, { t: 'roy', n: ROY.alive.size, st: 'fight' }); }
+  const left = ROY.alive.size, msg = att && att.name ? `💀 ${v.name} 탈락! (${att.name} 처치) · 남은 인원 ${left}명` : `💀 ${v.name} 탈락! · 남은 인원 ${left}명`;
+  for (const id of ROY.all) { const q = players.get(id); if (q) send(q, { t: 'notice', m: msg, c: '#ff8787' }); }
+  if (att && att.name) sendAll({ t: 'kill', a: who(att), v: who(v), map: '🔥 무한장', st: 0, lost: 0 });
+  say(v, 'sys', '💀 무한장에서 탈락했어요');
+}
+function royaleEnd(reason) {
+  const m = MAPS.royale;
+  for (const q of players.values()) if (q.map === 'royale') { q.stun = 0; const vs = villageSpawn(q.faction); warp(q, vs.map, vs.x, vs.y); }
+  for (const id of ROY.all) { const q = players.get(id); if (q) send(q, { t: 'roy', n: 0, st: 'idle' }); }
+  m.t = m.orig.map(r => r.slice()); ROY.st = 'idle'; ROY.alive.clear(); ROY.all.clear(); if (reason) sendAll({ t: 'notice', m: reason, c: '#adb5bd' });
+}
+function royaleTick(t) {
+  if (ROY.st === 'idle') return;
+  const m = MAPS.royale;
+  for (const id of [...ROY.alive]) { const q = players.get(id); if (!q || q.map !== 'royale') ROY.alive.delete(id); }
+  if (ROY.st === 'count') { if (t >= ROY.startAt) { ROY.st = 'fight'; ROY.ringAt = t + 20000; for (const id of ROY.alive) { const q = players.get(id); if (q) send(q, { t: 'notice', m: '⚔️ 무한장 시작!! 진영 상관없이 모두가 적! 자기장을 피하세요', c: '#ff6b6b', big: 1 }); } } return; }
+  if (ROY.st === 'fight') {
+    if (ROY.alive.size <= 1) {
+      const w = players.get([...ROY.alive][0]);
+      if (w) { w.gold += ROY.prize; w.dirty = 1; sendAll({ t: 'notice', m: `🏆 무한장 우승: [${FAC[w.faction].n}] ${w.name}!! 상금 💰${ROY.prize.toLocaleString()}G`, c: '#ffe066', big: 1 }); sendAll({ t: 'kill', a: who(w), boss: '🔥 무한장 우승', map: '무한장' }); bc('royale', { t: 'fx', k: 'lvup', x: w.x, y: w.y, c: '#ffe066' }); }
+      ROY.st = 'end'; ROY.endAt = t + 6000; return;
+    }
+    if (t >= ROY.ringAt && ROY.ring < 6) {
+      ROY.ring++; ROY.ringAt = t + 18000; const wdt = ROY.ring * 2 + 1, tiles = [];
+      for (let y = 1; y < m.h - 1; y++) for (let x = 1; x < m.w - 1; x++) if (Math.min(x, y, m.w - 1 - x, m.h - 1 - y) <= wdt && m.t[y][x] !== 'V') tiles.push([x, y]);
+      bc('royale', { t: 'warn', tiles, ms: 4000, c: '#7048e8' }); for (const id of ROY.alive) { const q = players.get(id); if (q) send(q, { t: 'notice', m: '🌀 자기장이 줄어든다!! 4초 안에 안쪽으로!', c: '#b197fc' }); }
+      setTimeout(() => {
+        if (ROY.st !== 'fight') return; const set = []; for (const [x, y] of tiles) { m.t[y][x] = 'V'; set.push([x, y]); } bc('royale', { t: 'tiles', set, ch: 'V' }); bc('royale', { t: 'shake', ms: 600 });
+        for (const q of players.values()) if (q.map === 'royale' && !q.dead && m.t[q.y][q.x] === 'V') { damagePlayer(q, Math.round(q.mhp * .35), null); if (!q.dead) { q.x = 22 + R(-2, 2); q.y = 16 + R(-1, 1); } }
+      }, 4000);
+    }
+    if (tk % 10 === 0 && ROY.ring >= 6) for (const id of ROY.alive) { const q = players.get(id); if (q && !q.dead) damagePlayer(q, Math.round(q.mhp * .04), null); }
+  }
+  if (ROY.st === 'end' && t >= ROY.endAt) royaleEnd();
 }
 
 /* ===================== 접속자 목록 ===================== */
@@ -815,7 +886,9 @@ function sendWho() { sendAll({ t: 'who', l: [...players.values()].map(p => [p.na
 const RAIDS = {
   r10: { n: '버섯브로콜리', lv: 10, map: 'raid1', exp: 60000, ilv: 14, items: 6 },
   r30: { n: '티라노', lv: 30, map: 'raid2', exp: 600000, ilv: 34, items: 10 },
-  r50: { n: '석상왕', lv: 50, map: 'raid3', exp: 5000000, ilv: 55, items: 18 }
+  r50: { n: '석상왕', lv: 50, map: 'raid3', exp: 5000000, ilv: 55, items: 18 },
+  r40: { n: '심연의 문어왕', lv: 40, map: 'raid4', exp: 1800000, ilv: 45, items: 12, lives: 4, min3: 1 },
+  r70: { n: '시계탑 마왕', lv: 70, map: 'raid5', exp: 18000000, ilv: 75, items: 24, lives: 5, min3: 1 }
 };
 for (const k in RAIDS) Object.assign(RAIDS[k], { id: k, st: 'idle', mem: new Set(), haz: [], ph: 0 });
 const LOBBY_MS = 20000;
@@ -824,7 +897,7 @@ function raidDlg(p, id) {
   const Rd = RAIDS[id]; if (!Rd) return;
   const N = NPCS['gate' + id.slice(1)], names = rmem(Rd).map(q => q.name);
   const stTxt = Rd.st === 'idle' ? '🟢 대기 중 — 참여하면 20초 뒤 다 같이 입장해요' : Rd.st === 'lobby' ? `🟡 모집 중 — ${Math.max(0, Math.ceil((Rd.startAt - now()) / 1000))}초 뒤 출발` : Rd.st === 'fight' ? '🔴 전투 중 — 끝나면 다시 도전할 수 있어요' : '🟣 정리 중 — 잠시 뒤 다시 도전할 수 있어요';
-  const lines = [`[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
+  const lines = [`[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만${Rd.min3 ? '\n⚠️ 3명이 동시에 해야 풀리는 기믹이 있어요 (3인 이상 권장)' : ''}${Rd.lives ? ' · 보스가 ' + (Rd.lives - 1) + '번 부활' : ''}`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
   const acts = [];
   if (Rd.mem.has(p.id) && Rd.st === 'lobby') acts.push({ k: 'raid', id, op: 'start', label: '⚔️ 지금 바로 출발' }, { k: 'raid', id, op: 'leave', label: '참여 취소' });
   else if (Rd.st === 'idle' || Rd.st === 'lobby') { if (p.lv >= Rd.lv || p.admin) acts.push({ k: 'raid', id, op: 'join', label: '🙋 보스 참여' }); else lines.push(`(Lv.${Rd.lv}부터 참여할 수 있어요)`); }
@@ -881,6 +954,9 @@ function raidStart(Rd) {
   const cx = m.w >> 1;
   if (Rd.id === 'r10') { const a = rSpawn(Rd, 'rmush', cx - 6, 7), b = rSpawn(Rd, 'rbroc', cx + 6, 7); rTalk(Rd, a, '버섯 등장!!'); rTalk(Rd, b, '브로콜리도 있다!!'); }
   if (Rd.id === 'r30') { rTalk(Rd, rSpawn(Rd, 'rdino', cx, 6, { inv: 1, shield: 1 }), '크아아아앙!!! 불꽃 갑옷이 나를 지킨다!!'); Rd.plateAt = now() + 4000; rHint(Rd, '🔥 티라노는 불꽃 갑옷(보호막) 상태! 파란 냉각 발판을 모두 밟아 갑옷을 식히세요'); }
+  Rd.left = Rd.lives || 1; Rd.marks = []; Rd.share = null; Rd.tent = [];
+  if (Rd.id === 'r40') { rTalk(Rd, rSpawn(Rd, 'kraken', cx, 7, { still: 1, inv: 1, shield: 1 }), '심연이… 너희를 삼킨다…'); rTentacles(Rd); Rd.plateAt = now() + 4000; rMood(Rd, 'deep'); rHint(Rd, '🐙 문어왕은 보호막 상태! 노란 등대 발판 3개를 3명이 동시에 2초 밟아야 깨져요'); }
+  if (Rd.id === 'r70') { rTalk(Rd, rSpawn(Rd, 'clockking', cx, 9, { still: 1, inv: 1, shield: 1 }), '째깍… 째깍… 너희의 시간은 끝났다.'); Rd.plateAt = now() + 4000; rHint(Rd, '🕰️ 마왕의 보호막! 톱니 발판 3개를 3명이 동시에 밟으세요. 노란 원(운명의 일격)은 3명 이상 모여서 나눠 맞기!'); }
   if (Rd.id === 'r50') {
     const b = rSpawn(Rd, 'zbody', cx, 8, { inv: 1, still: 1 }); rTalk(Rd, b, '…감히 내 잠을 깨우는가.');
     for (const [dx, dy] of [[-7, -3], [-7, 1], [-5, 5], [-2, 7], [2, 7], [5, 5], [7, 1], [7, -3]]) rSpawn(Rd, 'zarm', cx + dx, 8 + dy, { still: 1, armAt: now() + R(3000, 7000) });
@@ -908,6 +984,21 @@ function raidMobDied(mo, p) {
     setTimeout(() => { if (Rd.st !== 'fight') return; rTalk(Rd, rSpawn(Rd, 'zbody2', x, y, { still: 1, inv: 1, shield: 1 }), '이것이… 나의 진짜 힘이다!!!'); Rd.plateAt = now() + 3500;
       for (const [dx, dy] of [[-7, 1], [-2, 7], [2, 7], [7, 1]]) rSpawn(Rd, 'zarm', x + dx, y + dy, { still: 1, armAt: now() + R(3000, 6000) }); }, 1500);
   } else if (Rd.id === 'r50' && key === 'zbody2') raidWin(Rd, p, mo);
+  else if (Rd.id === 'r40' && key === 'tentacle') Rd.tent.push({ x: mo.x, y: mo.y, at: now() + 20000 });
+  else if ((Rd.id === 'r40' && key === 'kraken') || (Rd.id === 'r70' && key === 'clockking')) {
+    if (Rd.left > 1) {
+      Rd.left--; Rd.ph++; Rd.plates = []; rPlates(Rd); Rd.share = null; const x = mo.x, y = mo.y, id = key;
+      sendAll({ t: 'notice', m: id === 'kraken' ? `🐙 문어왕이 심연에서 다시 살아났다!! (남은 목숨 ${Rd.left})` : `⏪ 시간 되감기!! 시계탑 마왕이 부활했다!! (남은 목숨 ${Rd.left})`, c: '#b197fc', big: 1 });
+      bc(Rd.map, { t: 'shake', ms: 1200 });
+      setTimeout(() => {
+        if (Rd.st !== 'fight') return;
+        const b = rSpawn(Rd, id, x, y, { still: 1, inv: 1, shield: 1 }); Rd.plateAt = now() + 3000;
+        rTalk(Rd, b, id === 'kraken' ? pick(['아직이다…!!', '심연은 끝나지 않는다!!', '촉수여 다시 일어나라!!']) : pick(['시간은 내 편이다!!', '되감기!! 처음부터 다시!!', '너희는 영원히 이 시계탑에 갇힌다!!']));
+        if (id === 'kraken') { rTentacles(Rd); if (Rd.left === 1) rCollapse(Rd, 3); }
+        if (id === 'clockking') { if (Rd.ph >= 3) rClones(Rd, b); if (Rd.ph === 4) rMood(Rd, 'dark'); if (Rd.left === 1) rCollapse(Rd, 3); }
+      }, 2500);
+    } else raidWin(Rd, p, mo);
+  }
 }
 function raidWin(Rd, p, mo) {
   const m = MAPS[Rd.map], ps = rmem(Rd).filter(q => q.map === m.id);
@@ -927,35 +1018,54 @@ function raidWin(Rd, p, mo) {
 // ===== 발판 / 그로기 / 맵 변환 =====
 const PCOL = ['#ff6b6b', '#4dabf7', '#51cf66', '#ffd43b', '#da77f2'], PEMO = ['🔴', '🔵', '🟢', '🟡', '🟣'];
 function rClean(Rd) {
-  const m = MAPS[Rd.map]; m.t = m.orig.map(r => r.slice()); Rd.plates = []; Rd.seq = null; Rd.seqI = 0; Rd.plateAt = 0; Rd.coll = 0; Rd.mood = '';
+  const m = MAPS[Rd.map]; m.t = m.orig.map(r => r.slice()); Rd.plates = []; Rd.seq = null; Rd.seqI = 0; Rd.plateAt = 0; Rd.coll = 0; Rd.mood = ''; Rd.sim = 0; Rd.hold = 0; Rd.share = null; Rd.marks = []; Rd.tent = [];
   bc(m.id, { t: 'mood', m: '' }); bc(m.id, mapMsg(m));
 }
 function rHint(Rd, msg) { for (const q of rmem(Rd)) send(q, { t: 'notice', m: msg, c: '#74c0fc' }); }
 function rMood(Rd, mood) { Rd.mood = mood; bc(Rd.map, { t: 'mood', m: mood }); bc(Rd.map, { t: 'shake', ms: 900 }); }
 function rSetTiles(Rd, list, ch) { const m = MAPS[Rd.map], set = []; for (const [x, y] of list) if (x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1 && m.t[y][x] !== 'W') { m.t[y][x] = ch; set.push([x, y]); } bc(m.id, { t: 'tiles', set, ch }); return set; }
-function rPlates(Rd) { bc(Rd.map, { t: 'plates', l: Rd.plates.map(p => [p.x, p.y, p.ci, p.on > now() ? 1 : 0]), seq: Rd.seq, i: Rd.seqI || 0 }); }
+function rPlates(Rd) { bc(Rd.map, { t: 'plates', l: Rd.plates.map(p => [p.x, p.y, p.ci, p.on > now() ? 1 : 0]), seq: Rd.seq, i: Rd.seqI || 0, sim: Rd.sim ? 1 : 0, hold: Rd.hold || 0 }); }
 function rFree(Rd, b, n) {
   const m = MAPS[Rd.map], out = [];
   for (let k = 0; k < 400 && out.length < n; k++) { const x = R(2, m.w - 3), y = R(2, m.h - 3); if (m.t[y][x] !== '.' || (b && dist(b, { x, y }) < 4.5) || out.some(o => Math.hypot(o.x - x, o.y - y) < 5)) continue; out.push({ x, y }); }
   return out;
 }
 function rMakePlates(Rd, b) {
-  if (Rd.id === 'r30') { Rd.plates = rFree(Rd, b, Rd.ph === 1 ? 3 : 4).map(o => ({ x: o.x, y: o.y, ci: 1, on: 0 })); Rd.seq = null; }
+  if (Rd.id === 'r40' || Rd.id === 'r70') { const pos = []; for (let k = 0; k < 60 && pos.length < 3; k++) { const c = rFree(Rd, b, 6); for (const o of c) if (pos.length < 3 && pos.every(q => Math.hypot(q.x - o.x, q.y - o.y) >= 8)) pos.push(o); } Rd.plates = pos.map(o => ({ x: o.x, y: o.y, ci: 3, on: 0 })); Rd.seq = null; Rd.sim = 1; Rd.hold = 0; rTalk(Rd, b, Rd.id === 'r40' ? '등대에 불을 켤 수 있을까…? 셋이서 동시에…' : '세 개의 톱니가 동시에 돌아야… 내 시간이 멈춘다…'); }
+  else if (Rd.id === 'r30') { Rd.plates = rFree(Rd, b, Rd.ph === 1 ? 3 : 4).map(o => ({ x: o.x, y: o.y, ci: 1, on: 0 })); Rd.seq = null; }
   else { const n = Rd.ph === 3 ? 5 : 4, pos = rFree(Rd, b, n), order = [...Array(n).keys()].sort(() => Math.random() - .5); Rd.plates = pos.map((o, i) => ({ x: o.x, y: o.y, ci: i, on: 0 })); Rd.seq = order; Rd.seqI = 0; rTalk(Rd, b, '순서를 기억하라… ' + order.map(i => PEMO[i]).join(' → ')); }
   rPlates(Rd);
 }
 function rGroggy(Rd, b) {
-  const t = now(); b.inv = 0; b.groggy = t + 12000; b.stun = t + 12000; b.air = 0; Rd.plates = []; Rd.seq = null; rPlates(Rd); Rd.plateAt = t + 12000;
+  const gt = Rd.id === 'r40' || Rd.id === 'r70' ? 10000 : 12000; const t = now(); b.inv = 0; b.groggy = t + gt; b.stun = t + gt; b.air = 0; Rd.plates = []; Rd.seq = null; rPlates(Rd); Rd.plateAt = t + gt;
   bc(Rd.map, { t: 'fx', k: 'boom', x: b.x, y: b.y, r: 4, c: '#74c0fc' }); bc(Rd.map, { t: 'shake', ms: 600 });
-  for (const q of rmem(Rd)) send(q, { t: 'notice', m: '💥 보호막 파괴! 그로기 12초 — 지금 집중 공격!! (피해 1.5배)', c: '#ffe066', big: 1 });
+  for (const q of rmem(Rd)) send(q, { t: 'notice', m: `💥 보호막 파괴! 그로기 ${gt / 1000}초 — 지금 집중 공격!! (피해 1.5배)`, c: '#ffe066', big: 1 });
   rTalk(Rd, b, pick(['크윽…!! 내 갑옷이…!!', '말도 안 돼…!!', '움직일 수가… 없다…']));
 }
+function rTentacles(Rd) { const m = MAPS[Rd.map], cx = m.w >> 1; Rd.tent = []; for (const o of m.mobs.filter(o => MON[o.t].id === 'tentacle')) o.dead = 1; m.mobs = m.mobs.filter(o => !o.dead); for (const [dx, dy] of [[-8, -1], [-7, 4], [-3, 7], [3, 7], [7, 4], [8, -1]]) rSpawn(Rd, 'tentacle', cx + dx, 7 + dy, { still: 1, armAt: now() + R(3000, 7000) }); }
+function rClones(Rd, b) { for (const [dx, dy] of [[-8, 3], [8, 3], [0, 9]]) rSpawn(Rd, 'clockclone', b.x + dx, b.y + dy, { still: 1 }); rHint(Rd, '👥 마왕의 분신 3체! 분신을 모두 쓰러뜨려야 톱니 발판이 나타나요'); }
+function rMainBoss(Rd) {
+  if (Rd.id === 'r30') return rBoss(Rd, Rd.ph === 1 ? 'rdino' : 'rdino2');
+  if (Rd.id === 'r50') return Rd.ph >= 2 ? rBoss(Rd, Rd.ph === 3 ? 'zbody2' : 'zbody') : null;
+  if (Rd.id === 'r40') return rBoss(Rd, 'kraken');
+  if (Rd.id === 'r70') return rBoss(Rd, 'clockking');
+  return null;
+}
 function rPlateTick(Rd, t) {
-  const b = Rd.id === 'r30' ? rBoss(Rd, Rd.ph === 1 ? 'rdino' : 'rdino2') : Rd.ph >= 2 ? rBoss(Rd, Rd.ph === 3 ? 'zbody2' : 'zbody') : null;
+  const b = rMainBoss(Rd);
   if (!b || !b.shield) return;
-  if (b.groggy && t > b.groggy) { b.groggy = 0; b.inv = 1; rTalk(Rd, b, '다시 보호막이다!!'); rHint(Rd, '🛡 보호막이 다시 생겼어요! 발판을 다시 밟으세요'); }
+  if (Rd.id === 'r70' && MAPS[Rd.map].mobs.some(o => !o.dead && MON[o.t].id === 'clockclone')) { if (Rd.plates.length) { Rd.plates = []; rPlates(Rd); } return; }
+  if (b.groggy && t > b.groggy) { b.groggy = 0; b.inv = 1; Rd.sim = 0; rTalk(Rd, b, '다시 보호막이다!!'); rHint(Rd, '🛡 보호막이 다시 생겼어요! 발판을 다시 밟으세요'); }
   if (!b.inv) return;
   if (!Rd.plates.length) { if (t > Rd.plateAt) rMakePlates(Rd, b); return; }
+  if (Rd.sim) {
+    const al = rAlive(Rd); let all = true;
+    for (const pl of Rd.plates) { const occ = al.some(q => q.x === pl.x && q.y === pl.y); if (occ !== !!pl.on) { pl.on = occ ? Infinity : 0; } if (!occ) all = false; }
+    Rd.hold = all ? (Rd.hold || 0) + 100 : 0;
+    if (Rd.hold >= 2000) { Rd.hold = 0; Rd.sim = 0; return rGroggy(Rd, b); }
+    if (tk % 3 === 0) rPlates(Rd);
+    return;
+  }
   let changed = false;
   for (const pl of Rd.plates) {
     if (pl.on > t) continue;
@@ -993,6 +1103,12 @@ function raidTick(t) {
     if (Rd.st === 'done') { if (t >= Rd.endAt) raidReset(Rd.id, '레이드가 끝났어요. 보스 대기실로 돌아왔어요.'); continue; }
     if (Rd.st !== 'fight') continue;
     if (!rAlive(Rd).length) { sendAll({ t: 'notice', m: `💀 ${Rd.n} 레이드 실패…`, c: '#868e96' }); raidReset(Rd.id); continue; }
+    if (Rd.share && t >= Rd.share.at) {
+      const S = Rd.share; Rd.share = null; const al = rAlive(Rd), inn = al.filter(q => Math.hypot(q.x - S.x, q.y - S.y) <= S.r + .3);
+      bc(m.id, { t: 'hz', tiles: rTiles(m, circleT(S.x, S.y, S.r)), c: '#ffd43b' }); bc(m.id, { t: 'share', x: S.x, y: S.y, r: 0, ms: 0 }); bc(m.id, { t: 'shake', ms: 700 });
+      if (inn.length >= 3) { for (const q of inn) damagePlayer(q, Math.max(1, Math.round(S.dmg / inn.length - defOf(q) * .2)), null); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `✅ 운명의 일격을 ${inn.length}명이 나눠 맞았다!`, c: '#69db7c' }); }
+      else { for (const q of inn) damagePlayer(q, S.dmg, null); for (const q of al) if (!inn.includes(q)) damagePlayer(q, 1200, null); const b = rBoss(Rd, 'clockking'); if (b) b.hp = Math.min(b.mhp, b.hp + Math.round(b.mhp * .05)); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `❌ 3명이 모이지 못했다!! (원 안 ${inn.length}명) 전원 피해 + 마왕 회복`, c: '#ff6b6b', big: 1 }); }
+    }
     if (tk % 10 === 0) for (const q of players.values()) if (q.map === m.id && !q.dead && m.t[q.y][q.x] === 'L') damagePlayer(q, Math.max(1, Math.round(110 - defOf(q) * .2)), null);
     rPlateTick(Rd, t);
     if (Rd.id === 'r50' && Rd.ph === 3 && Rd.coll === 3) { const b = rBoss(Rd, 'zbody2'); if (b && b.hp < b.mhp * .5) { Rd.coll = 5; rCollapse(Rd, 5); } }
@@ -1027,6 +1143,27 @@ function raidTick(t) {
       rTalk(Rd, b, pick(['불이야아아!!', '크아앙!! 🔥', '다 태워버리겠다!!']));
       if ((Rd.cnt = (Rd.cnt || 0) + 1) % 2 === 0) warnT(Rd, Rd.ph === 1 ? circleT(b.x, b.y, 3.2) : randT(m, 12).flatMap(([x, y]) => circleT(x, y, 1)), 1100, Rd.ph === 1 ? 220 : 300, '#c92a2a', { stun: Rd.ph === 2 ? 800 : 0 });
       Rd.next = t + (Rd.ph === 1 ? 4200 : 3500);
+    }
+    if (Rd.id === 'r40') {
+      for (const tn of [...Rd.tent]) if (t > tn.at && rBoss(Rd, 'kraken')) { Rd.tent.splice(Rd.tent.indexOf(tn), 1); rSpawn(Rd, 'tentacle', tn.x, tn.y, { still: 1, armAt: t + 3000 }); bc(m.id, { t: 'mtalk', id: rBoss(Rd, 'kraken').id, m: '촉수여… 되살아나라!!', loud: 1 }); }
+      for (const a of m.mobs.filter(o => !o.dead && MON[o.t].id === 'tentacle')) if (t > (a.armAt || 0)) { a.armAt = t + R(5500, 8500); warnT(Rd, lineT(m, a.x, a.y, rTarget(Rd), 14), 1400, 420, '#7048e8'); }
+      const b = rBoss(Rd, 'kraken'); if (!b) { Rd.next = t + 800; continue; }
+      if (b.groggy > t) { Rd.next = t + 800; continue; }
+      const c = Rd.cnt = (Rd.cnt || 0) + 1, ph = Rd.ph;
+      warnT(Rd, randT(m, 7 + ph * 3).flatMap(([x, y]) => circleT(x, y, 1)), 1500, 330 + ph * 40, '#212529');
+      if (c % 3 === 0) { warnT(Rd, circleT(b.x, b.y, 4 + ph), 1800, 520, '#1864ab', { stun: 900 }); rTalk(Rd, b, '소용돌이에 빨려 들어가라!!'); }
+      if (ph >= 3 && c % 3 === 1) { const gap = R(2, m.w - 6); for (let k = 0; k * 3 < m.h - 2; k++) { const tiles = []; for (let y = 1 + k * 3; y < Math.min(m.h - 1, 4 + k * 3); y++) for (let x = 1; x < m.w - 1; x++) if (x < gap || x > gap + 3) tiles.push([x, y]); warnT(Rd, tiles, 1300 + k * 380, 480, '#4dabf7'); } rTalk(Rd, b, '해일이다!! 틈으로 피해봐라!!'); }
+      Rd.next = t + Math.max(2600, 4000 - ph * 300);
+    }
+    if (Rd.id === 'r70') {
+      const b = rBoss(Rd, 'clockking'); if (!b) { Rd.next = t + 800; continue; }
+      if (b.groggy > t) { Rd.next = t + 800; continue; }
+      const c = Rd.cnt = (Rd.cnt || 0) + 1, ph = Rd.ph, a0 = Math.random() * Math.PI * 2, dir = Math.random() < .5 ? 1 : -1;
+      for (let k = 0; k < 6 + ph; k++) { const a = a0 + dir * k * .45, q = { x: b.x + Math.cos(a) * 20, y: b.y + Math.sin(a) * 20 }; warnT(Rd, lineT(m, b.x, b.y, q, 22), 1300 + k * 280, 600 + ph * 50, '#fab005'); }
+      if (c % 3 === 1) { const al = rAlive(Rd).sort(() => Math.random() - .5).slice(0, Math.min(2, Math.max(1, rAlive(Rd).length - 1))); for (const q of al) { bc(m.id, { t: 'mark', id: q.id, ms: 4000 }); send(q, { t: 'notice', m: '💣 시한폭탄이 붙었다! 4초 뒤 폭발 — 다른 사람과 떨어지세요!', c: '#ff922b', big: 1 }); setTimeout(() => { if (Rd.st === 'fight' && q.map === m.id && !q.dead) warnT(Rd, circleT(q.x, q.y, 2.5), 500, 850 + ph * 60, '#ff922b'); }, 3500); } rTalk(Rd, b, '째깍째깍… 펑!!'); }
+      if (c % 3 === 2 && !Rd.share) { const q = rTarget(Rd), sx = Math.max(3, Math.min(m.w - 4, q.x + R(-3, 3))), sy = Math.max(3, Math.min(m.h - 4, q.y + R(-3, 3))); Rd.share = { x: sx, y: sy, r: 2.2, at: t + 5000, dmg: 3300 + ph * 300 }; bc(m.id, { t: 'share', x: sx, y: sy, r: 2.2, ms: 5000 }); for (const q2 of rmem(Rd)) send(q2, { t: 'notice', m: '⚠️ 운명의 일격! 노란 원 안에 3명 이상 모여서 나눠 맞으세요!!', c: '#ffd43b', big: 1 }); rTalk(Rd, b, '운명의 일격… 함께 견딜 수 있겠나?'); }
+      if (ph >= 4 && c % 2 === 0) { const sq = R(0, 3), tiles = []; for (let y = 1; y < m.h - 1; y++) for (let x = 1; x < m.w - 1; x++) { const qd = (x < (m.w >> 1) ? 0 : 1) + (y < (m.h >> 1) ? 0 : 2); if (qd !== sq) tiles.push([x, y]); } warnT(Rd, tiles, 2400, 900, '#9c36b5'); rTalk(Rd, b, '시간의 틈은 하나뿐이다!!'); }
+      Rd.next = t + Math.max(2600, 3800 - ph * 200);
     }
     if (Rd.id === 'r50') {
       const body = rBoss(Rd, Rd.ph === 3 ? 'zbody2' : 'zbody');
@@ -1103,23 +1240,25 @@ function onMsg(p, m) {
     }
     case 'use': {
       const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || it.type !== 'potion' || p.dead) return;
-      if (it.k === 'hp') { const v = Math.max(100, Math.round(p.mhp * 0.4)); p.hp = Math.min(p.mhp, p.hp + v); bc(p.map, { t: 'dm', x: p.x, y: p.y, v, c: '#69db7c' }); } else p.mp = Math.min(p.mmp, p.mp + Math.max(60, Math.round(p.mmp * 0.4)));
+      const [hr, mr] = POTS[it.k] || [0, 0];
+      if (hr) { const v = Math.max(100, Math.round(p.mhp * hr)); p.hp = Math.min(p.mhp, p.hp + v); bc(p.map, { t: 'dm', x: p.x, y: p.y, v, c: '#69db7c' }); }
+      if (mr) p.mp = Math.min(p.mmp, p.mp + Math.max(60, Math.round(p.mmp * mr)));
       if (--it.q <= 0) p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1; p.vdirty = 1; break;
     }
-    case 'potion': { const it = p.inv.find(i => i.type === 'potion' && i.k === m.k); if (it) onMsg(p, { t: 'use', id: it.id }); break; }
+    case 'potion': { const it = p.inv.find(i => i.type === 'potion' && i.k === m.k) || p.inv.find(i => i.type === 'potion' && i.k === m.k + '2'); if (it) onMsg(p, { t: 'use', id: it.id }); break; }
     case 'equip': {
       const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || !isEq(it) || p.lock.has(it.id)) return; const sl = it.type;
       p.inv.splice(p.inv.indexOf(it), 1); if (p.eq[sl]) p.inv.push(p.eq[sl]); p.eq[sl] = it; stats(p); p.dirty = 1; break;
     }
     case 'unequip': { const sl = m.slot; if (!p.eq[sl] || p.inv.length >= MAXINV) return; p.inv.push(p.eq[sl]); p.eq[sl] = null; stats(p); p.dirty = 1; break; }
-    case 'enh': enhance(p, m.id | 0, !!m.ward); break;
+    case 'enh': enhance(p, m.id | 0, !!m.ward, !!m.bless); break;
     case 'compose': compose(p, (m.ids || []).map(Number).slice(0, 3)); break;
     case 'sell': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id)) return; p.gold += sellPrice(it); p.inv.splice(p.inv.indexOf(it), 1); p.dirty = 1; break; }
     case 'drop': { const it = p.inv.find(i => i.id === (m.id | 0)); if (!it || p.lock.has(it.id) || p.dead) return; p.inv.splice(p.inv.indexOf(it), 1); dropGround(mp, p.x, p.y, it, 0); p.dirty = 1; say(p, 'sys', `🗑️ ${itemLabel(it)}을(를) 바닥에 버렸어요 (누구나 주울 수 있어요)`);
       if (isEq(it) && it.r >= 3) sendAll({ t: 'notice', m: `🗑️ ${p.name}님이 ${itemLabel(it)}을(를) 바닥에 버렸다!`, c: RAR[it.r].c }, p.map); break; }
     case 'buy': {
       const s = SHOP.find(x => x.k === m.k); const n = Math.max(1, Math.min(99, m.n | 0)); if (!s || p.gold < s.p * n) return say(p, 'sys', '골드가 부족해요');
-      p.gold -= s.p * n; giveItem(p, s.k === 'hp' || s.k === 'mp' ? mkPot(s.k, n) : mkScroll(s.k, n)); p.dirty = 1; break;
+      p.gold -= s.p * n; giveItem(p, POTS[s.k] ? mkPot(s.k, n) : mkScroll(s.k, n)); p.dirty = 1; say(p, 'loot', `🛒 ${SN[s.k]} x${n} 구매 (-${(s.p * n).toLocaleString()}G)`); break;
     }
     case 'qa': { const q = QUESTS.find(x => x.id === (m.id | 0)); if (!q || !qAvail(p, q) || !npcNear(p, q.giver)) return; p.q[q.id] = 0; p.dirty = 1; say(p, 'sys', `📜 [${q.n}] 퀘스트 시작!`); break; }
     case 'qt': { const q = QUESTS.find(x => x.id === (m.id | 0)); if (!q || !npcNear(p, q.giver) || !qReady(p, q)) return; questTurn(p, q.id); talkNpc(p, q.giver); break; }
@@ -1189,7 +1328,7 @@ function tick() {
     if (p.dirty) { p.dirty = 0; send(p, mePayload(p)); }
     if (p.vdirty && tk % 3 === 0) { p.vdirty = 0; send(p, { t: 'v', hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, exp: p.exp, need: need(p.lv), lv: p.lv, gold: p.gold }); }
   }
-  raidTick(t);
+  raidTick(t); royaleTick(t);
   if (tk % 50 === 0) sendWho();
   if (tk % 300 === 0) flush();
 }
