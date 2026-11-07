@@ -209,6 +209,12 @@ MON.push({ idx: MON.length, id: 'kg_cd', n: '어두운 수정', s: 'crystal', c:
 // 🐸 황금떡두꺼비 군단 (매일 오후 8시 이벤트)
 MON.push({ idx: MON.length, id: 'goldtoad', n: '대왕 황금떡두꺼비', s: 'toad', c: '#fab005', lv: 100, mat: '황금 떡', boss: 1, hp: 1e7, atk: 950, xp: 30000000, g: 200000, big: 4.4, novar: 1, gtoad: 1 });
 MON.push({ idx: MON.length, id: 'toadling', n: '황금떡두꺼비 졸개', s: 'toad', c: '#ffd43b', lv: 90, mat: '황금 떡', boss: 1, hp: 60000, atk: 650, xp: 400000, g: 20000, big: 1.7, novar: 1, gtoad: 1 });
+// 📦 택배 도둑 냥아치 (2시간마다) / 🤖 거대 메카 부천로보 (5시간마다) — 능력치는 나타난 맵에 맞춰 정해짐
+MON.push({ idx: MON.length, id: 'thiefcat', n: '택배 도둑 냥아치', s: 'thief', c: '#868e96', lv: 1, mat: '', boss: 1, hp: 1e5, atk: 0, xp: 0, g: 0, big: 2.8, novar: 1, ev: 'cat' });
+MON.push({ idx: MON.length, id: 'decoycat', n: '가짜 냥아치', s: 'thief', c: '#adb5bd', lv: 1, mat: '', boss: 1, hp: 1e4, atk: 0, xp: 0, g: 0, big: 2.2, novar: 1, evp: 'cat' });
+MON.push({ idx: MON.length, id: 'mecha', n: '거대 메카 부천로보', s: 'mecha', c: '#4dabf7', lv: 1, mat: '', boss: 1, hp: 1e6, atk: 0, xp: 0, g: 0, big: 4.4, novar: 1, ev: 'robo' });
+for (const [id, n, c] of [['rp_arml', '왼팔 (로켓 펀치)', '#ff6b6b'], ['rp_armr', '오른팔 (레이저)', '#ffd43b'], ['rp_leg', '다리 (발구르기)', '#69db7c'], ['rp_cannon', '어깨 캐논 (미사일)', '#b197fc']])
+  MON.push({ idx: MON.length, id, n, s: 'robopart', c, lv: 1, mat: '', boss: 1, hp: 1e5, atk: 0, xp: 0, g: 0, big: 1.9, novar: 1, evp: 'robo' });
 MON.push({ idx: MON.length, id: 'zpet', n: '소환된 좀비', s: 'zombie', c: '#94d82d', lv: 1, mat: '', boss: 0, hp: 1, atk: 0, xp: 0, g: 0, pet: 1 });
 const MI = {}; MON.forEach(m => MI[m.id] = m);
 const tp0 = o => MON[o.t];
@@ -263,6 +269,9 @@ Object.assign(MI.hwang, {
 MI.goldtoad.talk = ['개굴… 개굴… 황금떡 맛 좀 볼래?', '내 문제를 맞혀봐라 개굴!!', '떡두꺼비 같은 아들 딸들아~ 개굴!', '개구울!! 나는 무적이다!!', '퀴즈 못 맞히면 다 깔아뭉갠다 개굴!'];
 MI.goldtoad.stunTalk = ['떡방아 쿵!!', '개구우우울!!']; MI.goldtoad.deathLine = '개굴… 떡이… 다 쉬어버렸다…';
 MI.toadling.talk = ['개굴!', '개굴개굴!', '(황금떡 냠냠)', '대왕님을 지켜라 개굴!'];
+MI.thiefcat.talk = ['냥냥~ 이 택배는 내 거다냥!', '잡아봐라냥~ 메롱!', '쿠팡? 배민? 다 털었다냥!', '냥아치는 안 잡힌다냥!!', '(택배 상자를 끌어안고 도망간다)'];
+MI.decoycat.talk = ['나도 냥아치다냥!', '진짜는 저쪽이다냥~', '냥?!'];
+MI.mecha.talk = ['삐빅. 부천 정복 프로토콜 가동.', '목표 확인. 섬멸한다.', '경고: 장갑 손상 없음. 너희는 약하다.', '부천로보, 출격!!', '에너지 충전 중… 99%…'];
 MI.santa.talk = ['호호호~ 나쁜 아이 명단 확인 중…', '선물은 착한 아이에게만!!', '루돌프! 돌진!!', '굴뚝으로 들어가주마~ 호호호!', '메리 크리스마스… 석탄이나 받아라!'];
 MI.rudolph.talk = ['(코가 반짝반짝)', '푸르릉!!', '산타 할아버지 지켜!!'];
 const ZTALK = ['으어어어…', '뇌… 뇌를 줘…', '그르르르…', '출근… 하기… 싫어…', '으아아…', '배고파…', '크르르…'];
@@ -853,6 +862,7 @@ function damageMob(p, mo, dmg, crit) {
     if (!p.god) { const back = Math.max(1, Math.min(Math.round(base * 0.25), Math.round(p.mhp * 0.07))); p.hp -= back; p.vdirty = 1; bc(p.map, { t: 'dm', x: p.x, y: p.y, v: '반사 ' + back, c: '#fab005' }); if (p.hp <= 0) { mo.hp -= dmg; die(p, null); return; } }
   }
   if (mo.groggy > now()) { dmg = Math.round(dmg * 1.5); crit = true; }
+  if (MON[mo.t].id === 'thiefcat' && Math.random() < .3 && EVS.cat.zs) { const z = EVS.cat.zs, r = Math.random(); spreadDrop(MAPS[p.map], mo.x, mo.y, [r < .7 ? mkGold(Math.round(z.g * (2 + Math.random() * 3))) : r < .9 ? mkPot('hp2', R(1, 3)) : mkScroll('enh', 1)], null); if (Math.random() < .3) bc(p.map, { t: 'mtalk', id: mo.id, m: pick(['내 택배!! 떨어뜨렸다냥!', '냐앙! 아프다냥!', '그건 내 거다냥!!']), loud: 0 }); }
   mo.hp -= dmg; mo.tgt = p.id; mo.last = p;
   bc(p.map, { t: 'dm', x: mo.x, y: mo.y, v: dmg, c: crit ? '#ffe600' : '#ffffff', cr: crit ? 1 : 0 });
   if (mo.hp <= 0) killMob(p, mo);
@@ -905,6 +915,7 @@ function killMob(p, mo) {
   const tp = MON[mo.t], m = MAPS[p.map]; mo.dead = 1;
   if (mo.ally) { const i = m.mobs.indexOf(mo); if (i >= 0) m.mobs.splice(i, 1); return; }
   if (mo.zombie) return zombieKill(p, mo, m);
+  if (MON[mo.t].evp) return evPartDied(p, mo, m);
   if (mo.raid) { const i = m.mobs.indexOf(mo); if (i >= 0) m.mobs.splice(i, 1); bc(m.id, { t: 'fx', k: 'die', x: mo.x, y: mo.y, c: tp.c }); raidMobDied(mo, p); return; }
   let xp = tp.xp; if (p.lv > tp.lv + 8) xp *= 0.3; xp = Math.round(xp);
   const gold = Math.round(tp.g * (0.6 + Math.random() * 0.8) * (FAC[p.faction].gold || 1));
@@ -915,6 +926,7 @@ function killMob(p, mo) {
     add(mkScroll('enh', R(1, 3))); if (Math.random() < 0.3) add(mkScroll('ward', 1)); add(mkPot('hp', R(3, 6))); add(stackItem('mat', tp.mat, tp.mat, R(1, 3)));
     if (Math.random() < 0.01) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), tp.lv));
     if (tp.id === 'goldtoad') gtWin(p, mo, m, add);
+    if (tp.ev) evKilled(p, mo, m, add);
     if (tp.id === 'hwang') { add({ id: db.iid++, type: 'weapon', b: 10, r: 5, il: Math.max(100, p.lv), plus: 0, n: '황룡의 천검', atkb: 400, defb: 80, hpb: 1500 }); if (TRANK('hwang') >= TRANK(p.title)) p.title = 'hwang'; sendAll({ t: 'notice', m: `🐲👑 ${p.name}님이 황룡을 쓰러뜨렸다!!! 황룡의 천검 + 칭호 [황룡 토벌자]`, c: '#fab005', big: 1 }); }
     if (tp.id === 'tuna') { add(tunaWeapon()); sendAll({ t: 'notice', m: `🐟 ${p.name}님이 냉동참치를 쓰러뜨렸다!! 🐟 대형 냉동참치가 떨어졌다!!`, c: '#a5d8ff', big: 1 }); }
     if (mo.collapse) { xp = tp.xp; announce(`🍶 보상은 잔소리를 끝까지 버틴 ${p.name}님에게!`); }
@@ -1151,6 +1163,8 @@ function adminCmd(p, m) {
     case 'setlv': { const o = [...players.values()].find(q => q.name === String(m.name || '').trim()); if (!o) return ok('그런 사람이 없어요'); o.lv = Math.max(1, Math.min(MAXLV, m.v | 0)); o.exp = 0; stats(o); o.hp = o.mhp; o.dirty = 1; return ok(`${o.name} → Lv${o.lv}`); }
     case 'zstart': return zevStart(p, m.min | 0);
     case 'gtnow': return gtStart(m.here ? mp : null);
+    case 'evnow': return evStart(String(m.id), m.here ? mp : null);
+    case 'evstop': return evEnd(String(m.id), '👑 관리자가 이벤트를 종료했어요');
     case 'gtstop': return gtEnd('👑 관리자가 황금떡두꺼비 군단을 돌려보냈어요');
     case 'gtquiz': if (GT.st === 'on') gtQuiz(now()); return;
     case 'hwangbag': giveItem(p, stackItem('bundle', 'hwang', '황룡의 부적', 1)); return ok('황룡의 부적 지급');
@@ -1857,9 +1871,10 @@ const QUIZ = [
   ['[계산] 7 × 8 = ?', ['56']], ['[계산] 13 + 29 = ?', ['42']], ['[계산] 100 - 37 = ?', ['63']], ['[계산] 9 × 9 = ?', ['81']]
 ].map(([q, a]) => ({ q, a }));
 const gtNorm = x => String(x).toLowerCase().replace(/[\s!?.~,'"·○()]/g, '');
-const gtNext = (t = now()) => { const d = new Date(t), n = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), GT_HOUR_UTC, 0, 0); return n > t ? n : n + 86400000; };
+const slotNext = (t, hours, offH) => { const H = 3600000, k = Math.floor((t - offH * H) / (hours * H)) + 1; return k * hours * H + offH * H; };
+const gtNext = (t = now()) => slotNext(t, 3, GT_HOUR_UTC % 3);
 const GT = { st: 'idle', at: gtNext(), map: null, boss: null, quiz: null, next: 0, end: 0, warn: 0, used: [] };
-function gtMsg() { const b = GT.boss; return { t: 'gt', st: GT.st, at: GT.at, sn: now(), map: GT.map ? MAPS[GT.map].name : '', hp: b && !b.dead ? Math.round(b.hp / b.mhp * 1000) / 10 : 0, end: GT.end }; }
+function gtMsg() { evBroadcast(); const b = GT.boss; return { t: 'gt', st: GT.st, at: GT.at, sn: now(), map: GT.map ? MAPS[GT.map].name : '', hp: b && !b.dead ? Math.round(b.hp / b.mhp * 1000) / 10 : 0, end: GT.end }; }
 function gtBlast(m, tiles, ms, dmg, c) {
   tiles = tiles.filter(([x, y]) => x > 0 && y > 0 && x < m.w - 1 && y < m.h - 1); bc(m.id, { t: 'warn', tiles, ms, c });
   setTimeout(() => { const set = new Set(tiles.map(([x, y]) => x + ',' + y)); bc(m.id, { t: 'hz', tiles, c }); for (const q of players.values()) if (q.map === m.id && !q.dead && !inSafe(m, q.x, q.y) && set.has(q.x + ',' + q.y)) damagePlayer(q, Math.max(1, Math.round(dmg - defOf(q) * .3)), null); }, ms);
@@ -1875,10 +1890,16 @@ function gtStart(here) {
   announce(`🐸 황금떡두꺼비 군단 출현! 📍 ${m.name} · 채팅에 뜨는 퀴즈를 ${GT_QUIZ_MS / 1000}초 안에 맞히면 대왕 떡두꺼비가 기절해요 (그때만 피해 들어감)`);
   sendAll(gtMsg());
 }
-function gtLing(m, b) { const zs = zStat(m), o = spawnBoss(m, 'toadling', b); o.until = b.until; o.hp = o.mhp = Math.round(zs.hp * 6); o.atk = Math.round(zs.atk * 1.3); }
+function evSpawn(m, id, near, extra) {
+  let x, y, n = 0;
+  do { if (near) { x = near.x + R(-(near.r || 4), near.r || 4); y = near.y + R(-(near.r || 4), near.r || 4); } else { x = R(6, m.w - 6); y = R(4, m.h - 4); } n++; } while ((!walk(m, x, y) || inSafe(m, x, y) || occ(m, x, y)) && n < 150);
+  const t = MI[id], o = Object.assign({ id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 1, v: null, acc: 0, dead: 0, atkAt: 0, mvAt: 0, tgt: 0, skAt: now() + 4000, until: now() + 40 * 60000 }, extra || {});
+  m.mobs.push(o); return o;
+}
+function gtLing(m, b) { const zs = zStat(m), o = evSpawn(m, 'toadling', b); o.until = b.until; o.hp = o.mhp = Math.round(zs.hp * 6); o.atk = Math.round(zs.atk * 1.3); }
 function gtEnd(msg) {
   if (GT.st !== 'on') return; const m = MAPS[GT.map];
-  m.mobs = m.mobs.filter(o => !MON[o.t].gtoad); GT.st = 'idle'; GT.quiz = null; GT.boss = null; GT.map = null; GT.at = gtNext(now() + 3600000); GT.warn = 0;
+  m.mobs = m.mobs.filter(o => !MON[o.t].gtoad); GT.st = 'idle'; GT.quiz = null; GT.boss = null; GT.map = null; GT.at = gtNext(now() + 60000); GT.warn = 0;
   if (msg) sendAll({ t: 'notice', m: msg, c: '#ffe066', big: 1 }); sendAll({ t: 'gtq', end: 1 }); sendAll(gtMsg());
 }
 function gtWin(p, mo, m, add) {
@@ -1906,14 +1927,14 @@ function gtTick(t) {
   if (GT.st === 'idle') {
     if (t >= GT.at) return gtStart();
     const left = GT.at - t;
-    if (left < 600000 && GT.warn < 1) { GT.warn = 1; sendAll({ t: 'notice', m: '🐸 10분 뒤 황금떡두꺼비 군단이 부천 어딘가에 나타납니다!! (오후 8시)', c: '#fab005', big: 1 }); }
+    if (left < 600000 && GT.warn < 1) { GT.warn = 1; sendAll({ t: 'notice', m: '🐸 10분 뒤 황금떡두꺼비 군단이 부천 어딘가에 나타납니다!!', c: '#fab005', big: 1 }); }
     if (left < 60000 && GT.warn < 2) { GT.warn = 2; sendAll({ t: 'notice', m: '🐸 1분 뒤 황금떡두꺼비 군단 출현!! 준비하세요!!', c: '#fab005', big: 1 }); }
     if (tk % 300 === 0) sendAll(gtMsg());
     return;
   }
   const b = GT.boss, m = MAPS[GT.map];
   if (!b || b.dead || !m.mobs.includes(b)) { if (GT.st === 'on' && b && !m.mobs.includes(b) && !b.dead) gtEnd('🐸 황금떡두꺼비 군단이 사라졌어요'); return; }
-  if (t >= GT.end) return gtEnd('🐸💨 황금떡두꺼비 군단이 황금떡을 들고 도망갔다… 내일 오후 8시에 다시!');
+  if (t >= GT.end) return gtEnd('🐸💨 황금떡두꺼비 군단이 황금떡을 들고 도망갔다… 3시간 뒤에 다시!');
   if (!b.inv && t > b.groggy) { b.inv = 1; bc(m.id, { t: 'mtalk', id: b.id, m: '개구우울!! 다시 무적이다!!', loud: 1 }); }
   if (GT.quiz && t > GT.quiz.until) {
     const Q = GT.quiz; GT.quiz = null; GT.next = t + 10000;
@@ -1924,6 +1945,132 @@ function gtTick(t) {
   if (!GT.quiz && b.inv && t >= GT.next) gtQuiz(t);
   if (b.inv && tk % 40 === 0) { gtBlast(m, randT(m, 10).filter(([x, y]) => Math.hypot(x - b.x, y - b.y) < 12).flatMap(([x, y]) => circleT(x, y, 1.2)), 1500, GT.dmg, '#ffd43b'); }
   if (tk % 20 === 0) sendAll(gtMsg());
+}
+/* ===================== ⏰ 정기 이벤트: 📦 냥아치(2시간) · 🤖 부천로보(5시간) ===================== */
+const EVS = {
+  cat: { id: 'cat', n: '택배 도둑 냥아치', e: '📦', every: 2, off: .5, dur: 10 * 60000, st: 'idle', at: 0, warn: 0 },
+  robo: { id: 'robo', n: '거대 메카 부천로보', e: '🤖', every: 5, off: .25, dur: 20 * 60000, st: 'idle', at: 0, warn: 0 }
+};
+for (const E of Object.values(EVS)) E.at = slotNext(now(), E.every, E.off);
+const evMaps = () => zMaps().filter(m => m.id !== 'sauna' && zStat(m).hp >= MI.pmush.hp);
+function evList() {
+  const L = [{ k: 'gt', e: '🐸', n: '황금떡두꺼비 군단', st: GT.st, at: GT.at, map: GT.map ? MAPS[GT.map].name : '', hp: GT.boss && !GT.boss.dead ? Math.round(GT.boss.hp / GT.boss.mhp * 100) : 0, end: GT.end }];
+  for (const E of Object.values(EVS)) L.push({ k: E.id, e: E.e, n: E.n, st: E.st, at: E.at, map: E.map ? MAPS[E.map].name : '', hp: E.boss && !E.boss.dead ? Math.round(E.boss.hp / E.boss.mhp * 100) : 0, end: E.end });
+  return L;
+}
+let evLast = 0; function evBroadcast(force) { const t = now(); if (!force && t - evLast < 500) return; evLast = t; sendAll({ t: 'evs', l: evList(), sn: t }); }
+function evStart(id, here) {
+  const E = EVS[id]; if (!E || E.st === 'on') return;
+  const cand = evMaps(), m = here && here.pool.length ? here : pick(cand.length ? cand : zMaps()), zs = zStat(m), t = now();
+  Object.assign(E, { st: 'on', map: m.id, end: t + E.dur, next: t + 5000, cnt: 0, zs });
+  if (id === 'cat') {
+    const hp = Math.round(zs.hp * 22); E.boss = evSpawn(m, 'thiefcat', null, { hp, mhp: hp, still: 1, noMelee: 1, until: E.end + 5000 }); E.split = 0;
+    sendAll({ t: 'notice', m: `📦🐱 택배 도둑 냥아치가 나타났다!! 📍 [${m.name}] — 때릴 때마다 훔친 택배가 떨어져요! 10분 안에 잡아라!`, c: '#ffa94d', big: 1 });
+  } else {
+    const hp = Math.round(zs.hp * 90); E.boss = evSpawn(m, 'mecha', null, { hp, mhp: hp, still: 1, noMelee: 1, inv: 1, until: E.end + 5000 });
+    roboParts(E, m, 1); bc(m.id, { t: 'shake', ms: 1500 });
+    sendAll({ t: 'notice', m: `🤖⚡ 거대 메카 부천로보 출격!! 📍 [${m.name}] — 팔·다리·캐논 부품 4개를 부수면 코어가 열려요!`, c: '#4dabf7', big: 1 });
+  }
+  bc(m.id, { t: 'fx', k: 'boom', x: E.boss.x, y: E.boss.y, r: 5, c: id === 'cat' ? '#ffa94d' : '#4dabf7' });
+  evBroadcast(true);
+}
+function evEnd(id, msg) {
+  const E = EVS[id]; if (!E || E.st !== 'on') return; const m = MAPS[E.map];
+  m.mobs = m.mobs.filter(o => !(MON[o.t].ev === id || MON[o.t].evp === id));
+  Object.assign(E, { st: 'idle', map: null, boss: null, warn: 0, at: slotNext(now() + 60000, E.every, E.off) });
+  if (msg) sendAll({ t: 'notice', m: msg, c: '#ffe066', big: 1 }); evBroadcast(true);
+}
+function roboParts(E, m, first) {
+  const b = E.boss, pr = first ? 1 : .7;
+  [['rp_arml', -3, 0], ['rp_armr', 3, 0], ['rp_leg', 0, 3], ['rp_cannon', 0, -3]].forEach(([id, dx, dy]) => {
+    if (m.mobs.some(o => !o.dead && MON[o.t].id === id)) return;
+    const hp = Math.round(E.zs.hp * 8 * pr); evSpawn(m, id, { x: b.x + dx, y: b.y + dy, r: 1 }, { hp, mhp: hp, still: 1, noMelee: 1, until: E.end + 5000 });
+  });
+  b.inv = 1; b.shield = 1;
+}
+function evPartDied(p, mo, m) {
+  const tp = MON[mo.t], i = m.mobs.indexOf(mo); if (i >= 0) m.mobs.splice(i, 1);
+  const E = EVS[tp.evp]; if (!E || E.st !== 'on') return;
+  if (tp.evp === 'cat') { spreadDrop(m, mo.x, mo.y, [mkGold(Math.round(E.zs.g * 6))], null); bc(m.id, { t: 'fx', k: 'boom', x: mo.x, y: mo.y, r: 1.5, c: '#adb5bd' }); bc(m.id, { t: 'mtalk', id: mo.id, m: '펑! 가짜였다냥~', loud: 1 }); return; }
+  bc(m.id, { t: 'fx', k: 'boom', x: mo.x, y: mo.y, r: 2, c: tp.c }); bc(m.id, { t: 'shake', ms: 500 });
+  sendAll({ t: 'notice', m: `🔧 ${p.name}님이 부천로보의 [${tp.n}]을(를) 부쉈다!`, c: tp.c });
+  if (!m.mobs.some(o => !o.dead && MON[o.t].evp === 'robo')) {
+    const b = E.boss; if (!b) return; b.inv = 0; b.shield = 0; b.groggy = now() + 20000; b.stun = now() + 20000; E.rebuild = now() + 20000;
+    bc(m.id, { t: 'mtalk', id: b.id, m: '경고!! 경고!! 코어 노출!! 시스템 정지!!', loud: 1 });
+    sendAll({ t: 'notice', m: '💥 부천로보 부품 전부 파괴!! 코어 노출 20초 — 지금 공격!! (피해 1.5배)', c: '#ffe066', big: 1 });
+  }
+}
+function evKilled(p, mo, m, add) {
+  const E = EVS[MON[mo.t].ev]; if (!E) return; const zs = E.zs || zStat(m);
+  const eqLv = Math.max(10, Math.round(MI[m.pool[0]].lv + 5));
+  if (E.id === 'cat') {
+    for (let k = 0; k < 8; k++) add(mkGold(Math.round(zs.g * 15))); add(mkScroll('enh', R(3, 6))); add(mkScroll('bless', 1)); add(genEquip(eqLv, true));
+    for (const q of players.values()) if (q.map === m.id && !q.dead) { const g = Math.round(zs.g * 40); q.gold += g; q.dirty = 1; say(q, 'loot', `📦 택배 탈환 보상 💰${g.toLocaleString()}G`, '#ffa94d'); }
+    setTimeout(() => evEnd('cat', `📦🎉 ${p.name}님이 택배 도둑 냥아치를 잡았다!! 훔친 택배가 와르르~ (참여자 전원 보상)`), 50);
+  } else {
+    for (let k = 0; k < 6; k++) add(mkGold(Math.round(zs.g * 40))); add(mkScroll('bless', 2)); add(mkScroll('ward', 2)); add(genEquip(eqLv, true)); add(genEquip(eqLv, true)); if (Math.random() < .5) add(hiddenEquip(pick(['weapon', 'armor', 'helm']), eqLv));
+    for (const q of players.values()) if (q.map === m.id && !q.dead) { const g = Math.round(zs.g * 120); q.gold += g; addExp(q, Math.round(zs.xp * 60)); q.dirty = 1; say(q, 'loot', `🤖 부천로보 격파 보상 💰${g.toLocaleString()}G + 경험치`, '#4dabf7'); }
+    setTimeout(() => evEnd('robo', `🤖💥 ${p.name}님이 거대 메카 부천로보를 격파했다!! 부천은 지켜졌다!! (참여자 전원 보상)`), 50);
+  }
+}
+function catTick(E, m, t) {
+  const b = E.boss; if (!b || b.dead) return;
+  if (b.stun > t) return;
+  const ps = [...players.values()].filter(q => q.map === m.id && !q.dead);
+  let near = null, nd = 99; for (const q of ps) { const d = dist(q, b); if (d < nd) { nd = d; near = q; } }
+  if (t > (b.mvAt || 0)) {
+    b.mvAt = t + (nd < 6 ? 300 : 650);
+    let best = null, bs = -1e9;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+      const nx = b.x + dx, ny = b.y + dy; if (!walk(m, nx, ny) || inSafe(m, nx, ny) || occ(m, nx, ny, b)) continue;
+      const sc = (near && nd < 9 ? Math.hypot(nx - near.x, ny - near.y) * 2 : 0) + Math.random() * 1.5 - (Math.min(nx, ny, m.w - nx, m.h - ny) < 3 ? 3 : 0);
+      if (sc > bs) { bs = sc; best = [nx, ny]; }
+    }
+    if (best) { b.x = best[0]; b.y = best[1]; }
+  }
+  if (near && nd < 2.2 && t > (E.smoke || 0)) { // 연막탄 순간이동
+    E.smoke = t + 9000; const sx = b.x, sy = b.y;
+    for (let k = 0; k < 60; k++) { const nx = b.x + R(-8, 8), ny = b.y + R(-8, 8); if (walk(m, nx, ny) && !inSafe(m, nx, ny) && Math.hypot(nx - sx, ny - sy) > 5) { b.x = nx; b.y = ny; break; } }
+    bc(m.id, { t: 'fx', k: 'boom', x: sx, y: sy, r: 2.5, c: '#868e96' }); for (const q of ps) if (Math.hypot(q.x - sx, q.y - sy) <= 2.5) { q.bf.spd = [0.45, t + 2500]; q.vdirty = 1; }
+    bc(m.id, { t: 'mtalk', id: b.id, m: '연막탄 펑!! 냥냥~', loud: 1 });
+  }
+  const hp = b.hp / b.mhp;
+  if ((E.split === 0 && hp < .6) || (E.split === 1 && hp < .3)) { E.split++; for (let k = 0; k < 4; k++) { const hp2 = Math.round(E.zs.hp * 2); const d = evSpawn(m, 'decoycat', { x: b.x, y: b.y, r: 3 }, { hp: hp2, mhp: hp2, still: 1, noMelee: 1, until: E.end }); } bc(m.id, { t: 'mtalk', id: b.id, m: '분신술이다냥!! 누가 진짜게~?', loud: 1 }); }
+  for (const o of m.mobs) if (MON[o.t].id === 'decoycat' && !o.dead && t > (o.mvAt || 0)) { o.mvAt = t + 300; const d = R(0, 3), nx = o.x + DX[d], ny = o.y + DY[d]; if (walk(m, nx, ny) && !inSafe(m, nx, ny) && !occ(m, nx, ny, o)) { o.x = nx; o.y = ny; } }
+}
+function roboTick(E, m, t) {
+  const b = E.boss; if (!b || b.dead) return;
+  if (E.rebuild && t > E.rebuild) { E.rebuild = 0; roboParts(E, m, 0); bc(m.id, { t: 'mtalk', id: b.id, m: '시스템 재가동. 부품 재조립 완료.', loud: 1 }); sendAll({ t: 'notice', m: '🔧 부천로보가 부품을 다시 조립했다! 다시 부수세요!', c: '#4dabf7' }); }
+  for (const o of m.mobs) if (MON[o.t].evp === 'robo' && !o.dead) { const off = { rp_arml: [-3, 0], rp_armr: [3, 0], rp_leg: [0, 3], rp_cannon: [0, -3] }[MON[o.t].id]; const nx = b.x + off[0], ny = b.y + off[1]; if (walk(m, nx, ny)) { o.x = nx; o.y = ny; } }
+  if (b.groggy > t) return;
+  const ps = [...players.values()].filter(q => q.map === m.id && !q.dead && dist(q, b) < 16); if (!ps.length) return;
+  if (t > (b.mvAt || 0)) { b.mvAt = t + 1400; const q = ps[0], nx = b.x + Math.sign(q.x - b.x), ny = b.y + Math.sign(q.y - b.y); if (dist(q, b) > 4 && walk(m, nx, b.y) && !inSafe(m, nx, b.y)) b.x = nx; else if (dist(q, b) > 4 && walk(m, b.x, ny) && !inSafe(m, b.x, ny)) b.y = ny; }
+  if (t < E.next) return;
+  const c = ++E.cnt, A = E.zs.atk, has = id => m.mobs.some(o => !o.dead && MON[o.t].id === id), say2 = msg => bc(m.id, { t: 'mtalk', id: b.id, m: msg, loud: 1 });
+  const pk = () => pick(ps);
+  if (c % 4 === 1 && has('rp_armr')) { for (const q of ps.slice(0, 3)) gtBlast(m, lineT(m, b.x, b.y, q, 18), 1400, A * 2.6, '#ffd43b'); say2('레이저 발사!!'); }
+  else if (c % 4 === 2 && has('rp_cannon')) { gtBlast(m, ps.flatMap(q => [[q.x, q.y], [q.x + R(-3, 3), q.y + R(-3, 3)], [q.x + R(-3, 3), q.y + R(-3, 3)]]).flatMap(([x, y]) => circleT(x, y, 1.2)), 1500, A * 2.2, '#b197fc'); say2('미사일 일제 사격!!'); }
+  else if (c % 4 === 3 && has('rp_leg')) { gtBlast(m, circleT(b.x, b.y, 4.5), 1400, A * 2.4, '#69db7c'); setTimeout(() => { for (const q of ps) if (!q.dead && q.map === m.id && dist(q, b) <= 4.5) { q.stun = now() + 900; q.vdirty = 1; } }, 1400); say2('메가 발구르기!!'); }
+  else if (has('rp_arml')) { const q = pk(); gtBlast(m, lineT(m, b.x, b.y, q, 14), 1200, A * 3, '#ff6b6b'); say2(`로켓 펀치!! 목표: ${q.name}`); }
+  else { gtBlast(m, circleT(b.x, b.y, 3), 1200, A * 1.8, '#4dabf7'); say2('긴급 방전!!'); }
+  E.next = t + 3200;
+}
+function evTick(t) {
+  for (const E of Object.values(EVS)) {
+    if (E.st === 'idle') {
+      if (t >= E.at) { evStart(E.id); continue; }
+      const left = E.at - t;
+      if (left < 600000 && E.warn < 1) { E.warn = 1; sendAll({ t: 'notice', m: `${E.e} 10분 뒤 ${E.n}이(가) 부천 어딘가에 나타납니다!!`, c: '#ffd43b', big: 1 }); }
+      if (left < 60000 && E.warn < 2) { E.warn = 2; sendAll({ t: 'notice', m: `${E.e} 1분 뒤 ${E.n} 출현!! 준비하세요!!`, c: '#ffd43b', big: 1 }); }
+      continue;
+    }
+    const m = MAPS[E.map];
+    if (!E.boss || E.boss.dead) continue; // 처치됨 → evKilled 가 마무리
+    if (!m.mobs.includes(E.boss)) { evEnd(E.id, ''); continue; }
+    if (t >= E.end) { evEnd(E.id, E.id === 'cat' ? '📦💨 냥아치가 택배를 들고 도망갔다냥~ 2시간 뒤에 또 온다냥!' : '🤖💨 부천로보가 퇴각했다… 5시간 뒤 재출격 예정!'); continue; }
+    if (E.id === 'cat') catTick(E, m, t); else roboTick(E, m, t);
+  }
+  if (tk % 20 === 0) evBroadcast(true);
 }
 /* ===================== 🎅 산타 레이드 ===================== */
 function santaRudolphs(Rd) { const m = MAPS[Rd.map]; for (const [x, y] of [[4, 4], [m.w - 5, 4], [4, m.h - 5], [m.w - 5, m.h - 5]]) rSpawn(Rd, 'rudolph', x, y, { sz: .3 }); }
@@ -1994,7 +2141,7 @@ function login(ws, m) {
   else if (TT) { sendAll({ t: 'notice', m: TT.enter(`[${FAC[p.faction].n}] ${name}`), c: TT.c, big: TT.big || 0 }); setTimeout(() => players.has(p.id) && bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 2.5, c: TT.c, n: TT.n, i: p.id }), 800); }
   else sendAll({ t: 'notice', m: `👋 [${FAC[p.faction].n}] ${name}님이 입장하셨습니다`, c: FAC[p.faction].c, small: 1 });
   if (ZEV.on) setTimeout(zevStatus, 300);
-  setTimeout(() => send(p, gtMsg()), 400);
+  setTimeout(() => { send(p, gtMsg()); send(p, { t: 'evs', l: evList(), sn: now() }); }, 400);
   sendWho();
 }
 function onMsg(p, m) {
@@ -2133,7 +2280,7 @@ function tick() {
     if (p.dirty) { p.dirty = 0; send(p, mePayload(p)); }
     if (p.vdirty && tk % 3 === 0) { p.vdirty = 0; send(p, { t: 'v', hp: p.hp, mhp: p.mhp, mp: p.mp, mmp: p.mmp, exp: p.exp, need: need(p.lv), lv: p.lv, gold: p.gold }); }
   }
-  raidTick(t); royaleTick(t); zevTick(t); if (tk % 2 === 0) gtTick(t);
+  raidTick(t); royaleTick(t); zevTick(t); if (tk % 2 === 0) gtTick(t); evTick(t);
   if (tk % 50 === 0) sendWho();
   if (tk % 300 === 0) flush();
 }

@@ -28,7 +28,7 @@ const fxs = [], dmgs = [];
 const cds = {};
 let ws = null, myId = 0, faction = '', WHO = [], EVT = 1;
 const WARN = [], HZ = [];
-let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, LTOP = [], STAG = null, GTS = null, GTOFF = 0;
+let PLATES = { l: [], seq: null, i: 0 }, MOOD = '', SHAKE = 0, LAVA = [], SHARE = null, COUNT = 0, ROYN = 0, FLASH = 0, ZBAN = null, ZST = null, ZR = null, LTOP = [], STAG = null, GTS = null, GTOFF = 0, EVL = null;
 const MARKS = {};
 
 /* ============ 로그인 ============ */
@@ -102,6 +102,7 @@ function onMsg(m) {
     case 'mood': MOOD = m.m; break;
     case 'stag': STAG = m; break;
     case 'gt': GTS = m; GTOFF = m.sn - Date.now(); renderGT(); break;
+    case 'evs': EVL = m.l; GTOFF = m.sn - Date.now(); renderGT(); break;
     case 'gtq': gtQuizUI(m); break;
     case 'zev':
       if (m.st === 'start') { ZBAN = { t: now(), ms: 4500, txt: '🧟 좀비들이 몰려옵니다…', sub: `${m.min}분 동안 좀비 보스를 가장 많이 잡아라! (좀비 1점 · 좀비 킹 5점)` }; SHAKE = now() + 900; }
@@ -433,6 +434,33 @@ function drawMob(g, cx, cy, e, t) {
     case 'kraken': { const y0 = Math.sin(t / 400) * 1.5; g.fillStyle = c; for (let k = 0; k < 6; k++) { const a = Math.PI * (.15 + k * .14), sw = Math.sin(t / 300 + k) * .25; g.save(); g.translate(Math.cos(a) * 7 * (k < 3 ? -1 : 1) * 0 + (k - 2.5) * 4, -6 + y0); g.rotate((k - 2.5) * .35 + sw); g.beginPath(); g.ellipse(0, 6, 2.5, 8, 0, 0, 7); g.fill(); g.restore(); } g.beginPath(); g.ellipse(0, -18 + y0, 13, 14, 0, 0, 7); g.fill(); g.fillStyle = '#9775fa'; for (const [sx, sy] of [[-6, -26], [5, -28], [0, -22]]) { g.beginPath(); g.arc(sx, sy + y0, 2, 0, 7); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.ellipse(-5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.ellipse(5, -15 + y0, 3.5, 2.6, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.fillRect(-5.6, -17 + y0, 1.3, 4); g.fillRect(4.4, -17 + y0, 1.3, 4); g.fillStyle = '#ffd43b'; g.beginPath(); g.moveTo(-8, -31 + y0); g.lineTo(-6, -37 + y0); g.lineTo(-2, -33 + y0); g.lineTo(0, -39 + y0); g.lineTo(2, -33 + y0); g.lineTo(6, -37 + y0); g.lineTo(8, -31 + y0); g.fill(); break; }
     case 'tentacle': { const sw = Math.sin(t / 220 + ph) * .45; g.save(); g.rotate(sw); g.fillStyle = c; g.beginPath(); g.moveTo(-5, 0); g.quadraticCurveTo(-7, -18, 0, -32); g.quadraticCurveTo(7, -18, 5, 0); g.fill(); g.fillStyle = '#e5dbff'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(1, -5 - k * 5.5, 1.6, 0, 7); g.fill(); } g.restore(); break; }
     case 'clock': { const y0 = Math.sin(t / 500), fake = M.id === 'clockclone'; if (fake) g.globalAlpha = .6 + .2 * Math.sin(t / 150); g.fillStyle = '#5c3d2e'; rr(g, -9, -10 + y0, 18, 10, 2); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(0, -22 + y0, 13, 0, 7); g.fill(); g.fillStyle = '#fff9db'; g.beginPath(); g.arc(0, -22 + y0, 10.5, 0, 7); g.fill(); g.fillStyle = '#212529'; for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; g.fillRect(Math.cos(a) * 8.5 - .6, -22 + y0 + Math.sin(a) * 8.5 - .6, 1.2, 1.2); } g.strokeStyle = '#212529'; g.lineWidth = 1.6; g.lineCap = 'round'; const a1 = t / 600, a2 = t / 60; g.beginPath(); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a1) * 5, -22 + y0 + Math.sin(a1) * 5); g.moveTo(0, -22 + y0); g.lineTo(Math.cos(a2) * 8, -22 + y0 + Math.sin(a2) * 8); g.stroke(); g.fillStyle = '#e03131'; g.beginPath(); g.arc(-4, -26 + y0, 1.6, 0, 7); g.arc(4, -26 + y0, 1.6, 0, 7); g.fill(); g.fillStyle = '#7048e8'; g.beginPath(); g.moveTo(-13, -30 + y0); g.lineTo(-17, -40 + y0); g.lineTo(-8, -33 + y0); g.moveTo(13, -30 + y0); g.lineTo(17, -40 + y0); g.lineTo(8, -33 + y0); g.fill(); g.globalAlpha = 1; break; }
+    case 'thief': { const y0 = -Math.abs(bob) * 3, run = Math.sin(t / 70 + ph);
+      g.fillStyle = '#8d5a3b'; rr(g, -15, -24 + y0, 13, 12, 2); g.fill(); g.strokeStyle = '#d9a066'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-15, -18 + y0); g.lineTo(-2, -18 + y0); g.moveTo(-8.5, -24 + y0); g.lineTo(-8.5, -12 + y0); g.stroke(); g.fillStyle = '#fff'; g.font = 'bold 5px sans-serif'; g.fillText('📦', -12, -14 + y0);
+      g.fillStyle = c; g.beginPath(); g.ellipse(0, -9 + y0, 10, 7, 0, 0, 7); g.fill();
+      g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.moveTo(-6, -4 + y0); g.lineTo(-7 + run * 3, 0); g.moveTo(5, -4 + y0); g.lineTo(6 - run * 3, 0); g.stroke();
+      g.lineWidth = 2.5; g.beginPath(); g.moveTo(9, -10 + y0); g.quadraticCurveTo(17, -14 + run * 3, 15, -22); g.stroke();
+      g.fillStyle = c; g.beginPath(); g.arc(-1, -19 + y0, 8, 0, 7); g.fill(); g.beginPath(); g.moveTo(-8, -22 + y0); g.lineTo(-6, -30 + y0); g.lineTo(-2, -25 + y0); g.moveTo(1, -25 + y0); g.lineTo(5, -30 + y0); g.lineTo(6, -22 + y0); g.fill();
+      g.fillStyle = '#212529'; rr(g, -9, -23 + y0, 16, 5, 2); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(-4.5, -20.5 + y0, 1.6, 0, 7); g.arc(2.5, -20.5 + y0, 1.6, 0, 7); g.fill(); g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(-4.2, -20.5 + y0, .8, 0, 7); g.arc(2.8, -20.5 + y0, .8, 0, 7); g.fill();
+      g.strokeStyle = '#222'; g.lineWidth = 1; g.beginPath(); g.moveTo(-3, -15.5 + y0); g.quadraticCurveTo(-1, -14 + y0, 1, -15.5 + y0); g.stroke(); g.fillStyle = '#ff8787'; g.beginPath(); g.arc(-1, -17 + y0, 1, 0, 7); g.fill();
+      if (M.id === 'thiefcat') { g.fillStyle = '#ffd43b'; g.font = '7px sans-serif'; g.globalAlpha = .6 + .4 * Math.sin(t / 150); g.fillText('💰', 8, -28 + y0); g.globalAlpha = 1; }
+      break; }
+    case 'mecha': { const y0 = Math.sin(t / 500) * 1.2, open = e.fl & 32, sh = e.fl & 16, pulse = .6 + .4 * Math.sin(t / 160);
+      g.fillStyle = '#343a40'; rr(g, -12, -14, 9, 14, 2); g.fill(); rr(g, 3, -14, 9, 14, 2); g.fill(); g.fillStyle = '#212529'; rr(g, -14, -3, 12, 4, 1); g.fill(); rr(g, 2, -3, 12, 4, 1); g.fill();
+      g.fillStyle = '#868e96'; rr(g, -16, -40 + y0, 32, 28, 5); g.fill(); g.fillStyle = '#495057'; rr(g, -16, -40 + y0, 32, 6, 3); g.fill();
+      g.fillStyle = '#1c7ed6'; rr(g, -22, -40 + y0, 9, 10, 3); g.fill(); rr(g, 13, -40 + y0, 9, 10, 3); g.fill();
+      g.save(); g.shadowColor = open ? '#ff6b6b' : '#4dabf7'; g.shadowBlur = open ? 20 : 10 * pulse; g.fillStyle = open ? '#ff6b6b' : '#74c0fc'; g.beginPath(); g.arc(0, -26 + y0, open ? 7 : 5, 0, 7); g.fill(); g.restore();
+      if (!open) { g.strokeStyle = '#495057'; g.lineWidth = 2; g.beginPath(); g.moveTo(-6, -26 + y0); g.lineTo(6, -26 + y0); g.moveTo(0, -32 + y0); g.lineTo(0, -20 + y0); g.stroke(); }
+      g.fillStyle = '#adb5bd'; rr(g, -9, -54 + y0, 18, 13, 4); g.fill(); g.save(); g.shadowColor = '#ff2b2b'; g.shadowBlur = 8; g.fillStyle = '#ff2b2b'; rr(g, -7, -50 + y0, 14, 4, 2); g.fill(); g.restore();
+      g.strokeStyle = '#495057'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -54 + y0); g.lineTo(0, -60 + y0); g.stroke(); g.fillStyle = '#ffd43b'; g.beginPath(); g.arc(0, -61 + y0, 1.8, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 5px sans-serif'; g.textAlign = 'center'; g.fillText('BUCHEON', 0, -15 + y0);
+      if (sh) { g.strokeStyle = `rgba(116,192,252,${.4 + .3 * pulse})`; g.lineWidth = 2; g.beginPath(); for (let k = 0; k < 7; k++) { const a = k * Math.PI / 3; g.lineTo(Math.cos(a) * 30, -30 + Math.sin(a) * 34); } g.stroke(); }
+      if (open) { g.fillStyle = '#ffd43b'; for (let k = 0; k < 5; k++) { const a = t / 80 + k * 1.3; g.fillRect(Math.cos(a) * 14, -26 + Math.sin(a) * 12, 2, 2); } }
+      break; }
+    case 'robopart': { const pulse = .5 + .5 * Math.sin(t / 200 + ph);
+      g.fillStyle = '#495057'; rr(g, -9, -20, 18, 18, 3); g.fill(); g.fillStyle = '#868e96'; rr(g, -7, -18, 14, 4, 2); g.fill();
+      g.save(); g.shadowColor = c; g.shadowBlur = 10 * pulse; g.fillStyle = c; g.beginPath(); g.arc(0, -9, 4, 0, 7); g.fill(); g.restore();
+      g.strokeStyle = '#ced4da'; g.lineWidth = 1; g.beginPath(); g.moveTo(-9, -2); g.lineTo(-12, 2); g.moveTo(9, -2); g.lineTo(12, 2); g.stroke();
+      break; }
     case 'toad': { const y0 = -Math.abs(bob) * 2.5, king = M.id === 'goldtoad';
       g.fillStyle = '#e67700'; g.beginPath(); g.ellipse(-11, -2, 5, 3, -.3, 0, 7); g.ellipse(11, -2, 5, 3, .3, 0, 7); g.fill();
       const gr = g.createRadialGradient(-4, -15 + y0, 2, 0, -10 + y0, 16); gr.addColorStop(0, '#fff9db'); gr.addColorStop(.45, c); gr.addColorStop(1, '#e67700'); g.fillStyle = gr; g.beginPath(); g.ellipse(0, -10 + y0, 14, 11, 0, 0, 7); g.fill();
@@ -815,7 +843,7 @@ function frame() {
       } else {
         const M = D.MON[e.t], S = M.boss ? (M.big || 1.9) : 1;
         if (M.raid) { if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 10, e.mb, e.loud); if (['zarm', 'tentacle', 'clockclone'].includes(M.id) || M.guard) hpBar(ctx, x, y - 40 * S, M.guard ? 26 : 40, e.h / e.H, '#fa5252'); if (M.guard && m && Math.hypot(e.x - m.x, e.y - m.y) < 5) { ctx.font = '9px Jua'; ctx.fillStyle = '#ffd43b'; ctx.fillText(M.n, x, y + 10); } }
-        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : M.s === 'zombie' ? ' 🧟' : M.hw ? ' 🐲' : M.s === 'toad' ? ' 🐸' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
+        else if (M.boss) { ctx.font = 'bold 13px Jua'; const n = (e.v != null ? D.VAR[e.v].p + ' ' : '') + M.n + (M.s === 'human' ? (M.look && M.look.grandma ? ' 🎤' : M.look && M.look.fangs ? ' 🧛' : ' ✨') : M.s === 'dog' ? ' 🐶' : M.s === 'tennis' ? ' 🎾' : M.s === 'tuna' ? ' 🐟' : M.s === 'zombie' ? ' 🧟' : M.hw ? ' 🐲' : M.s === 'toad' ? ' 🐸' : M.id === 'thiefcat' ? ' 📦' : M.id === 'mecha' ? ' 🤖' : ''); ctx.fillStyle = '#000'; ctx.fillText('👑 ' + n, x + 1, y - 34 * S - 9); ctx.fillStyle = '#ffe066'; ctx.fillText('👑 ' + n, x, y - 34 * S - 10); hpBar(ctx, x, y - 34 * S - 4, 60, e.h / e.H, '#fa5252'); if (e.mb && t < e.mbT) bubble(ctx, x, y - 34 * S - 26, e.mb, e.loud); }
         else if (e.fl & 64) { ctx.font = '9px Jua'; ctx.fillStyle = '#000'; ctx.fillText('🧟 아군 좀비', x + 1, y + 11); ctx.fillStyle = '#94d82d'; ctx.fillText('🧟 아군 좀비', x, y + 10); }
         else { if (e.h < e.H) hpBar(ctx, x, y - 30, 22, e.h / e.H, '#fa5252'); if (m && Math.hypot(e.x - m.x, e.y - m.y) < 4) { ctx.font = '9px Jua'; ctx.fillStyle = '#fff'; ctx.fillText(M.n + ' Lv' + M.lv, x, y + 10); } }
       }
@@ -1107,12 +1135,20 @@ function renderWho() {
 }
 function renderGT() {
   let el = $('#gtw'); if (!el) { el = document.createElement('div'); el.id = 'gtw'; document.body.appendChild(el); el.onclick = () => el.classList.toggle('mini'); }
+  if (EVL) {
+    el.style.display = 'block'; const sn = Date.now() + GTOFF, SH = { gt: '떡두꺼비', cat: '냥아치', robo: '부천로보' };
+    const fmt = ms => { const s3 = Math.max(0, Math.floor(ms / 1000)), hh = Math.floor(s3 / 3600), mi = Math.floor(s3 / 60) % 60; return hh ? hh + '시간 ' + mi + '분' : mi + '분 ' + (s3 % 60) + '초'; };
+    const L = [...EVL].sort((a, b) => (b.st === 'on') - (a.st === 'on') || a.at - b.at), on = L.some(e => e.st === 'on'), soon = L.some(e => e.st !== 'on' && e.at - sn < 600000);
+    el.className = (on ? 'on' : soon ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : '');
+    el.innerHTML = L.map((e, i) => `<div class="${i ? 'ev2' : ''}">${e.st === 'on' ? `${e.e} <b>${SH[e.k] || e.n} 출현!</b> 📍${esc(e.map)} · ${e.hp}%` : `${e.e} ${SH[e.k] || e.n} ${fmt(e.at - sn)} 남음`}</div>`).join('');
+    return;
+  }
   if (!GTS) { el.style.display = 'none'; return; } el.style.display = 'block';
   const sn = Date.now() + GTOFF, hms = ms => { const s2 = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s2 / 3600)).padStart(2, '0')}:${String(Math.floor(s2 / 60) % 60).padStart(2, '0')}:${String(s2 % 60).padStart(2, '0')}`; };
   if (GTS.st === 'on') { el.className = 'on' + (el.classList.contains('mini') ? ' mini' : ''); el.innerHTML = `<b>🐸 황금떡두꺼비 군단 출현!!</b><div>📍 ${esc(GTS.map)}</div><div class="gs">체력 ${GTS.hp}% · 도망까지 ${hms(GTS.end - sn)}</div>`; }
   else { const left = GTS.at - sn; el.className = (left < 600000 ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : ''); const s3 = Math.max(0, Math.floor(left / 1000)), hh = Math.floor(s3 / 3600), mi = Math.floor(s3 / 60) % 60; el.innerHTML = `🐸 ${hh ? hh + '시간 ' + mi + '분' : mi + '분 ' + (s3 % 60) + '초'} 남음`; }
 }
-setInterval(() => { if (GTS) renderGT(); }, 1000);
+setInterval(() => { if (GTS || EVL) renderGT(); }, 1000);
 let gtTimer = null;
 function gtSubmit() { const i = $('#gtin'); if (!i) return; const v = i.value.trim(); if (v) send({ t: 'chat', m: v }); i.value = ''; }
 function gtQuizUI(m) {
@@ -1210,6 +1246,7 @@ function renderAdm() {
   let h = head('👑 관리자 모드');
   h += `<div class="acts"><button data-a="god" class="${A.god ? 'pri' : ''}">🛡 무적 ${A.god ? 'ON' : 'OFF'}</button><button data-a="onehit" class="${A.onehit ? 'pri' : ''}">💥 한방 ${A.onehit ? 'ON' : 'OFF'}</button><button data-a="fast" class="${A.fast ? 'pri' : ''}">⚡ 초고속 ${A.fast ? 'ON' : 'OFF'}</button><button data-a="heal">❤️ 완전회복</button><button data-a="clear">🧹 맵 몬스터 제거</button><button data-a="kill">☠️ 주변 몬스터 처치</button><button data-a="pickall">🧲 맵 아이템 다 줍기</button><button data-a="mount">🐶 밥풀이 탑승 ${ME.mount ? 'OFF' : 'ON'}</button><button data-a="tunabag">🐟 냉동참치 보따리</button><button data-a="tunamats">🧩 참치 재료</button><button data-a="hwangbag">🐲 황룡의 부적</button><button data-a="beastmats">🧩 4신수 재료</button><button data-a="gbuff">🐉 신수 버프 4종</button><button data-a="santabuff">🎅 산타 버프</button><button data-a="topdps">📊 신수 체력 계산</button></div>`;
   h += `<h4 style="margin:12px 0 4px">🐸 황금떡두꺼비 군단 (매일 오후 8시 자동)</h4><div class="acts"><button data-a="gtnow" class="pri">🐸 지금 출현 (랜덤 맵)</button><button id="gthere">🐸 이 맵에 출현</button><button data-a="gtquiz">❓ 퀴즈 바로 내기</button><button data-a="gtstop" class="red">돌려보내기</button></div>`;
+  h += `<h4 style="margin:12px 0 4px">⏰ 정기 이벤트 (📦 냥아치 2시간 · 🤖 부천로보 5시간마다 자동)</h4><div class="acts">${[['cat', '📦 냥아치'], ['robo', '🤖 부천로보']].map(([k, n]) => `<button data-ev="${k}" class="pri">${n} 지금</button><button data-evh="${k}">${n} 이 맵에</button><button data-evs="${k}" class="red">${n} 종료</button>`).join('')}</div>`;
   h += `<div class="small" style="margin-top:6px">무적 ON이면 피해 없음 + 스킬 쿨타임/MP 없음</div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 경험치 이벤트 (전체)</h4><div class="acts">${[1, 2, 5, 10].map(v => `<button data-ev="${v}" class="${EVT === v ? 'pri' : ''}">${v === 1 ? '이벤트 끄기' : v + '배'}</button>`).join('')}<button data-a="raidreset">🧹 레이드 초기화</button></div>`;
   h += `<h4 style="margin:12px 0 4px">🔥 무한장 (배틀로얄)</h4><div class="acts"><button class="pri" data-a="royale">🔥 무한장 시작 (접속자 전원)</button><button data-a="royalestop">종료</button></div><div class="small">관리자를 뺀 접속자 전원이 무한장으로 이동 → 3초 카운트 → 진영 상관없이 싸워서 마지막 1명에게 골드</div>`;
@@ -1235,6 +1272,9 @@ function renderAdm() {
   P.querySelectorAll('[data-fac]').forEach(b => b.onclick = () => adm({ op: 'faction', f: b.dataset.fac }));
   P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv }); sl.value = ''; });
   $('#gthere').onclick = () => adm({ op: 'gtnow', here: 1 });
+  P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => adm({ op: 'evnow', id: b.dataset.ev }));
+  P.querySelectorAll('[data-evh]').forEach(b => b.onclick = () => adm({ op: 'evnow', id: b.dataset.evh, here: 1 }));
+  P.querySelectorAll('[data-evs]').forEach(b => b.onclick = () => adm({ op: 'evstop', id: b.dataset.evs }));
   $('#admmobgo').onclick = () => adm({ op: 'mob', id: $('#admmob').value, n: 5 });
   $('#admmat').onclick = () => adm({ op: 'mat', id: $('#admmob').value });
   $('#admlvgo').onclick = () => adm({ op: 'lv', v: +$('#admlv').value });
