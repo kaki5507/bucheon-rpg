@@ -1951,7 +1951,9 @@ function santaAttack(Rd, t) {
 /* ===================== 접속/메시지 ===================== */
 const app = express(); app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app); const wss = new WebSocketServer({ server, maxPayload: 8192 });
-const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+// 순간이동 비용: 맵 몬스터 평균 레벨 기준 (레이드/신전/무한장은 불가)
+function tpCost(m) { if (/^(raid|temple)/.test(m.id) || m.id === 'royale') return 0; const L = m.pool.length ? m.pool.reduce((a, id) => a + MI[id].lv, 0) / m.pool.length : 5; return Math.round((200 + L * L * 3) / 100) * 100; }
+const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
@@ -2053,6 +2055,18 @@ function onMsg(p, m) {
     case 'pk': pkMsg(p, m); break;
     case 'adm': if (p.admin) adminCmd(p, m); break;
     case 'raid': raidOp(p, String(m.id), String(m.op)); break;
+    case 'mtp': { // 월드맵 순간이동 (골드 소모, 가본 맵만)
+      const to = MAPS[String(m.id)], c = to && tpCost(to);
+      if (!to || !c || p.dead) break;
+      if (/^(raid|temple)/.test(p.map) || p.map === 'royale') { say(p, 'sys', '레이드·신전·무한장 안에서는 순간이동할 수 없어요 (🚪 나가기 먼저)'); break; }
+      if (!(p.seen && p.seen[to.id]) && !p.admin) { say(p, 'sys', '아직 가보지 않은 맵이에요'); break; }
+      if (to.id === p.map) { say(p, 'sys', '이미 여기 있어요'); break; }
+      if (p.gold < c && !p.admin) { say(p, 'sys', `골드가 부족해요 (${c.toLocaleString()}G 필요)`); break; }
+      if (!p.admin) p.gold -= c; p.dirty = 1; p.stun = 0;
+      bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 1.2, c: '#b197fc', n: '순간이동!', i: p.id });
+      const sp = to.spawn || { x: 2, y: 2 }; warp(p, to.id, sp.x, sp.y);
+      say(p, 'loot', `✨ ${to.name}(으)로 순간이동! (-${p.admin ? 0 : c.toLocaleString()}G)`, '#b197fc'); break;
+    }
     case 'rexit': { // 레이드/신전 어디서든 언제든 나가기
       if (p.dead || !/^(raid|temple)/.test(p.map)) break;
       const Rd = Object.values(RAIDS).find(r => r.map === p.map);

@@ -1163,9 +1163,13 @@ function renderWorld() {
   const P = $('#pworld'), seen = (ME && ME.seen) || {}, info = id => D.MAPLIST.find(m => m.id === id) || { n: id };
   const pos = Object.fromEntries(WMAP.map(([id, x, y]) => [id, [x, y]]));
   let h = head('🗺️ 월드맵') + `<div class="wmap"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${WLINK.map(([a, b]) => `<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="${seen[a] && seen[b] ? '#b197fc' : '#4a3f72'}" stroke-width="0.8" stroke-dasharray="${seen[a] && seen[b] ? '' : '2 1.5'}"/>`).join('')}</svg>`;
-  for (const [id, x, y] of WMAP) { const M = info(id), on = seen[id], cur = MAP && MAP.id === id; h += `<div class="wnode ${on ? '' : 'dim'} ${cur ? 'cur' : ''}" style="left:${x}%;top:${y}%">${cur ? '📍' : ''}${esc(M.n)}<div class="small">${M.lvr && M.lvr !== '휴식' && M.lvr !== '레이드' ? 'Lv' + M.lvr : M.lvr || ''}${on ? '' : ' · 미발견'}</div></div>`; }
-  h += `</div><div class="small" style="margin-top:6px">흐린 곳은 아직 가보지 않은 맵이에요 · 보기 전용</div>`;
+  for (const [id, x, y] of WMAP) { const M = info(id), on = seen[id] || (ME && ME.admin), cur = MAP && MAP.id === id, tp = on && !cur && M.tc; h += `<div class="wnode ${on ? '' : 'dim'} ${cur ? 'cur' : ''} ${tp ? 'tp' : ''}" ${tp ? `data-tp="${id}"` : ''} style="left:${x}%;top:${y}%">${cur ? '📍' : ''}${esc(M.n)}<div class="small">${M.lvr && M.lvr !== '휴식' && M.lvr !== '레이드' ? 'Lv' + M.lvr : M.lvr || ''}${on ? '' : ' · 미발견'}${tp ? ` · ✨${M.tc >= 10000 ? Math.round(M.tc / 1000) / 10 + '만' : M.tc.toLocaleString()}G` : ''}</div></div>`; }
+  const quick = WMAP.map(([id]) => info(id)).filter(M => (seen[M.id] || (ME && ME.admin)) && M.tc && !(MAP && MAP.id === M.id));
+  h += `</div><div style="margin-top:8px;font-size:14px">✨ 빠른 이동 <span class="small">(가본 맵 · 골드 소모)</span></div><div class="tpq">${quick.length ? quick.map(M => `<button data-tp="${M.id}">${esc(M.n)} <span class="small">💰${M.tc.toLocaleString()}</span></button>`).join('') : '<span class="small">아직 가본 맵이 없어요</span>'}</div><div id="tpbar" class="small" style="margin-top:6px">✨ 가본 맵을 누르면 골드를 내고 순간이동 (마을 안전지대로 도착) · 흐린 곳은 아직 안 가본 맵 · 레이드·신전은 보스 대기실로 가서 입장</div>`;
   P.innerHTML = h;
+  P.querySelectorAll('[data-tp]').forEach(el => el.onclick = () => { const id = el.dataset.tp, M = info(id), bar = $('#tpbar');
+    bar.innerHTML = `<b>${esc(M.n)}</b>(으)로 이동할까요? 💰 ${M.tc.toLocaleString()}G <span class="acts" style="display:inline-flex"><button class="pri" id="tpgo">✨ 순간이동</button><button id="tpno">취소</button></span>`;
+    $('#tpgo').onclick = () => { send({ t: 'mtp', id }); P.style.display = 'none'; }; $('#tpno').onclick = renderWorld; });
 }
 
 /* ============ NPC / 퀘스트 ============ */
