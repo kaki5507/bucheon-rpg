@@ -770,7 +770,7 @@ function mePayload(p) {
 }
 function pubP(p) {
   const w = p.eq.weapon, a = p.eq.armor, h = p.eq.helm;
-  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, ad: p.admin ? 1 : 0, tt: p.title || undefined, iv: p.invUntil > now() ? 1 : undefined, mt: p.mount ? 1 : 0, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
+  return { i: p.id, n: p.name, f: p.faction, j: p.job, l: p.lv, x: p.x, y: p.y, d: p.d, h: p.hp, H: p.mhp, w: w ? [w.b, w.r, w.plus] : 0, ar: a ? [a.b, a.r] : 0, he: h ? [h.b, h.r] : 0, bb: p.bubT > now() ? p.bub : undefined, ad: p.admin ? 1 : 0, tt: p.title || undefined, rk: RANKN.get(p.name) || undefined, iv: p.invUntil > now() ? 1 : undefined, mt: p.mount ? 1 : 0, bf: (bm(p, 'atk') > 1 ? 1 : 0) | (bm(p, 'def') > 1 ? 2 : 0) | (bm(p, 'spd') > 1 ? 4 : 0) | (bm(p, 'spd') < 1 ? 8 : 0) | (p.stun > now() ? 16 : 0) };
 }
 function mapMsg(m) { return { t: 'map', id: m.id, name: m.name, w: m.w, h: m.h, theme: m.theme, rows: m.t.map(r => r.join('')), portals: m.portals.map(p => ({ x: p.x, y: p.y, n: MAPS[p.to].name })), safes: m.safes, sl: m.sl, lvr: m.lvr, npcs: m.npcs.map(n => ({ id: n.id, x: n.x, y: n.y, n: NPCS[n.id].n, look: NPCS[n.id].look })) }; }
 function warp(p, mapId, x, y) {
@@ -1220,6 +1220,8 @@ function royaleTick(t) {
 /* ===================== 접속자 목록 ===================== */
 function sendWho() { sendAll({ t: 'who', l: [...players.values()].map(p => [p.name, p.faction, p.job, p.lv, MAPS[p.map].name, p.admin ? 1 : 0, p.title || '']), zr: db.zrank || null, top: lvTop() }); }
 // 레벨 랭킹 TOP3 (오프라인 포함, 관리자 제외)
+const RANKN = new Map(); // 이름 → 레벨 랭킹(1~3)
+function refreshRanks() { RANKN.clear(); lvTop().forEach((r, i) => RANKN.set(r[0], i + 1)); }
 function lvTop() {
   const on = new Map([...players.values()].filter(p => !p.admin).map(p => [p.name, p])), L = [];
   for (const [n, a] of Object.entries(db.acc)) { if (n === ADMIN) continue; const c = on.get(n) || a.ch; if (c && c.lv) L.push([n, c.faction, c.job, c.lv, on.has(n) ? 1 : 0, c.title || '', c.exp || 0]); }
@@ -1982,8 +1984,9 @@ function login(ws, m) {
   ws.send(JSON.stringify(INIT)); warp(p, p.map, p.x, p.y);
   if (p.admin) say(p, 'sys', ADMIN_TIP);
   send(p, { t: 'evt', mult: EXPM });
-  const TT = TITLES[p.title];
-  if (TT) { sendAll({ t: 'notice', m: TT.enter(`[${FAC[p.faction].n}] ${name}`), c: TT.c, big: TT.big || 0 }); setTimeout(() => players.has(p.id) && bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 2.5, c: TT.c, n: TT.n, i: p.id }), 800); }
+  const TT = TITLES[p.title], rk = p.admin ? 0 : lvTop().findIndex(r => r[0] === name) + 1;
+  if (rk) { const RC = ['#ffd43b', '#dee2e6', '#ff922b'][rk - 1]; RANKN.set(name, rk); sendAll({ t: 'notice', m: `${['🥇', '🥈', '🥉'][rk - 1]} 레벨 랭킹 ${rk}위 [${FAC[p.faction].n}] ${name}님이 입장하셨습니다!!${rk === 1 ? ' 모두 길을 비켜라!!' : ''}`, c: RC, big: 1 }); setTimeout(() => players.has(p.id) && bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 2.5, c: RC, n: `랭킹 ${rk}위`, i: p.id }), 800); }
+  else if (TT) { sendAll({ t: 'notice', m: TT.enter(`[${FAC[p.faction].n}] ${name}`), c: TT.c, big: TT.big || 0 }); setTimeout(() => players.has(p.id) && bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 2.5, c: TT.c, n: TT.n, i: p.id }), 800); }
   else sendAll({ t: 'notice', m: `👋 [${FAC[p.faction].n}] ${name}님이 입장하셨습니다`, c: FAC[p.faction].c, small: 1 });
   if (ZEV.on) setTimeout(zevStatus, 300);
   setTimeout(() => send(p, gtMsg()), 400);
@@ -2106,6 +2109,7 @@ function tick() {
     const ps = []; for (const p of players.values()) if (p.map === m.id && !p.dead) ps.push(pubP(p));
     if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0) | (o.drunk ? 4 : 0) | (o.air ? 8 : 0) | (o.inv ? 16 : 0) | (o.groggy > t ? 32 : 0) | (o.ally ? 64 : 0) | (o.inv ? 16 : 0), o.fa != null ? Math.round(o.fa * 100) / 100 : undefined]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it), t < g.ownT ? g.own : 0, g.it.type === 'gold' ? 1 : isEq(g.it) ? 2 : 0]) });
   }
+  if (tk % 50 === 0) refreshRanks();
   if (tk % 10 === 0) for (const p of players.values()) if (p.santa && p.santa < t) { p.santa = 0; stats(p); p.dirty = 1; say(p, 'sys', '🎅 산타의 축복이 끝났어요'); }
   if (tk % 20 === 0) for (const p of players.values()) if (!p.dead) { const k = MAPS[p.map].regen * (p.gb && p.gb.jj ? 2 : 1); p.hp = Math.min(p.mhp, p.hp + Math.ceil(p.mhp * 0.02 * k)); p.mp = Math.min(p.mmp, p.mp + Math.ceil(p.mmp * 0.04 * k)); p.vdirty = 1; }
   for (const p of players.values()) {

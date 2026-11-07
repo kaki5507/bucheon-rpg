@@ -806,7 +806,7 @@ function frame() {
         const J = D.JOBS[e.j], fc = FACS[e.f] ? FACS[e.f][1] : '#fff', enemy = MAP.id === 'royale' ? e.i !== myId : /^(raid|temple)/.test(MAP.id) ? false : e.f !== faction;
         ctx.font = '11px Jua'; const label = (e.ad ? '👑 ' : '') + (J ? J.icon : '') + ' ' + e.n + ' Lv' + e.l;
         ctx.fillStyle = '#000'; ctx.fillText(label, x + 1, y + 14); ctx.fillStyle = e.i === myId ? '#fff' : fc; ctx.fillText(label, x, y + 13);
-        const TT = e.tt && D.TITLES && D.TITLES[e.tt];
+        const TT = e.rk ? { n: ['🥇', '🥈', '🥉'][e.rk - 1] + ' 랭킹 ' + e.rk + '위', c: ['#ffd43b', '#dee2e6', '#ff922b'][e.rk - 1] } : e.tt && D.TITLES && D.TITLES[e.tt];
         if (TT) { ctx.font = 'bold 10px Jua'; ctx.fillStyle = '#000'; ctx.fillText('«' + TT.n + '»', x + 1, y + 26); ctx.fillStyle = TT.c; ctx.fillText('«' + TT.n + '»', x, y + 25); }
         if (enemy) { ctx.font = '9px Jua'; ctx.fillStyle = '#ff6b6b'; ctx.fillText(MAP.id === 'royale' ? '⚔ 적' : '⚔ 적 진영 ' + FACS[e.f][0], x, y + (TT ? 36 : 24)); }
         const up = e.mt ? 15 : 0;
