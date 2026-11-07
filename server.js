@@ -416,8 +416,8 @@ const NPCS = {
   gate10: { n: '🍄 Lv10 레이드 안내원', look: { ar: [1, 2], he: [1, 2], w: [5, 2, 0] }, hi: [] },
   gate30: { n: '🦖 Lv30 레이드 안내원', look: { ar: [4, 3], he: [2, 3], w: [6, 3, 0] }, hi: [] },
   merchant: { n: '🛒 잡화상인', look: { ar: [1, 0], he: [0, 0] }, hi: ['포션이랑 주문서 있어요~'] },
-  gate40: { n: '🐙 Lv40 레이드 안내원 (3인↑)', look: { ar: [1, 3], he: [3, 3], w: [5, 3, 0] }, hi: [] },
-  gate70: { n: '🕰️ Lv70 레이드 안내원 (3인↑)', look: { ar: [3, 5], he: [4, 5], w: [4, 5, 0] }, hi: [] },
+  gate40: { n: '🐙 Lv40 레이드 안내원', look: { ar: [1, 3], he: [3, 3], w: [5, 3, 0] }, hi: [] },
+  gate70: { n: '🕰️ Lv70 레이드 안내원', look: { ar: [3, 5], he: [4, 5], w: [4, 5, 0] }, hi: [] },
   gate50: { n: '🗿 Lv50 레이드 안내원', look: { ar: [3, 4], he: [4, 4], w: [7, 4, 0] }, hi: [] },
   chief: { n: '이장님', look: { ar: [3, 0], he: [1, 0] }, hi: ['오늘도 평화로운 동네일세.', '마을 오른쪽 포탈로 나가면 상동역 술집거리야.'] },
   pocha: { n: '포차 이모', look: { ar: [2, 0], he: [1, 1], w: [1, 0, 0] }, hi: ['어서 와~ 오늘 꼬치 맛있어!', '위쪽 포탈로 가면 사우나야. 피로 풀고 와~'] },
@@ -426,7 +426,7 @@ const NPCS = {
   secretary: { n: '시장 비서', look: { ar: [3, 2] }, hi: ['번호표 뽑고 기다려 주세요.', '시청은 오늘도 바쁩니다…'] },
   miner: { n: '광부 할아버지', look: { ar: [1, 0], he: [2, 0], w: [6, 0, 0] }, hi: ['동굴은 위험해. 조심하게.', '수정이 반짝이는 쪽이 깊은 곳이야.'] },
   temple: { n: '🏛️ 신전 안내인', look: { ar: [3, 5], he: [3, 5], w: [4, 5, 0] }, hi: [] },
-  gate90: { n: '🪓 Lv90 군단장 레이드 안내원 (3인↑)', look: { ar: [4, 5], he: [2, 5], w: [6, 5, 0] }, hi: [] },
+  gate90: { n: '🪓 Lv90 군단장 레이드 안내원', look: { ar: [4, 5], he: [2, 5], w: [6, 5, 0] }, hi: [] },
   gate80: { n: '🎅 Lv80 산타 레이드 안내원', look: { ar: [2, 4], he: [1, 4], w: [1, 4, 0] }, hi: [] },
   station: { n: '부천역 역무원', look: { ar: [3, 2], he: [2, 2] }, hi: ['부천역입니다~ 오른쪽은 자유시장, 아래는 지하수로 던전이에요.', '지하로 내려갈수록 아주 강한 몬스터가 나와요. 레벨 100까지!'] },
   ranger: { n: '도당산 등산객', look: { ar: [1, 1], he: [1, 1] }, hi: ['철쭉 필 때 오면 진짜 예뻐~', '산신령님 화나게 하지 마.'] },
@@ -1347,7 +1347,7 @@ function raidDlg(p, id) {
   const Rd = RAIDS[id]; if (!Rd) return;
   const N = NPCS[Rd.npc], names = rmem(Rd).map(q => q.name);
   const stTxt = Rd.st === 'idle' ? '🟢 대기 중 — 참여하면 20초 뒤 다 같이 입장해요' : Rd.st === 'lobby' ? `🟡 모집 중 — ${Math.max(0, Math.ceil((Rd.startAt - now()) / 1000))}초 뒤 출발` : Rd.st === 'fight' ? '🔴 전투 중 — 끝나면 다시 도전할 수 있어요' : '🟣 정리 중 — 잠시 뒤 다시 도전할 수 있어요';
-  const lines = [Rd.temple ? `[${Rd.beast.e} ${Rd.n}] Lv${Rd.lv} 이상 · ⚠️ 3명 이상 모여야 입장\n🌀 어두운 미로 · 숨은 함정(밟으면 떨어져서 처음으로) · 수호병 · 3인 룬 퍼즐 → ${Rd.beast.n} 방\n🏆 처치 시 [${Rd.beast.buff}] 영구 버프 + ${Rd.mat}` : `[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만${Rd.min3 ? '\n⚠️ 3명이 동시에 해야 풀리는 기믹이 있어요 (3인 이상 권장)' : ''}${Rd.lives ? ' · 보스가 ' + (Rd.lives - 1) + '번 부활' : ''}`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
+  const lines = [Rd.temple ? `[${Rd.beast.e} ${Rd.n}] Lv${Rd.lv} 이상 · 혼자도 입장 가능\n🌀 미로 · 숨은 함정(밟으면 떨어져서 처음으로) · 수호병 · 3인 룬 퍼즐 → ${Rd.beast.n} 방\n🏆 처치 시 [${Rd.beast.buff}] 영구 버프 + ${Rd.mat}` : `[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만${Rd.min3 ? '\n🤝 동시에 밟는 발판 기믹 (발판 수 = 인원수, 최대 3 · 혼자도 가능)' : ''}${Rd.lives ? ' · 보스가 ' + (Rd.lives - 1) + '번 부활' : ''}`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
   const acts = [];
   if (Rd.mem.has(p.id) && Rd.st === 'lobby') acts.push({ k: 'raid', id, op: 'start', label: '⚔️ 지금 바로 출발' }, { k: 'raid', id, op: 'leave', label: '참여 취소' });
   else if (Rd.st === 'idle' || Rd.st === 'lobby') { if (p.lv >= Rd.lv || p.admin) acts.push({ k: 'raid', id, op: 'join', label: '🙋 보스 참여' }); else lines.push(`(Lv.${Rd.lv}부터 참여할 수 있어요)`); }
@@ -1398,7 +1398,7 @@ function rTalk(Rd, o, msg) { if (o) bc(Rd.map, { t: 'mtalk', id: o.id, m: msg, l
 function raidStart(Rd) {
   const ps = rmem(Rd).filter(q => q.map === 'bosshub' && !q.dead);
   if (!ps.length) { Rd.mem.clear(); Rd.st = 'idle'; return; }
-  if (Rd.temple && ps.length < 3 && !ps.some(q => q.admin)) { for (const q of ps) send(q, { t: 'notice', m: `🏛️ ${Rd.n}은(는) 3명 이상 모여야 들어갈 수 있어요 (현재 ${ps.length}명)`, c: '#ff8787', big: 1 }); Rd.mem.clear(); Rd.st = 'idle'; return; }
+  if (false) { for (const q of ps) send(q, { t: 'notice', m: `🏛️ ${Rd.n}은(는) 3명 이상 모여야 들어갈 수 있어요 (현재 ${ps.length}명)`, c: '#ff8787', big: 1 }); Rd.mem.clear(); Rd.st = 'idle'; return; }
   Rd.mem = new Set(ps.map(q => q.id));
   const m = MAPS[Rd.map]; m.mobs.length = 0; m.ground.length = 0; Rd.haz = []; rClean(Rd);
   Rd.enr = 0; Rd.cnt = 0;
@@ -1497,7 +1497,7 @@ function rFree(Rd, b, n) {
   return out;
 }
 function rMakePlates(Rd, b) {
-  if (Rd.id === 'r40' || Rd.id === 'r70' || Rd.id === 'r80') { const pos = []; for (let k = 0; k < 60 && pos.length < 3; k++) { const c = rFree(Rd, b, 6); for (const o of c) if (pos.length < 3 && pos.every(q => Math.hypot(q.x - o.x, q.y - o.y) >= 8)) pos.push(o); } Rd.plates = pos.map(o => ({ x: o.x, y: o.y, ci: 3, on: 0 })); Rd.seq = null; Rd.sim = 1; Rd.hold = 0; rTalk(Rd, b, Rd.id === 'r80' ? '굴뚝 3개를 동시에 막으면… 내 마법이 풀리지… 호호호' : Rd.id === 'r40' ? '등대에 불을 켤 수 있을까…? 셋이서 동시에…' : '세 개의 톱니가 동시에 돌아야… 내 시간이 멈춘다…'); }
+  if (Rd.id === 'r40' || Rd.id === 'r70' || Rd.id === 'r80') { const pos = [], N = Math.max(1, Math.min(3, rAlive(Rd).length)); for (let k = 0; k < 60 && pos.length < N; k++) { const c = rFree(Rd, b, 6); for (const o of c) if (pos.length < N && pos.every(q => Math.hypot(q.x - o.x, q.y - o.y) >= 8)) pos.push(o); } Rd.plates = pos.map(o => ({ x: o.x, y: o.y, ci: 3, on: 0 })); Rd.seq = null; Rd.sim = 1; Rd.hold = 0; rTalk(Rd, b, Rd.id === 'r80' ? '굴뚝 3개를 동시에 막으면… 내 마법이 풀리지… 호호호' : Rd.id === 'r40' ? '등대에 불을 켤 수 있을까…? 셋이서 동시에…' : '세 개의 톱니가 동시에 돌아야… 내 시간이 멈춘다…'); }
   else if (Rd.id === 'r30') { Rd.plates = rFree(Rd, b, Rd.ph === 1 ? 3 : 4).map(o => ({ x: o.x, y: o.y, ci: 1, on: 0 })); Rd.seq = null; }
   else { const n = Rd.ph === 3 ? 5 : 4, pos = rFree(Rd, b, n), order = [...Array(n).keys()].sort(() => Math.random() - .5); Rd.plates = pos.map((o, i) => ({ x: o.x, y: o.y, ci: i, on: 0 })); Rd.seq = order; Rd.seqI = 0; rTalk(Rd, b, '순서를 기억하라… ' + order.map(i => PEMO[i]).join(' → ')); }
   rPlates(Rd);
@@ -1527,6 +1527,7 @@ function rPlateTick(Rd, t) {
   if (!Rd.plates.length) { if (t > Rd.plateAt) rMakePlates(Rd, b); return; }
   if (Rd.sim) {
     const al = rAlive(Rd); let all = true;
+    if (al.length && Rd.plates.length > al.length) { Rd.plates = Rd.plates.slice(0, al.length); rPlates(Rd); } // 인원이 줄면 발판도 줄임
     for (const pl of Rd.plates) { const occ = al.some(q => q.x === pl.x && q.y === pl.y); if (occ !== !!pl.on) { pl.on = occ ? Infinity : 0; } if (!occ) all = false; }
     Rd.hold = all ? (Rd.hold || 0) + 100 : 0;
     if (Rd.hold >= 2000) { Rd.hold = 0; Rd.sim = 0; return rGroggy(Rd, b); }
@@ -1574,7 +1575,7 @@ function raidTick(t) {
     if (Rd.share && t >= Rd.share.at) {
       const S = Rd.share; Rd.share = null; const al = rAlive(Rd), inn = al.filter(q => Math.hypot(q.x - S.x, q.y - S.y) <= S.r + .3);
       bc(m.id, { t: 'hz', tiles: rTiles(m, circleT(S.x, S.y, S.r)), c: '#ffd43b' }); bc(m.id, { t: 'share', x: S.x, y: S.y, r: 0, ms: 0 }); bc(m.id, { t: 'shake', ms: 700 });
-      if (inn.length >= 3) { for (const q of inn) damagePlayer(q, Math.max(1, Math.round(S.dmg / inn.length - defOf(q) * .2)), null); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `✅ 운명의 일격을 ${inn.length}명이 나눠 맞았다!`, c: '#69db7c' }); }
+      if (inn.length >= Math.min(3, al.length)) { for (const q of inn) damagePlayer(q, Math.max(1, Math.round(S.dmg / inn.length - defOf(q) * .2)), null); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `✅ 운명의 일격을 ${inn.length}명이 나눠 맞았다!`, c: '#69db7c' }); }
       else { for (const q of inn) damagePlayer(q, S.dmg, null); for (const q of al) if (!inn.includes(q)) damagePlayer(q, 1200, null); const b = rBoss(Rd, 'clockking'); if (b) b.hp = Math.min(b.mhp, b.hp + Math.round(b.mhp * .05)); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `❌ 3명이 모이지 못했다!! (원 안 ${inn.length}명) 전원 피해 + 마왕 회복`, c: '#ff6b6b', big: 1 }); }
     }
     if (tk % 10 === 0) for (const q of players.values()) if (q.map === m.id && !q.dead && m.t[q.y][q.x] === 'L') damagePlayer(q, Math.max(1, Math.round(110 - defOf(q) * .2)), null);
@@ -1655,7 +1656,7 @@ function raidTick(t) {
 const TCX = 21;
 function templeDlg(p) {
   const st = Rd => Rd.st === 'idle' ? '🟢 비어 있음' : Rd.st === 'lobby' ? `🟡 모집 중 (${Rd.mem.size}명)` : Rd.st === 'fight' ? '🔴 도전 중' : '🟣 정리 중';
-  const lines = ['사방을 지키는 네 신수의 신전이다…', '어두운 미로와 무너지는 바닥을 지나, 셋이 함께 룬을 밝혀야 신수의 방이 열린다. (Lv80↑ · 3명 이상)', Object.keys(BEASTS).map(k => `${BEASTS[k].e} ${RAIDS[k].n}: ${st(RAIDS[k])}${p.gb && p.gb[BEASTS[k].gb] ? ' ✅' : ''}`).join('\n')];
+  const lines = ['사방을 지키는 네 신수의 신전이다…', '미로와 무너지는 바닥을 지나, 룬을 밝혀야 신수의 방이 열린다. (Lv80↑ · 혼자도 가능, 룬 개수는 인원수만큼 최대 3개)', Object.keys(BEASTS).map(k => `${BEASTS[k].e} ${RAIDS[k].n}: ${st(RAIDS[k])}${p.gb && p.gb[BEASTS[k].gb] ? ' ✅' : ''}`).join('\n')];
   send(p, { t: 'dlg', npc: 'temple', name: NPCS.temple.n, look: NPCS.temple.look, lines, acts: [...Object.keys(BEASTS).map(k => ({ k: 'raid', id: k, op: 'view', label: `${BEASTS[k].e} ${BEASTS[k].n} 신전` })), { k: 'close', label: '닫기' }], keep: 1 });
 }
 function buildTemple(Rd) {
@@ -1667,7 +1668,7 @@ function buildTemple(Rd) {
   const seen = new Set(['1,' + (H - 2)]), st = [[1, H - 2]]; t[H - 2][1] = '.';
   while (st.length) { const [x, y] = st[st.length - 1], nb = [[2, 0], [-2, 0], [0, 2], [0, -2]].map(([dx, dy]) => [x + dx, y + dy, dx, dy]).filter(([nx, ny]) => cell(nx, ny) && !seen.has(nx + ',' + ny));
     if (!nb.length) { st.pop(); continue; } const [nx, ny, dx, dy] = pick(nb); t[y + dy / 2][x + dx / 2] = '.'; t[ny][nx] = '.'; seen.add(nx + ',' + ny); st.push([nx, ny]); }
-  for (let k = 0; k < 12; k++) { const x = R(2, W - 3), y = R(18, H - 3); if (t[y][x] === 'W' && ((t[y][x - 1] === '.' && t[y][x + 1] === '.') || (t[y - 1][x] === '.' && t[y + 1][x] === '.'))) t[y][x] = '.'; }
+  for (let k = 0; k < 30; k++) { const x = R(2, W - 3), y = R(18, H - 3); if (t[y][x] === 'W' && ((t[y][x - 1] === '.' && t[y][x + 1] === '.') || (t[y - 1][x] === '.' && t[y + 1][x] === '.'))) t[y][x] = '.'; }
   t[16][TCX] = '.'; t[H - 2][0] = '.';
   // 정답 길 (BFS)
   const key = (x, y) => x + ',' + y, prev = new Map([[key(1, H - 2), null]]), q = [[1, H - 2]];
@@ -1676,7 +1677,7 @@ function buildTemple(Rd) {
   // 함정: 정답 길이 아닌 갈림길에 숨겨진 무너지는 바닥 + 정답 길 위에도 가끔 금 간 바닥(밟으면 떨어짐, 옆으로 돌아가야 함)
   const off = [], on = [];
   for (let y = 17; y <= H - 2; y++) for (let x = 1; x <= W - 2; x++) if (t[y][x] === '.' && Math.hypot(x - 1, y - (H - 2)) > 4) (path.has(key(x, y)) ? on : off).push([x, y]);
-  for (const [x, y] of off) if (Math.random() < .32) t[y][x] = 'X';
+  for (const [x, y] of off) if (Math.random() < .15) t[y][x] = 'X';
   m.t = t; m.orig = t.map(r => r.slice());
   return { path, off: off.filter(([x, y]) => t[y][x] === '.'), on };
 }
@@ -1686,26 +1687,26 @@ function templeStart(Rd, ps) {
   for (const q of ps) warp(q, m.id, 1, m.h - 2);
   Rd.st = 'fight'; Rd.next = now() + 3500; Rd.t0 = now(); Rd.left = 1; Rd.marks = []; Rd.share = null; Rd.tent = [];
   // 미로 수호병
-  const spots = [...mz.off, ...mz.on].filter(([x, y]) => Math.hypot(x - 1, y - (m.h - 2)) > 7).sort(() => Math.random() - .5).slice(0, 16);
+  const spots = [...mz.off, ...mz.on].filter(([x, y]) => Math.hypot(x - 1, y - (m.h - 2)) > 7).sort(() => Math.random() - .5).slice(0, 8);
   for (const [x, y] of spots) rSpawn(Rd, B.guard, x, y, { boss: 0, maze: 1, sz: 0 });
   for (const [x, y] of [[11, 14], [31, 14]]) rSpawn(Rd, B.guard, x, y, { boss: 0, maze: 1, sz: 0 });
-  Rd.ph = 1; Rd.plates = [[13, 14], [TCX, 14], [29, 14]].map(([x, y]) => ({ x, y, ci: 3, on: 0 })); Rd.sim = 1; Rd.hold = 0; Rd.seq = null; rPlates(Rd);
-  rMood(Rd, 'dark');
+  Rd.ph = 1; Rd.plates = [[TCX, 14], [13, 14], [29, 14]].slice(0, Math.max(1, Math.min(3, ps.length))).map(([x, y]) => ({ x, y, ci: 3, on: 0 })); Rd.sim = 1; Rd.hold = 0; Rd.seq = null; rPlates(Rd);
   sendAll({ t: 'notice', m: `🏛️ ${B.e} ${Rd.n} 도전 시작!! (${ps.length}명) — 어둠 속 미로를 지나 ${B.n}의 방으로…`, c: '#ffd43b', big: 1 });
-  rHint(Rd, `🌀 미로를 지나 위쪽 '룬의 전실'로! 숨겨진 함정을 밟으면 바닥이 꺼져 처음으로 떨어져요. 전실의 노란 룬 3개를 3명이 동시에 2초 밟으면 봉인문이 열려요`);
+  rHint(Rd, `🌀 미로를 지나 위쪽 '룬의 전실'로! 숨겨진 함정을 밟으면 바닥이 꺼져 처음으로 떨어져요. 전실의 노란 룬을 모두 동시에 2초 밟으면 봉인문이 열려요 (룬 개수 = 인원수, 최대 3개)`);
 }
 function templeFall(p) {
   const Rd = Object.values(RAIDS).find(r => r.temple && r.map === p.map && r.st === 'fight'); if (!Rd) return;
   const m = MAPS[p.map], x = p.x, y = p.y;
   bc(m.id, { t: 'fx', k: 'die', x, y, c: '#000000' }); rSetTiles(Rd, [[x, y]], 'V');
-  p.stun = now() + 1200; warp(p, m.id, 1, m.h - 2); damagePlayer(p, Math.round(p.mhp * .2), null);
-  send(p, { t: 'notice', m: '🕳️ 바닥이 무너졌다!! 아래로 떨어져서 처음 위치로… (HP -20%)', c: '#ff8787', big: 1 });
+  p.stun = now() + 1200; warp(p, m.id, 1, m.h - 2); damagePlayer(p, Math.round(p.mhp * .1), null);
+  send(p, { t: 'notice', m: '🕳️ 바닥이 무너졌다!! 아래로 떨어져서 처음 위치로… (HP -10%)', c: '#ff8787', big: 1 });
   for (const q of rmem(Rd)) if (q !== p) say(q, 'sys', `🕳️ ${p.name}님이 함정에 빠져 처음으로 떨어졌어요!`);
 }
 function templeTick(Rd, t) {
   const m = MAPS[Rd.map];
   if (Rd.ph !== 1) return;
   const al = rAlive(Rd); let all = true;
+  if (al.length && Rd.plates.length > al.length) { Rd.plates = Rd.plates.slice(0, al.length); rPlates(Rd); }
   for (const pl of Rd.plates) { const o = al.some(q => q.x === pl.x && q.y === pl.y); pl.on = o ? Infinity : 0; if (!o) all = false; }
   Rd.hold = all ? (Rd.hold || 0) + 100 : 0;
   if (tk % 3 === 0) rPlates(Rd);
