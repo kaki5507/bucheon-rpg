@@ -143,7 +143,7 @@ function scanLava() { LAVA = []; if (!MAP) return; for (let y = 0; y < MAP.h; y+
 let exitAsk = 0; function confirmExit() { const t = Date.now(); if (t - exitAsk < 3000) return true; exitAsk = t; const rx = $('#rexit'); rx.textContent = '한 번 더 누르면 나가기'; setTimeout(() => { rx.textContent = '🚪 나가기'; }, 3000); return false; }
 function loadMap(m) {
   MAP = m; ents.clear(); ground = []; WARN.length = 0; HZ.length = 0; PLATES = { l: [], seq: null, i: 0 }; MOOD = ''; STAG = null; setTimeout(scanLava, 0); if (typeof dlg !== 'undefined' && dlg) { dlg = null; drawDlg(); }
-  { let rx = $('#rexit'); if (!rx) { rx = document.createElement('button'); rx.id = 'rexit'; rx.textContent = '🚪 나가기'; rx.onclick = () => { if (confirmExit()) send({ t: 'rexit' }); }; document.body.appendChild(rx); } rx.style.display = /^(raid|temple)/.test(m.id) ? 'block' : 'none'; }
+  { let rx = $('#rexit'); if (!rx) { rx = document.createElement('button'); rx.id = 'rexit'; rx.textContent = '🚪 나가기'; rx.onclick = () => send({ t: 'rexit' }); rx.addEventListener('touchend', e => { e.preventDefault(); send({ t: 'rexit' }); }, { passive: false }); document.body.appendChild(rx); } rx.style.display = /^(raid|temple)/.test(m.id) ? 'block' : 'none'; }
   $('#mapname').textContent = '📍 ' + m.name + (m.lvr && m.lvr !== '휴식' ? ' · Lv' + m.lvr : '');
   mapCv = document.createElement('canvas'); mapCv.width = m.w * T; mapCv.height = m.h * T;
   const g = mapCv.getContext('2d'), th = m.theme, floor = FLOOR[th] || FLOOR.grass;

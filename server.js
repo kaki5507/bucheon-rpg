@@ -1477,6 +1477,8 @@ function raidWin(Rd, p, mo) {
   sendAll({ t: 'notice', m: `🏆 ${Rd.n} 레이드 클리어!! (${ps.map(q => q.name).join(', ')})${items.some(i => i.n === '석상왕의 왕관') ? ' 👑 석상왕의 왕관이 떨어졌다!' : ''}`, c: '#ffe066', big: 1 });
   sendAll({ t: 'kill', a: who(p), boss: Rd.n + ' 레이드', map: m.name });
   Rd.st = 'done'; Rd.endAt = now() + 45000; Rd.ph = 0;
+  rClean(Rd); Rd.haz = []; rMood(Rd, ''); // 무너진 바닥 복구 → 포탈로도 나갈 수 있게
+  for (const q of rmem(Rd)) send(q, { t: 'notice', m: '🎉 클리어! 보상을 주우세요 — 45초 뒤 자동으로 대기실로 돌아가요 (🚪 나가기 버튼으로 바로 나가도 돼요)', c: '#69db7c', big: 1 });
   for (const q of ps) say(q, 'sys', '45초 안에 바닥의 보상을 주우세요! (F키)');
 }
 // ===== 발판 / 그로기 / 맵 변환 =====
