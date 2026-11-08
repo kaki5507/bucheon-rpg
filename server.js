@@ -55,6 +55,7 @@ const WB = [
   { n: '좀비 소환 지팡이', s: 'zstaff', r: 4, a: 20, cd: 600, zsum: 1 },
   { n: '황룡의 천검', s: 'hwang', r: 1, a: 42, cd: 650, aoe: 2 }]; // 황룡 처치 전용 // 좀비 습격 1위 전용 // 마지막(냉동참치)은 드랍 X, 냉동참치 보스 전용
 const WB_NORMAL = 8;
+const LEG_PRICE = lv => Math.round((500000 + lv * lv * 200) / 10000) * 10000; // 상점 전설 무기 가격 (내 레벨 기준)
 const AB = [{ n: '후드티', d: 3, c: '#74c0fc' }, { n: '가죽조끼', d: 4, c: '#a9744f' }, { n: '패딩', d: 5, c: '#f783ac' },
 { n: '정장', d: 6, c: '#495057' }, { n: '철갑옷', d: 7, c: '#adb5bd' }];
 const HB = [{ n: '야구모자', d: 2, s: 'cap' }, { n: '털모자', d: 2, s: 'beanie' }, { n: '헬멧', d: 4, s: 'helm' },
@@ -1892,7 +1893,7 @@ function gtBlast(m, tiles, ms, dmg, c) {
 function gtStart(here) {
   if (GT.st === 'on') return;
   const cand = zMaps().filter(m => m.id !== 'sauna' && zStat(m).hp >= MI.pmush.hp), m = here && here.pool.length ? here : pick(cand.length ? cand : zMaps());
-  const zs = zStat(m), b = spawnBoss(m, 'goldtoad'); const hp = Math.round(topDps() * 400); b.hp = b.mhp = hp; b.atk = Math.round(zs.atk * 2.2); GT.dmg = Math.round(zs.atk * 2.5); b.inv = 1; b.until = now() + GT_DUR + 60000; b.gtb = 1;
+  const zs = zStat(m), b = spawnBoss(m, 'goldtoad'); const hp = Math.round(topDps() * 120); b.hp = b.mhp = hp; b.atk = Math.round(zs.atk * 2.2); GT.dmg = Math.round(zs.atk * 2.5); b.inv = 1; b.until = now() + GT_DUR + 60000; b.gtb = 1;
   for (let i = 0; i < 10; i++) gtLing(m, b);
   Object.assign(GT, { st: 'on', map: m.id, boss: b, quiz: null, next: now() + 9000, end: now() + GT_DUR });
   bc(m.id, { t: 'shake', ms: 1200 }); bc(m.id, { t: 'fx', k: 'boom', x: b.x, y: b.y, r: 6, c: '#fab005' });
@@ -1906,7 +1907,7 @@ function evSpawn(m, id, near, extra) {
   const t = MI[id], o = Object.assign({ id: MID++, t: t.idx, x, y, hx: x, hy: y, hp: t.hp, mhp: t.hp, boss: 1, v: null, acc: 0, dead: 0, atkAt: 0, mvAt: 0, tgt: 0, skAt: now() + 4000, until: now() + 40 * 60000 }, extra || {});
   m.mobs.push(o); return o;
 }
-function gtLing(m, b) { const zs = zStat(m), o = evSpawn(m, 'toadling', b); o.until = b.until; o.hp = o.mhp = Math.round(zs.hp * 6); o.atk = Math.round(zs.atk * 1.3); }
+function gtLing(m, b) { const zs = zStat(m), o = evSpawn(m, 'toadling', b); o.until = b.until; o.hp = o.mhp = Math.round(zs.hp * 4); o.atk = Math.round(zs.atk * 1.3); }
 function gtEnd(msg) {
   if (GT.st !== 'on') return; const m = MAPS[GT.map];
   m.mobs = m.mobs.filter(o => !MON[o.t].gtoad); GT.st = 'idle'; GT.quiz = null; GT.boss = null; GT.map = null; GT.at = gtNext(now() + 60000); GT.warn = 0;
@@ -2113,7 +2114,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, maxPayload: 8192 });
 // 순간이동 비용: 맵 몬스터 평균 레벨 기준 (레이드/신전/무한장은 불가)
 function tpCost(m) { if (/^(raid|temple)/.test(m.id) || m.id === 'royale') return 0; const L = m.pool.length ? m.pool.reduce((a, id) => a + MI[id].lv, 0) / m.pool.length : 5; return Math.round((200 + L * L * 3) / 100) * 100; }
-const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+const INIT = { t: 'init', LEG: { base: 500000, k: 200, n: WB_NORMAL }, TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
@@ -2202,6 +2203,13 @@ function onMsg(p, m) {
     case 'buy': {
       const s = SHOP.find(x => x.k === m.k); const n = Math.max(1, Math.min(99, m.n | 0)); if (!s || p.gold < s.p * n) return say(p, 'sys', '골드가 부족해요');
       p.gold -= s.p * n; giveItem(p, POTS[s.k] ? mkPot(s.k, n) : mkScroll(s.k, n)); p.dirty = 1; say(p, 'loot', `🛒 ${SN[s.k]} x${n} 구매 (-${(s.p * n).toLocaleString()}G)`); break;
+    }
+    case 'buyleg': { // 💰 골드로 전설 무기 (내 레벨 아이템, 특수 무기 제외)
+      const b = m.b | 0, c = LEG_PRICE(p.lv); if (b < 0 || b >= WB_NORMAL) return;
+      if (p.gold < c) return say(p, 'sys', `골드가 부족해요 (${c.toLocaleString()}G 필요)`);
+      p.gold -= c; const it = { id: db.iid++, type: 'weapon', b, r: 5, il: p.lv, plus: 0, n: '전설의 ' + WB[b].n }; giveItem(p, it); p.dirty = 1;
+      say(p, 'loot', `🛒 [전설] ${it.n} (Lv${it.il}) 구매! (-${c.toLocaleString()}G) — 장비창에서 끼세요`, '#ffe600');
+      sendAll({ t: 'chat', ch: 'sys', m: `💰 ${p.name}님이 상점에서 [전설] ${it.n}을(를) 샀다!` }); break;
     }
     case 'qa': { const q = QUESTS.find(x => x.id === (m.id | 0)); if (!q || !qAvail(p, q) || !npcNear(p, q.giver)) return; p.q[q.id] = 0; p.dirty = 1; say(p, 'sys', `📜 [${q.n}] 퀘스트 시작!`); break; }
     case 'qt': { const q = QUESTS.find(x => x.id === (m.id | 0)); if (!q || !npcNear(p, q.giver) || !qReady(p, q)) return; questTurn(p, q.id); talkNpc(p, q.giver); break; }

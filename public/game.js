@@ -1092,7 +1092,11 @@ function renderQuest() {
 function renderShop() {
   const P = $('#pshop'); let h = head('🏪 동네 상점') + `<div class="small">💰 ${ME.gold.toLocaleString()}G · 팔기는 가방에서</div>`;
   for (const s of D.SHOP) h += `<div class="row"><div>${esc(s.n)} <span class="small">${s.p}G</span></div><div class="acts" style="margin:0"><button data-b="${s.k}" data-n="1">1개</button><button data-b="${s.k}" data-n="10">10개</button></div></div>`;
+  if (D.LEG) { const price = Math.round((D.LEG.base + ME.lv * ME.lv * D.LEG.k) / 10000) * 10000, ok = ME.gold >= price;
+    h += `<div style="margin-top:12px;font-size:16px;color:#ffe600">⚔️ 전설 무기 <span class="small" style="color:#ffe8a3">내 레벨(Lv${ME.lv}) 무기 · 💰 ${price.toLocaleString()}G</span></div><div class="small">레벨이 오를수록 더 세고 비싸져요 · 강화는 +0부터</div><div class="tpq">`
+      + D.WB.slice(0, D.LEG.n).map((w, i) => `<button data-leg="${i}" ${ok ? '' : 'disabled'} style="border-color:#ffe600">${esc(w.n)}<span class="small"> ${w.r > 1 ? '원거리' : '근접'}</span></button>`).join('') + `</div>${ok ? '' : `<div class="small" style="color:#ff8787">골드가 ${(price - ME.gold).toLocaleString()}G 부족해요</div>`}`; }
   P.innerHTML = h; P.querySelectorAll('[data-b]').forEach(b => b.onclick = () => send({ t: 'buy', k: b.dataset.b, n: +b.dataset.n }));
+  P.querySelectorAll('[data-leg]').forEach(b => b.onclick = () => { if (b.dataset.ok) { send({ t: 'buyleg', b: +b.dataset.leg }); return; } P.querySelectorAll('[data-leg]').forEach(x => { delete x.dataset.ok; x.style.background = ''; }); b.dataset.ok = 1; b.style.background = '#5f3dc4'; b.lastChild.textContent = ' 한 번 더 눌러 구매'; });
 }
 function renderJob() {
   const P = $('#pjob'), J = D.JOBS[ME.job]; let h = head('🌟 직업');
