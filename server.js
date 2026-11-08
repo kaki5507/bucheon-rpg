@@ -797,6 +797,7 @@ function warp(p, mapId, x, y) {
   let n = 0; while (occ(m, x, y, p) && n < 20) { x += R(-1, 1); y += R(-1, 1); n++; if (!walk(m, x, y)) { x = m.spawn.x; y = m.spawn.y; } }
   p.x = x; p.y = y; send(p, mapMsg(m));
   if (typeof ZEV !== 'undefined' && ZEV.on && m.pool.length) send(p, { t: 'mood', m: 'zombie' });
+  if (typeof GT !== 'undefined' && GT.quiz && GT.map !== m.id) send(p, { t: 'gtq', end: 1 });
   const Rd = Object.values(RAIDS || {}).find(r => r.map === mapId); if (Rd) { send(p, { t: 'mood', m: Rd.mood || '' }); send(p, { t: 'plates', l: (Rd.plates || []).map(q => [q.x, q.y, q.ci, q.on > now() ? 1 : 0]), seq: Rd.seq, i: Rd.seqI || 0, sim: Rd.sim ? 1 : 0, hold: 0 }); }
 }
 function save(p) {
@@ -1911,7 +1912,7 @@ function gtLing(m, b) { const zs = zStat(m), o = evSpawn(m, 'toadling', b); o.un
 function gtEnd(msg) {
   if (GT.st !== 'on') return; const m = MAPS[GT.map];
   m.mobs = m.mobs.filter(o => !MON[o.t].gtoad); GT.st = 'idle'; GT.quiz = null; GT.boss = null; GT.map = null; GT.at = gtNext(now() + 60000); GT.warn = 0;
-  if (msg) sendAll({ t: 'notice', m: msg, c: '#ffe066', big: 1 }); sendAll({ t: 'gtq', end: 1 }); sendAll(gtMsg());
+  if (msg) sendAll({ t: 'notice', m: msg, c: '#ffe066', big: 1 }); sendAll({ t: 'gtq', end: 1, fin: 1 }); sendAll(gtMsg());
 }
 function gtWin(p, mo, m, add) {
   for (let i = 0; i < 6; i++) add(mkGold(200000)); add(mkScroll('bless', 3)); add(mkScroll('ward', 3)); add(hiddenEquip(pick(['weapon', 'armor', 'helm']), Math.max(80, p.lv)));
@@ -1922,8 +1923,8 @@ function gtQuiz(t) {
   let i; do { i = R(0, QUIZ.length - 1); } while (GT.used.includes(i) && GT.used.length < QUIZ.length - 1);
   GT.used.push(i); if (GT.used.length > 25) GT.used.shift();
   GT.quiz = { ...QUIZ[i], until: t + GT_QUIZ_MS + 300 };
-  sendAll({ t: 'gtq', q: GT.quiz.q, ms: GT_QUIZ_MS, map: MAPS[GT.map].name });
-  announce(`🐸 퀴즈! ${GT.quiz.q} (${GT_QUIZ_MS / 1000}초 · 채팅으로 정답)`);
+  bc(GT.map, { t: 'gtq', q: GT.quiz.q, ms: GT_QUIZ_MS, map: MAPS[GT.map].name });
+  bc(GT.map, { t: 'chat', ch: 'sys', m: `🐸 퀴즈! ${GT.quiz.q} (${GT_QUIZ_MS / 1000}초 · 채팅으로 정답)` });
   const b = GT.boss; if (b && !b.dead) bc(GT.map, { t: 'mtalk', id: b.id, m: '문제 나간다 개굴!! ' + GT.quiz.q, loud: 1 });
 }
 function gtAnswer(p, s) {
@@ -1931,8 +1932,8 @@ function gtAnswer(p, s) {
   const b = GT.boss, t = now(); GT.quiz = null;
   if (b && !b.dead) { b.inv = 0; b.groggy = t + 15000; b.stun = t + 15000; bc(GT.map, { t: 'fx', k: 'boom', x: b.x, y: b.y, r: 4, c: '#69db7c' }); bc(GT.map, { t: 'mtalk', id: b.id, m: '개굴?! 마, 맞혔다고…?!', loud: 1 }); }
   p.gold += 100000; p.dirty = 1;
-  sendAll({ t: 'notice', m: `⭕ 정답!! ${p.name}님 — "${Q.a[0]}" · 대왕 떡두꺼비 기절 15초!! 지금 공격!! (정답 보상 10만G)`, c: '#69db7c', big: 1 });
-  sendAll({ t: 'gtq', ok: 1, who: p.name, a: Q.a[0] }); GT.next = t + 15000 + 5000;
+  bc(GT.map, { t: 'notice', m: `⭕ 정답!! ${p.name}님 — "${Q.a[0]}" · 대왕 떡두꺼비 기절 15초!! 지금 공격!! (정답 보상 10만G)`, c: '#69db7c' });
+  bc(GT.map, { t: 'gtq', ok: 1, who: p.name, a: Q.a[0] }); GT.next = t + 15000 + 15000;
 }
 function gtTick(t) {
   if (GT.st === 'idle') {
@@ -1948,8 +1949,8 @@ function gtTick(t) {
   if (t >= GT.end) return gtEnd('🐸💨 황금떡두꺼비 군단이 황금떡을 들고 도망갔다… 3시간 뒤에 다시!');
   if (!b.inv && t > b.groggy) { b.inv = 1; bc(m.id, { t: 'mtalk', id: b.id, m: '개구우울!! 다시 무적이다!!', loud: 1 }); }
   if (GT.quiz && t > GT.quiz.until) {
-    const Q = GT.quiz; GT.quiz = null; GT.next = t + 10000;
-    sendAll({ t: 'notice', m: `❌ 땡!! 정답은 "${Q.a[0]}" — 대왕 떡두꺼비가 무적 상태로 날뛴다!!`, c: '#ff6b6b', big: 1 }); sendAll({ t: 'gtq', ok: 0, a: Q.a[0] });
+    const Q = GT.quiz; GT.quiz = null; GT.next = t + 30000;
+    bc(GT.map, { t: 'notice', m: `❌ 땡!! 정답은 "${Q.a[0]}" — 대왕 떡두꺼비가 무적 상태로 날뛴다!!`, c: '#ff6b6b' }); bc(GT.map, { t: 'gtq', ok: 0, a: Q.a[0] });
     gtBlast(m, circleT(b.x, b.y, 5.5), 1400, GT.dmg * 1.3, '#fab005'); bc(m.id, { t: 'mtalk', id: b.id, m: '틀렸다 개굴!! 떡방아 대폭주!!', loud: 1 });
     for (let k = 0; k < 2; k++) gtLing(m, b);
   }

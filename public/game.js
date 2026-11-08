@@ -1156,16 +1156,18 @@ function renderGT() {
   else { const left = GTS.at - sn; el.className = (left < 600000 ? 'soon' : '') + (el.classList.contains('mini') ? ' mini' : ''); const s3 = Math.max(0, Math.floor(left / 1000)), hh = Math.floor(s3 / 3600), mi = Math.floor(s3 / 60) % 60; el.innerHTML = `🐸 ${hh ? hh + '시간 ' + mi + '분' : mi + '분 ' + (s3 % 60) + '초'} 남음`; }
 }
 setInterval(() => { if (GTS || EVL) renderGT(); }, 1000);
-let gtTimer = null;
+let gtTimer = null, gtOff = 0; // gtOff: 이번 이벤트 동안 퀴즈창 끄기
 function gtSubmit() { const i = $('#gtin'); if (!i) return; const v = i.value.trim(); if (v) send({ t: 'chat', m: v }); i.value = ''; }
 function gtQuizUI(m) {
   let el = $('#gtq'); if (!el) { el = document.createElement('div'); el.id = 'gtq'; document.body.appendChild(el); }
   clearTimeout(gtTimer);
-  if (m.end) { el.style.display = 'none'; return; }
+  if (m.end) { el.style.display = 'none'; if (m.fin) gtOff = 0; return; }
+  if (gtOff) { if (m.q) LOG.push(`<span style="color:#ffd43b">🐸 퀴즈: ${esc(m.q)}</span>`); return; }
   if (m.q) {
     el.style.display = 'block'; el.className = '';
-    el.innerHTML = `<div class="gh">🐸 황금떡두꺼비 퀴즈! <span class="small">📍 ${esc(m.map || '')}</span></div><div class="gq">${esc(m.q)}</div><div class="gbar"><i style="animation-duration:${m.ms}ms"></i></div><div class="acts"><input id="gtin" maxlength="30" placeholder="정답 입력 후 Enter" autocomplete="off"><button class="pri" id="gtgo">정답!</button></div>`;
-    $('#gtgo').onclick = gtSubmit; if (!('ontouchstart' in window)) setTimeout(() => { const i = $('#gtin'); if (i) i.focus(); }, 30);
+    el.innerHTML = `<div class="gh">🐸 황금떡두꺼비 퀴즈! <span class="small">📍 ${esc(m.map || '')}</span><button id="gtx" style="float:right;padding:0 8px">✕</button></div><div class="gq">${esc(m.q)}</div><div class="gbar"><i style="animation-duration:${m.ms}ms"></i></div><div class="acts"><input id="gtin" maxlength="30" placeholder="정답 입력 후 Enter" autocomplete="off"><button class="pri" id="gtgo">정답!</button></div><div class="small" style="margin-top:6px"><a href="#" id="gtoff" style="color:#ffe8a3">🔕 이번 이벤트 동안 퀴즈창 끄기</a> <span style="opacity:.7">(채팅으로는 계속 답할 수 있어요)</span></div>`;
+    $('#gtgo').onclick = gtSubmit; $('#gtx').onclick = () => { el.style.display = 'none'; const i = $('#gtin'); if (i) i.blur(); };
+    $('#gtoff').onclick = e => { e.preventDefault(); gtOff = 1; el.style.display = 'none'; const i = $('#gtin'); if (i) i.blur(); }; if (!('ontouchstart' in window)) setTimeout(() => { const i = $('#gtin'); if (i) i.focus(); }, 30);
     return;
   }
   el.style.display = 'block'; el.className = m.ok ? 'ok' : 'no';
