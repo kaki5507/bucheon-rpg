@@ -56,8 +56,11 @@ function doLogin() {
   try { localStorage.setItem('bc_name', name); } catch (e) { }
   $('#lerr').textContent = '접속 중...';
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
-  ws.onopen = () => ws.send(JSON.stringify({ t: 'login', name, pw, faction: pickFac }));
-  ws.onmessage = e => onMsg(JSON.parse(e.data));
+  const canZ = typeof DecompressionStream !== 'undefined'; ws.binaryType = 'arraybuffer';
+  ws.onopen = () => ws.send(JSON.stringify({ t: 'login', name, pw, faction: pickFac, z: canZ ? 1 : 0 }));
+  let mq = Promise.resolve(); // 압축 메시지를 푸는 동안에도 순서 유지
+  ws.onmessage = e => { const d = e.data; if (typeof d === 'string' && mq === null) return onMsg(JSON.parse(d));
+    mq = mq.then(async () => onMsg(JSON.parse(typeof d === 'string' ? d : await new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()))).catch(err => console.error(err)); };
   ws.onclose = () => {
     if (!ME) { $('#lerr').textContent = $('#lerr').textContent === '접속 중...' ? '서버에 연결할 수 없어요' : $('#lerr').textContent; return; }
     toast('연결이 끊겼어요. 다시 접속합니다...'); setTimeout(() => location.reload(), 2000);

@@ -754,9 +754,12 @@ const boomRate = plus => plus < 4 ? 0 : plus <= 6 ? (plus - 3) * 10 : Math.min(9
 
 /* ===================== 플레이어 ===================== */
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 32).toString('hex'); }
-function send(p, o) { if (p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify(o)); }
-function bc(mapId, o) { const s = JSON.stringify(o); for (const p of players.values()) if (p.map === mapId && p.ws.readyState === 1) p.ws.send(s); }
-function sendAll(o, mapId) { const s = JSON.stringify(o); for (const p of players.values()) if (p.ws.readyState === 1 && (!mapId || p.map === mapId)) p.ws.send(s); }
+// 큰 메시지는 서버에서 압축(deflate-raw)해서 바이너리로 보냄 → 브라우저가 풀어서 읽음 (Render 프록시가 웹소켓 압축을 막아서 직접 압축)
+const zlib = require('zlib');
+function out(p, s, c) { if (p.z && s.length > 600) { if (!c.b) c.b = zlib.deflateRawSync(s, { level: 3 }); p.ws.send(c.b); } else p.ws.send(s); }
+function send(p, o) { if (p.ws && p.ws.readyState === 1) out(p, JSON.stringify(o), {}); }
+function bc(mapId, o) { const s = JSON.stringify(o), c = {}; for (const p of players.values()) if (p.map === mapId && p.ws.readyState === 1) out(p, s, c); }
+function sendAll(o, mapId) { const s = JSON.stringify(o), c = {}; for (const p of players.values()) if (p.ws.readyState === 1 && (!mapId || p.map === mapId)) out(p, s, c); }
 const who = p => ({ n: p.name, f: p.faction });
 function announce(m) { const s = JSON.stringify({ t: 'chat', ch: 'sys', m }); for (const p of players.values()) if (p.ws.readyState === 1) p.ws.send(s); }
 const say = (p, ch, m, c) => send(p, { t: 'chat', ch, m, c });
@@ -2107,7 +2110,7 @@ const app = express(); app.use(express.static(path.join(__dirname, 'public')));
 let READY = false;
 app.get('/health', (req, res) => res.json({ ok: READY, players: players.size, up: Math.round(process.uptime()) }));
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, maxPayload: 8192, perMessageDeflate: { threshold: 512, zlibDeflateOptions: { level: 3 }, serverNoContextTakeover: false } }); // 전송량 압축
+const wss = new WebSocketServer({ server, maxPayload: 8192 });
 // 순간이동 비용: 맵 몬스터 평균 레벨 기준 (레이드/신전/무한장은 불가)
 function tpCost(m) { if (/^(raid|temple)/.test(m.id) || m.id === 'royale') return 0; const L = m.pool.length ? m.pool.reduce((a, id) => a + MI[id].lv, 0) / m.pool.length : 5; return Math.round((200 + L * L * 3) / 100) * 100; }
 const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
@@ -2142,7 +2145,7 @@ function login(ws, m) {
   if (p.job === 'novice' && p.lv >= TIER1_LV) setTimeout(() => send(p, { t: 'jobpick' }), 500);
   stats(p); if (p.hp > 900 && c.hp === 999) { p.hp = p.mhp; p.mp = p.mmp; } p.hp = Math.max(1, p.hp);
   if (isAdmin) { p.admin = 1; p.god = 1; }
-  players.set(p.id, p); ws.pid = p.id;
+  p.z = m.z === 1; players.set(p.id, p); ws.pid = p.id;
   ws.send(JSON.stringify(INIT)); warp(p, p.map, p.x, p.y);
   if (p.admin) say(p, 'sys', ADMIN_TIP);
   send(p, { t: 'evt', mult: EXPM });
