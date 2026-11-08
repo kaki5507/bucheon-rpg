@@ -2314,6 +2314,8 @@ dbInit().catch(e => { console.error('DB 연결 실패 → 재시작:', e.message
 });
 // 4) 진단 로그: 30분마다 상태, 이벤트 루프가 2초 넘게 멈추면 기록, 예외 기록
 let lagT = Date.now(); setInterval(() => { const d = Date.now() - lagT - 1000; if (d > 2000) console.warn(`⚠ 서버가 ${(d / 1000).toFixed(1)}초 멈췄었음`); lagT = Date.now(); }, 1000);
+// 잠들지 않게: Render 무료 서버는 15분간 요청이 없으면 잠드는데, 다시 깨우기가 실패하는 경우가 있어서 10분마다 자기 주소를 호출해 깨어 있게 함
+if (process.env.RENDER_EXTERNAL_URL) setInterval(() => { require('https').get(process.env.RENDER_EXTERNAL_URL + '/health', r => r.resume()).on('error', e => console.error('keepalive 실패:', e.message)); }, 10 * 60000);
 setInterval(() => console.log(`💓 동작 중 · 접속 ${players.size}명 · 메모리 ${Math.round(process.memoryUsage().rss / 1048576)}MB`), 30 * 60000);
 process.on('unhandledRejection', e => console.error('처리 안 된 오류:', e && e.message || e));
 process.on('uncaughtException', e => { console.error('치명적 오류 → 재시작:', e && e.stack || e); process.exit(1); });
