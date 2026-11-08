@@ -10,6 +10,7 @@ let adminFail = 0, adminLockUntil = 0;
 const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const now = () => Date.now();
+const angN = a => isFinite(a) ? ((a % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI : 0; // -π~π
 const DX = [0, -1, 1, 0], DY = [1, 0, 0, -1]; // 0 아래 1 왼 2 오른 3 위
 const MAXINV = 48;
 
@@ -21,9 +22,14 @@ let pg = null;
 async function dbInit() {
   if (!process.env.DATABASE_URL) { console.log('⚠ DATABASE_URL 없음: data.json 파일에 저장 (Render 무료 플랜에선 재시작 시 초기화됨)'); return; }
   const { Pool } = require('pg');
-  pg = new Pool({ connectionString: process.env.DATABASE_URL, ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }, max: 2 });
-  await pg.query('CREATE TABLE IF NOT EXISTS game_kv (k TEXT PRIMARY KEY, v JSONB NOT NULL)');
-  const r = await pg.query("SELECT v FROM game_kv WHERE k='db'");
+  pg = new Pool({ connectionString: process.env.DATABASE_URL, ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }, max: 2,
+    connectionTimeoutMillis: 15000, query_timeout: 20000, idleTimeoutMillis: 60000, keepAlive: true }); // DB가 멈춰도 서버가 무한 대기하지 않게
+  pg.on('error', e => console.error('DB 풀 오류:', e.message));
+  let r;
+  for (let i = 1; ; i++) {
+    try { await pg.query('CREATE TABLE IF NOT EXISTS game_kv (k TEXT PRIMARY KEY, v JSONB NOT NULL)'); r = await pg.query("SELECT v FROM game_kv WHERE k='db'"); break; }
+    catch (e) { console.error(`DB 연결 재시도 ${i}/6:`, e.message); if (i >= 6) throw e; await new Promise(res => setTimeout(res, 3000 * i)); }
+  }
   if (r.rows[0]) { db = r.rows[0].v; db.acc = db.acc || {}; db.iid = db.iid || 1; }
   console.log('✅ Postgres 연결됨, 계정 수:', Object.keys(db.acc).length);
 }
@@ -795,8 +801,9 @@ function save(p) {
 }
 let saveDirty = true;
 let saving = false;
-async function flush() {
-  if (saving) return; saving = true;
+async function flush(force) {
+  if (saving) return; if (!force && !players.size && !saveDirty) return; // 아무도 없고 바뀐 것도 없으면 DB를 깨우지 않음
+  saving = true; saveDirty = !!players.size;
   try {
     for (const p of players.values()) save(p);
     const json = JSON.stringify(db);
@@ -850,7 +857,7 @@ function damageMob(p, mo, dmg, crit) {
   if (mo.kargon) {
     const Rd = RAIDS[mo.raid]; if (Rd) Rd.threat[p.id] = (Rd.threat[p.id] || 0) + dmg;
     if (!(mo.groggy > now())) {
-      let rel = Math.atan2(p.y - mo.y, p.x - mo.x) - mo.fa; while (rel > Math.PI) rel -= 2 * Math.PI; while (rel < -Math.PI) rel += 2 * Math.PI;
+      let rel = angN(Math.atan2(p.y - mo.y, p.x - mo.x) - mo.fa);
       if (!p.onehit && (Math.abs(rel) < 2.0 || (p.x === mo.x && p.y === mo.y))) { if (Math.random() < .5) bc(p.map, { t: 'dm', x: mo.x, y: mo.y, v: '🛡 막힘! 뒤를 노려라', c: '#adb5bd' }); return; }
       dmg = Math.round(dmg * .6); crit = true; bc(p.map, { t: 'dm', x: p.x, y: p.y - 1, v: '백어택!', c: '#69db7c' });
       if (Rd && !mo.inv) { Rd.stag = Math.min(100, (Rd.stag || 0) + 3); if (Rd.stag >= 100) { Rd.stag = 0; const gt = Rd.ph >= 4 ? 6000 : 8000; mo.groggy = now() + gt; mo.stun = now() + gt; bc(p.map, { t: 'fx', k: 'boom', x: mo.x, y: mo.y, r: 3, c: '#ffd43b' }); for (const q of rmem(Rd)) send(q, { t: 'notice', m: `💫 무력화 성공!! 카르곤 기절 ${gt / 1000}초 — 사방에서 공격 가능! (피해 1.5배)`, c: '#ffe066', big: 1 }); rTalk(Rd, mo, '크윽…!! 다리가…!!'); } kgStag(Rd); }
@@ -1798,7 +1805,7 @@ function kgTick(Rd, t) {
   const m = MAPS[Rd.map], b = rBoss(Rd, 'kargon'); if (!b) return;
   const tg = kgAggro(Rd, b);
   if (tg && !(b.stun > t)) {
-    const want = Math.atan2(tg.y - b.y, tg.x - b.x); let d = want - b.fa; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    const want = Math.atan2(tg.y - b.y, tg.x - b.x); if (!isFinite(b.fa)) b.fa = 0; let d = angN(want - b.fa);
     b.fa += Math.max(-.12, Math.min(.12, d)) * (Rd.ph >= 4 ? 1.6 : 1);
     if (t > (b.mvAt || 0) && dist(b, tg) > 2.2) { b.mvAt = t + (Rd.ph >= 4 ? 450 : 650); const nx = b.x + Math.sign(tg.x - b.x) * (Math.abs(tg.x - b.x) >= Math.abs(tg.y - b.y) ? 1 : 0), ny = b.y + Math.sign(tg.y - b.y) * (Math.abs(tg.x - b.x) < Math.abs(tg.y - b.y) ? 1 : 0); if (walk(m, nx, ny)) { b.x = nx; b.y = ny; } }
   }
@@ -2097,7 +2104,10 @@ function santaAttack(Rd, t) {
 
 /* ===================== 접속/메시지 ===================== */
 const app = express(); app.use(express.static(path.join(__dirname, 'public')));
-const server = http.createServer(app); const wss = new WebSocketServer({ server, maxPayload: 8192 });
+let READY = false;
+app.get('/health', (req, res) => res.json({ ok: READY, players: players.size, up: Math.round(process.uptime()) }));
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server, maxPayload: 8192, perMessageDeflate: { threshold: 512, zlibDeflateOptions: { level: 3 }, serverNoContextTakeover: false } }); // 전송량 압축
 // 순간이동 비용: 맵 몬스터 평균 레벨 기준 (레이드/신전/무한장은 불가)
 function tpCost(m) { if (/^(raid|temple)/.test(m.id) || m.id === 'royale') return 0; const L = m.pool.length ? m.pool.reduce((a, id) => a + MI[id].lv, 0) / m.pool.length : 5; return Math.round((200 + L * L * 3) / 100) * 100; }
 const INIT = { t: 'init', TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
@@ -2225,9 +2235,9 @@ function onMsg(p, m) {
 wss.on('connection', ws => {
   ws.on('message', raw => {
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
-    try { if (m.t === 'login') { if (!ws.pid) login(ws, m); } else { const p = players.get(ws.pid); if (p) onMsg(p, m); } } catch (e) { console.error(e); }
+    try { if (m.t === 'login') { if (!READY) { ws.send(JSON.stringify({ t: 'err', m: '서버가 켜지는 중이에요. 10초 뒤에 다시 시도해 주세요' })); return; } if (!ws.pid) login(ws, m); } else { const p = players.get(ws.pid); if (p) onMsg(p, m); } } catch (e) { console.error(e); }
   });
-  ws.on('close', () => { const p = players.get(ws.pid); if (!p) return; const g = games.get(p.id); if (g) endGame(g, p.name + '님이 나갔어요'); for (const k in RAIDS) RAIDS[k].mem.delete(p.id); save(p); players.delete(p.id); sendWho(); });
+  ws.on('close', () => { const p = players.get(ws.pid); if (!p) return; saveDirty = true; const g = games.get(p.id); if (g) endGame(g, p.name + '님이 나갔어요'); for (const k in RAIDS) RAIDS[k].mem.delete(p.id); save(p); players.delete(p.id); sendWho(); });
 });
 
 /* ===================== 틱 ===================== */
@@ -2284,9 +2294,15 @@ function tick() {
   if (tk % 50 === 0) sendWho();
   if (tk % 300 === 0) flush();
 }
-const bye = async () => { saving = false; await flush(); process.exit(0); };
+const bye = async () => { saving = false; await flush(true); process.exit(0); };
 process.on('SIGTERM', bye); process.on('SIGINT', bye);
-dbInit().catch(e => { console.error('DB 연결 실패:', e.message); process.exit(1); }).then(() => {
-  setInterval(tick, 100);
-  server.listen(PORT, () => console.log('부천 RPG 서버 시작: http://localhost:' + PORT));
+server.listen(PORT, () => console.log('부천 RPG 웹 포트 열림: ' + PORT + ' (DB 불러오는 중…)'));
+dbInit().catch(e => { console.error('DB 연결 실패 → 재시작:', e.message); process.exit(1); }).then(() => {
+  READY = true; setInterval(tick, 100);
+  console.log('부천 RPG 서버 시작: http://localhost:' + PORT);
 });
+// 4) 진단 로그: 30분마다 상태, 이벤트 루프가 2초 넘게 멈추면 기록, 예외 기록
+let lagT = Date.now(); setInterval(() => { const d = Date.now() - lagT - 1000; if (d > 2000) console.warn(`⚠ 서버가 ${(d / 1000).toFixed(1)}초 멈췄었음`); lagT = Date.now(); }, 1000);
+setInterval(() => console.log(`💓 동작 중 · 접속 ${players.size}명 · 메모리 ${Math.round(process.memoryUsage().rss / 1048576)}MB`), 30 * 60000);
+process.on('unhandledRejection', e => console.error('처리 안 된 오류:', e && e.message || e));
+process.on('uncaughtException', e => { console.error('치명적 오류 → 재시작:', e && e.stack || e); process.exit(1); });
