@@ -1202,17 +1202,17 @@ const WMAP = [ // [맵id, x, y]  (0~100 좌표)
   ['station', 88, 80], ['market', 72, 92], ['dodang', 55, 92], ['lake', 38, 92], ['sewer', 90, 62], ['factory', 88, 44], ['wonmi', 90, 30], ['tunnel', 78, 19], ['castle', 92, 7], ['raid6', 67, 8], ['raid7', 58, 26], ['temple1', 4, 19], ['temple2', 13, 19], ['temple3', 36, 21], ['temple4', 46, 21], ['bunker', 78, 42], ['comic', 66, 36], ['ruins', 54, 40], ['stadium', 44, 46], ['abyss', 33, 41], ['void', 21, 39], ['inferno', 7, 66]];
 const WLINK = [['bucheon', 'bosshub'], ['bosshub', 'raid1'], ['bosshub', 'raid2'], ['bosshub', 'raid3'], ['bosshub', 'raid4'], ['bosshub', 'raid5'], ['bucheon', 'pub'], ['pub', 'sauna'], ['pub', 'gym'], ['gym', 'hall'], ['hall', 'cave1'], ['cave1', 'cave2'],
   ['cave2', 'station'], ['bucheon', 'station'], ['station', 'market'], ['market', 'dodang'], ['dodang', 'lake'], ['station', 'sewer'], ['sewer', 'factory'], ['factory', 'wonmi'], ['wonmi', 'tunnel'], ['tunnel', 'castle'], ['bosshub', 'raid6'], ['bosshub', 'raid7'], ['bosshub', 'temple1'], ['bosshub', 'temple2'], ['bosshub', 'temple3'], ['bosshub', 'temple4'], ['castle', 'bunker'], ['bunker', 'comic'], ['comic', 'ruins'], ['ruins', 'stadium'], ['stadium', 'abyss'], ['abyss', 'void'], ['void', 'inferno']];
-function renderWorld() {
-  const P = $('#pworld'), seen = (ME && ME.seen) || {}, info = id => D.MAPLIST.find(m => m.id === id) || { n: id };
-  const pos = Object.fromEntries(WMAP.map(([id, x, y]) => [id, [x, y]]));
-  let h = head('🗺️ 월드맵') + `<div class="wmap"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${WLINK.map(([a, b]) => `<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="${seen[a] && seen[b] ? '#b197fc' : '#4a3f72'}" stroke-width="0.8" stroke-dasharray="${seen[a] && seen[b] ? '' : '2 1.5'}"/>`).join('')}</svg>`;
-  for (const [id, x, y] of WMAP) { const M = info(id), on = seen[id] || (ME && ME.admin), cur = MAP && MAP.id === id, tp = on && !cur && M.tc; h += `<div class="wnode ${on ? '' : 'dim'} ${cur ? 'cur' : ''} ${tp ? 'tp' : ''}" ${tp ? `data-tp="${id}"` : ''} style="left:${x}%;top:${y}%">${cur ? '📍' : ''}${esc(M.n)}<div class="small">${M.lvr && M.lvr !== '휴식' && M.lvr !== '레이드' ? 'Lv' + M.lvr : M.lvr || ''}${on ? '' : ' · 미발견'}${tp ? ` · ✨${M.tc >= 10000 ? Math.round(M.tc / 1000) / 10 + '만' : M.tc.toLocaleString()}G` : ''}</div></div>`; }
-  const quick = WMAP.map(([id]) => info(id)).filter(M => (seen[M.id] || (ME && ME.admin)) && M.tc && !(MAP && MAP.id === M.id));
-  h += `</div><div style="margin-top:8px;font-size:14px">✨ 빠른 이동 <span class="small">(가본 맵 · 골드 소모)</span></div><div class="tpq">${quick.length ? quick.map(M => `<button data-tp="${M.id}">${esc(M.n)} <span class="small">💰${M.tc.toLocaleString()}</span></button>`).join('') : '<span class="small">아직 가본 맵이 없어요</span>'}</div><div id="tpbar" class="small" style="margin-top:6px">✨ 가본 맵을 누르면 골드를 내고 순간이동 (마을 안전지대로 도착) · 흐린 곳은 아직 안 가본 맵 · 레이드·신전은 보스 대기실로 가서 입장</div>`;
+function renderWorld() { // 레벨 순 목록 + 빠른 이동
+  const P = $('#pworld'), seen = (ME && ME.seen) || {}, adm = ME && ME.admin, lvOf = M => { const n = parseInt(M.lvr); return isNaN(n) ? 9999 : n; };
+  const L = D.MAPLIST.filter(M => M.tc || M.id === 'bosshub').sort((a, b) => lvOf(a) - lvOf(b));
+  let h = head('🗺️ 지도 · 빠른 이동') + `<div class="small" style="margin-bottom:6px">💰 ${ME.gold.toLocaleString()}G · 가본 곳만 골드 내고 순간이동 (도착은 안전지대) · 레이드·신전은 보스 대기실에서 입장</div><div class="wlist">`;
+  for (const M of L) { const on = seen[M.id] || adm, cur = MAP && MAP.id === M.id, ok = on && !cur, lv = lvOf(M) < 9999 ? 'Lv' + M.lvr : (M.lvr || '');
+    h += `<div class="wrow2 ${cur ? 'cur' : ''} ${on ? '' : 'dim'}"><div><b>${cur ? '📍 ' : ''}${esc(M.n)}</b> <span class="small">${esc(lv)}</span></div>${cur ? '<span class="small">지금 여기</span>' : ok ? `<button data-tp="${M.id}">✨ ${M.tc.toLocaleString()}G</button>` : '<span class="small">🔒 미발견</span>'}</div>`; }
+  h += `</div><div id="tpbar" class="small" style="margin-top:6px"></div>`;
   P.innerHTML = h;
-  P.querySelectorAll('[data-tp]').forEach(el => el.onclick = () => { const id = el.dataset.tp, M = info(id), bar = $('#tpbar');
+  P.querySelectorAll('[data-tp]').forEach(el => el.onclick = () => { const id = el.dataset.tp, M = D.MAPLIST.find(m => m.id === id), bar = $('#tpbar');
     bar.innerHTML = `<b>${esc(M.n)}</b>(으)로 이동할까요? 💰 ${M.tc.toLocaleString()}G <span class="acts" style="display:inline-flex"><button class="pri" id="tpgo">✨ 순간이동</button><button id="tpno">취소</button></span>`;
-    $('#tpgo').onclick = () => { send({ t: 'mtp', id }); P.style.display = 'none'; }; $('#tpno').onclick = renderWorld; });
+    bar.scrollIntoView({ block: 'nearest' }); $('#tpgo').onclick = () => { send({ t: 'mtp', id }); P.style.display = 'none'; }; $('#tpno').onclick = renderWorld; });
 }
 
 /* ============ NPC / 퀘스트 ============ */

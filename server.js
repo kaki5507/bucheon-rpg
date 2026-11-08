@@ -2290,7 +2290,7 @@ function tick() {
       }
     }
     for (let i = m.ground.length - 1; i >= 0; i--) if (t > m.ground[i].exp) m.ground.splice(i, 1);
-    if (tk % 600 === 0 && m.boss && !ZEV.on && !m.mobs.some(o => o.boss && !o.dead) && Math.random() < (m.fastBoss ? 1 / 20 : 1 / 60)) spawnBoss(m); // 약 1시간에 1번 (1분마다 1/60)
+    if (tk % 600 === 0 && m.boss && !ZEV.on && !m.mobs.some(o => o.boss && !o.dead) && Math.random() < (m.fastBoss ? 1 / 10 : 1 / 25)) spawnBoss(m); // 약 1시간에 1번 (1분마다 1/60)
     const ps = []; for (const p of players.values()) if (p.map === m.id && !p.dead) ps.push(pubP(p));
     if (ps.length) bc(m.id, { t: 'st', p: ps, m: m.mobs.filter(o => !o.dead).map(o => [o.id, o.t, o.x, o.y, o.hp, o.mhp, o.v, o.acc, (t < (o.stun || 0) ? 1 : 0) | (t < (o.slow || 0) ? 2 : 0) | (o.drunk ? 4 : 0) | (o.air ? 8 : 0) | (o.inv ? 16 : 0) | (o.groggy > t ? 32 : 0) | (o.ally ? 64 : 0) | (o.inv ? 16 : 0), o.fa != null ? Math.round(o.fa * 100) / 100 : undefined]), g: m.ground.map(g => [g.id, g.x, g.y, isEq(g.it) ? g.it.r : 0, itemLabel(g.it), t < g.ownT ? g.own : 0, g.it.type === 'gold' ? 1 : isEq(g.it) ? 2 : 0]) });
   }
