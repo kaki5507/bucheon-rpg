@@ -511,7 +511,7 @@ function drawNewWorld(t) {
     if (COLOS && COLOS.lead) { const e = [...ents.values()].find(q => q.kind === 'p' && q.n === COLOS.lead); if (e) { ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('👑', tc(e.rx), tc(e.ry) - 46 - (e.mt ? 15 : 0) + Math.sin(t / 200) * 2); } } }
   for (const id in HANG) { if (t > HANG[id]) { delete HANG[id]; continue; } const e = ents.get('p' + id); if (!e) continue; const x = tc(e.rx), y = tc(e.ry) - 34; ctx.save(); ctx.strokeStyle = '#adb5bd'; ctx.lineWidth = 2.5; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(x, y - 220); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]); ctx.strokeStyle = '#e03131'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y + 6, 7, -Math.PI * .5, Math.PI * .9); ctx.stroke(); ctx.font = 'bold 16px Jua'; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#000'; const s = '⛓️ ' + Math.ceil((HANG[id] - t) / 1000); ctx.strokeText(s, x, y - 20); ctx.fillStyle = '#ff6b6b'; ctx.fillText(s, x, y - 20); ctx.restore(); }
 }
-function toggleMount() { if (!ME) return; const own = Object.keys(ME.mounts || {}); if (!own.length) return toast('아직 탈것이 없어요 (🤫 침묵의 도축장 클리어 시 🐗 돈돈)', '#ffa94d'); let pre = ''; try { pre = localStorage.getItem('mnt') || ''; } catch (e) { } send({ t: 'mount', id: ME.mount || (own.includes(pre) ? pre : own.includes('boar') ? 'boar' : own[0]) }); }
+function toggleMount() { if (!ME) return; const own = Object.keys(ME.mounts || {}); if (!own.length) return toast('아직 탈것이 없어요 (🤫 침묵의 도축장 클리어 시 🐗 돈돈)', '#ffa94d'); let pre = ''; try { pre = localStorage.getItem('mnt') || ''; } catch (e) { } const e = me(), st = e && (e.bf & 16); send({ t: 'mount', id: (st && ME.mount) || (st ? '' : ME.mount) || (own.includes(pre) ? pre : own.includes('boar') ? 'boar' : own[0]) }); }
 function drawMob(g, cx, cy, e, t) {
   const M = D.MON[e.t], boss = M.boss, S = (boss ? (M.big || 1.9) : 1) * (M.id === 'rmushbroc' ? .65 + .35 * Math.max(0, e.h / e.H) : 1), c = mobColor(e, M.c, t);
   if (e.fl & 8) { g.save(); g.fillStyle = '#0005'; g.beginPath(); g.ellipse(cx, cy, 11 * S * .7, 4 * S * .7, 0, 0, 7); g.fill(); g.restore(); cy -= 70 + Math.sin(t / 90) * 4; }
@@ -1068,7 +1068,7 @@ function buildSkills() {
   $('#skills').innerHTML = sk.map((s, i) => `<div class="sk ${ME.lv < s.lv ? 'lock' : ''} ${s.ult ? 'ult' : ''}" data-i="${i}" title="${esc(s.n)} (MP ${s.mp}, 쿨 ${s.cd / 1000}초, Lv${s.lv})\n${esc(s.d)}"><b>${i + 1}</b>${esc(s.n)}<div class="cdv"></div></div>`).join('')
     + `<div class="sk" id="skatk" title="기본 공격 (Space)"><b>␣</b>공격</div>`
     + (wing ? `<div class="sk wingsk" id="skblink" title="왕좌의 날개: 바라보는 쪽으로 5칸 점멸 (R, 쿨 8초)"><b>R</b>🪽점멸<div class="cdv"></div></div>` : '')
-    + (own.length ? `<div class="sk ${ME.mount ? 'mton' : ''}" id="skmount" title="탈것 타기/내리기 (T)"><b>T</b>${ME.mount ? (D.MOUNTS[ME.mount] || {}).e + '내리기' : '🐾타기'}</div>` : '')
+    + (own.length ? `<div class="sk ${ME.mount ? 'mton' : ''}" id="skmount" title="탈것 타기/내리기 (T) · 기절 중에 누르면 기절 해제 (30초에 한 번)"><b>T</b>${ME.mount ? (D.MOUNTS[ME.mount] || {}).e + '내리기' : '🐾타기'}<div class="cdv"></div></div>` : '')
     + `<div class="sk pot" data-pot="hp" title="HP포션 (Z)"><b>Z</b>❤️<span class="pq" id="pqhp">0</span></div><div class="sk pot" data-pot="mp" title="MP포션 (X)"><b>X</b>💙<span class="pq" id="pqmp">0</span></div>`;
   document.querySelectorAll('.sk.pot').forEach(d => d.onclick = () => send({ t: 'potion', k: d.dataset.pot }));
   document.querySelectorAll('.sk[data-i]').forEach(d => d.onclick = () => send({ t: 'sk', i: +d.dataset.i }));
@@ -1078,6 +1078,7 @@ function buildSkills() {
 }
 function updSkillCd(t) {
   document.querySelectorAll('.sk[data-i]').forEach(d => { const c = cds[d.dataset.i], v = d.querySelector('.cdv'); v.style.height = c && t < c.e ? ((c.e - t) / (c.e - c.s) * 100) + '%' : '0'; });
+  const mb = $('#skmount'); if (mb) { const c = cds[8]; mb.querySelector('.cdv').style.height = c && t < c.e ? ((c.e - t) / (c.e - c.s) * 100) + '%' : '0'; }
   const bl = $('#skblink'); if (bl) { const c = cds[9]; bl.querySelector('.cdv').style.height = c && t < c.e ? ((c.e - t) / (c.e - c.s) * 100) + '%' : '0'; }
 }
 

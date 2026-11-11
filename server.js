@@ -839,9 +839,9 @@ function newChar(faction) {
   const h = { id: db.iid++, type: 'helm', b: 0, r: 0, il: 1, plus: 0, n: '낡은 야구모자' };
   return { faction, job, lv: 1, exp: 0, gold: 500, inv: [mkPot('hp', 5), mkPot('mp', 3), mkScroll('enh', 1)], eq: { weapon: w, armor: a, helm: h }, q: {}, qd: {}, qv: 2, map: 'bucheon', x: villageSpawn(faction).x, y: villageSpawn(faction).y, hp: 999, mp: 999 };
 }
-let EXPM = 1;
+let EXPM = 1; const EXPB = 10; // 기본 경험치 10배 (관리자 이벤트 배율은 여기에 곱해짐)
 function addExp(p, x, raw) {
-  if (!raw) x = Math.round(x * EXPM * (p.santa > now() ? 1.5 : 1));
+  if (!raw) x = Math.round(x * EXPB * EXPM * (p.santa > now() ? 1.5 : 1));
   p.exp += x;
   while (p.exp >= need(p.lv) && p.lv < MAXLV) {
     p.exp -= need(p.lv); p.lv++; stats(p); p.hp = p.mhp; p.mp = p.mmp; p.dirty = 1;
@@ -983,7 +983,7 @@ function killMob(p, mo) {
   }
   spreadDrop(m, mo.x, mo.y, loot, p.id);
   const rare = loot.filter(it => isEq(it) && it.r >= 2);
-  say(p, 'loot', `+${Math.round(xp * EXPM)}exp${loot.length > 1 ? ' · 바닥에 아이템이 떨어졌어요 (F로 줍기)' : ''}${rare.length ? ' ✨ ' + rare.map(itemLabel).join(', ') : ''}`);
+  say(p, 'loot', `+${Math.round(xp * EXPB * EXPM)}exp${loot.length > 1 ? ' · 바닥에 아이템이 떨어졌어요 (F로 줍기)' : ''}${rare.length ? ' ✨ ' + rare.map(itemLabel).join(', ') : ''}`);
   addExp(p, xp);
   for (const k in p.q) { const qd = QUESTS.find(q => q.id === +k); if (qd && qd.kill && (qd.kill === 'any' || qd.kill === tp.id)) p.q[k] = Math.min(qd.cnt, (p.q[k] || 0) + 1); }
   p.dirty = 1; bc(p.map, { t: 'fx', k: 'die', x: mo.x, y: mo.y, c: tp.c });
@@ -1335,7 +1335,7 @@ function zombieKill(p, mo, m) {
   if (Math.random() < .3) loot.push(mkPot('hp2', 1)); if (Math.random() < .1) loot.push(mkScroll('enh', 1)); if (king) { loot.push(mkScroll('enh', R(2, 4))); if (Math.random() < .5) loot.push(mkScroll('bless', 1)); }
   spreadDrop(m, mo.x, mo.y, loot, p.id);
   addExp(p, mo.zxp);
-  say(p, 'loot', `🧟 ${tp.n} 처치! ${p.admin ? '(관리자는 랭킹 제외)' : `+${pts}점 (총 ${ZEV.kills[p.name]}점)`} +${Math.round(mo.zxp * EXPM)}exp`, '#8ce99a');
+  say(p, 'loot', `🧟 ${tp.n} 처치! ${p.admin ? '(관리자는 랭킹 제외)' : `+${pts}점 (총 ${ZEV.kills[p.name]}점)`} +${Math.round(mo.zxp * EXPB * EXPM)}exp`, '#8ce99a');
   for (const k in p.q) { const qd = QUESTS.find(q => q.id === +k); if (qd && qd.kill === 'any') p.q[k] = Math.min(qd.cnt, (p.q[k] || 0) + 1); }
   bc(m.id, { t: 'fx', k: 'die', x: mo.x, y: mo.y, c: tp.c }); p.dirty = 1;
   if (king) sendAll({ t: 'notice', m: `🧟👑 ${p.name}님이 좀비 킹을 쓰러뜨렸다!! (+5점)`, c: '#69db7c' });
@@ -1536,7 +1536,7 @@ function raidWin(Rd, p, mo) {
   if (Rd.temple) for (const q of ps) { q.gb = q.gb || {}; const had = q.gb[Rd.beast.gb]; q.gb[Rd.beast.gb] = 1; stats(q); q.dirty = 1; send(q, { t: 'notice', m: `${Rd.beast.e} 고유 신수 버프 [${Rd.beast.buff}] ${had ? '(이미 있음)' : '획득!! (영구)'}`, c: Rd.beast.c === '#f8f9fa' ? '#dee2e6' : Rd.beast.c, big: 1 }); bc(m.id, { t: 'fx', k: 'lvup', x: q.x, y: q.y, c: '#ffe066' }); }
   if (Rd.id === 'r180') for (const q of ps) { const nw = grantMount(q, 'boar'); send(q, { t: 'notice', m: nw ? '🐗 탈것 [멧돼지 왕 돈돈] 획득!! 이동속도 +35% · 스킬 쿨타임 -15% (장비창 E 또는 T키로 타고 내리기)' : '🐗 돈돈이 반갑게 꼬리를 흔든다 (탈것은 이미 보유 중)', c: '#ffa94d', big: 1 }); if (nw) { bc(m.id, { t: 'fx', k: 'lvup', x: q.x, y: q.y, c: '#ffa94d' }); sendAll({ t: 'chat', ch: 'sys', m: `🐗 ${q.name}님이 침묵의 도축장에서 멧돼지 왕 돈돈을 구해 탈것으로 얻었다!` }); } }
   if (Rd.id === 'r80') for (const q of ps) { q.santa = now() + 30 * 60000; stats(q); q.dirty = 1; send(q, { t: 'notice', m: '🎅 산타의 축복!! 30분 동안 공격·방어 +15%, 경험치 1.5배', c: '#ff6b6b', big: 1 }); }
-  for (const q of ps) { addExp(q, each); q.gold += Math.round(Rd.exp / 20 / Math.max(1, ps.length)); q.dirty = 1; say(q, 'loot', `🏆 레이드 클리어! +${Math.round(each * EXPM)}exp (참여자 ${ps.length}명 분배)`); }
+  for (const q of ps) { addExp(q, each); q.gold += Math.round(Rd.exp / 20 / Math.max(1, ps.length)); q.dirty = 1; say(q, 'loot', `🏆 레이드 클리어! +${Math.round(each * EXPB * EXPM)}exp (참여자 ${ps.length}명 분배)`); }
   m.mobs.length = 0; Rd.haz = [];
   const items = []; for (let i = 0; i < Rd.items; i++) items.push(buildEquip(pick(['weapon', 'armor', 'helm']), Rd.ilv, rollRarity(true)));
   items.push(mkScroll('enh', Math.ceil(Rd.items / 2)), mkGold(Rd.exp / 60 | 0)); if (Math.random() < .4) items.push(mkScroll('ward', 1));
@@ -2300,7 +2300,7 @@ function abAttack(Rd, t) {
 }
 
 /* ===================== 🐾 탈것 / 🪽 왕좌의 날개 ===================== */
-const MOUNTS = { babpuli: { n: '밥풀이', e: '🐶', d: '이동속도 +35%' }, boar: { n: '멧돼지 왕 돈돈', e: '🐗', d: '이동속도 +35% · 스킬 쿨타임 -15%', cd: .85 } };
+const MOUNTS = { babpuli: { n: '밥풀이', e: '🐶', d: '이동속도 +35% · 기절 중 타면 기절 해제(30초)' }, boar: { n: '멧돼지 왕 돈돈', e: '🐗', d: '이동속도 +35% · 스킬 쿨타임 -15% · 기절 중 타면 기절 해제(30초)', cd: .85 } };
 function grantMount(p, id, quiet) { p.mounts = p.mounts || {}; const had = p.mounts[id]; p.mounts[id] = 1; if (!had || !quiet) p.mount = id; p.dirty = 1; p.vdirty = 1; return !had; }
 const THR_NEED = 10;
 function addThrone(p, n) {
@@ -2479,7 +2479,15 @@ function onMsg(p, m) {
     }
     case 'atk': basicAttack(p); break;
     case 'blink': blink(p, t); break;
-    case 'mount': { const id = String(m.id || ''); if (id && !(p.mounts || {})[id]) break; p.mount = !id || p.mount === id ? '' : id; p.dirty = 1; p.vdirty = 1; if (p.mount) bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 1.2, c: '#ffa94d', n: MOUNTS[p.mount].n + ' 탑승', i: p.id }); break; }
+    case 'mount': { const id = String(m.id || ''); if (id && !(p.mounts || {})[id]) break;
+      if (id && t < p.stun) { // 🐾 탈것 스킬: 기절 중에 누르면 기절이 풀리며 올라탐 (30초에 한 번)
+        const ex = RAIDS.r180.exec, held = (ex && ex.id === p.id) || (p.map === 'colo' && COLO.st === 'count');
+        if (held) { say(p, 'sys', '지금은 탈것으로 풀 수 없는 속박이에요'); break; }
+        if (t < (p.unstunAt || 0)) { say(p, 'sys', `🐾 탈것 기절 해제는 ${Math.ceil((p.unstunAt - t) / 1000)}초 뒤에 다시 쓸 수 있어요`); break; }
+        p.stun = 0; p.unstunAt = t + 30000; p.mount = id; p.dirty = 1; p.vdirty = 1; send(p, { t: 'cd', i: 8, ms: 30000 });
+        bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 1.5, c: '#ffe066', n: '기절 해제!', i: p.id }); say(p, 'sys', `${MOUNTS[id].e} ${MOUNTS[id].n}에 올라타며 기절에서 풀려났어요! (30초 뒤 다시 가능)`, '#ffe066'); break;
+      }
+      p.mount = !id || p.mount === id ? '' : id; p.dirty = 1; p.vdirty = 1; if (p.mount) bc(p.map, { t: 'fx', k: 'abuff', x: p.x, y: p.y, r: 1.2, c: '#ffa94d', n: MOUNTS[p.mount].n + ' 탑승', i: p.id }); break; }
     case 'wing': if (p.wings) { p.wingOn = p.wingOn ? 0 : 1; stats(p); p.dirty = 1; p.vdirty = 1; } break;
     case 'sk': castSkill(p, m.i | 0); break;
     case 'chat': {
