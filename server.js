@@ -1403,7 +1403,7 @@ const RAIDS = {
   r70: { n: '시계탑 마왕', lv: 70, map: 'raid5', exp: 18000000, ilv: 75, items: 6, lives: 5, min3: 1, mat: '시간의 톱니' },
   r80: { n: '산타', lv: 80, map: 'raid6', exp: 40000000, ilv: 88, items: 6, min3: 1, mat: '산타의 선물' },
   r90: { n: '흑철 군단장 카르곤', lv: 90, map: 'raid7', exp: 90000000, ilv: 98, items: 7, min3: 1, mat: '군단장의 뿔' },
-  r180: { n: '침묵의 도축장', lv: 150, map: 'raid8', exp: 1000000000, ilv: 185, items: 8, mat: '백정의 녹슨 갈고리' }
+  r180: { n: '침묵의 도축장', lv: 100, map: 'raid8', exp: 1000000000, ilv: 185, items: 8, mat: '백정의 녹슨 갈고리' }
 };
 for (const [k, B] of Object.entries(BEASTS)) RAIDS[k] = { n: B.n + ' 신전', lv: 80, map: 'temple' + k.slice(1), exp: 30000000, ilv: 100, items: 5, temple: 1, beast: B, npc: 'temple', mat: B.mat };
 for (const k in RAIDS) Object.assign(RAIDS[k], { id: k, st: 'idle', mem: new Set(), haz: [], ph: 0, npc: RAIDS[k].npc || 'gate' + k.slice(1) });
@@ -1413,7 +1413,7 @@ function raidDlg(p, id) {
   const Rd = RAIDS[id]; if (!Rd) return;
   const N = NPCS[Rd.npc], names = rmem(Rd).map(q => q.name);
   const stTxt = Rd.st === 'idle' ? '🟢 대기 중 — 참여하면 20초 뒤 다 같이 입장해요' : Rd.st === 'lobby' ? `🟡 모집 중 — ${Math.max(0, Math.ceil((Rd.startAt - now()) / 1000))}초 뒤 출발` : Rd.st === 'fight' ? '🔴 전투 중 — 끝나면 다시 도전할 수 있어요' : '🟣 정리 중 — 잠시 뒤 다시 도전할 수 있어요';
-  const lines = [Rd.id === 'r180' ? `"30년 전에 문 닫은 오정 도축장 말이야… 밤마다 쇠사슬 끄는 소리가 나. 눈먼 백정이 아직도 '소리'로 사냥을 하고 있다네.\n내 친구, 멧돼지 왕 돈돈이가 그 안에 묶여 있어. 제발… 풀어주게. 그러면 돈돈이가 자네를 등에 태울 걸세."\n\n[🤫 침묵의 도축장] Lv150 이상 (권장 Lv180) · 혼자도 가능 · 한 번에 한 팀\n🎬 1막 갈고리 복도 → 2막 냉동 창고 (돈돈의 쇠사슬 4개) → 최종막 눈먼 백정 (4페이즈)\n🤫 "쉿!" 동안 스킬을 쓰면 즉사 — 평타만! (1·2막은 움직여도 들켜요)\n🏆 탈것 [🐗 멧돼지 왕 돈돈] 이동속도 +35% · 스킬 쿨타임 -15%${(p.mounts || {}).boar ? ' ✅ 보유 중' : ''}` : Rd.temple ? `[${Rd.beast.e} ${Rd.n}] Lv${Rd.lv} 이상 · 혼자도 입장 가능\n🌀 미로 · 숨은 함정(밟으면 떨어져서 처음으로) · 수호병 · 3인 룬 퍼즐 → ${Rd.beast.n} 방\n🏆 처치 시 [${Rd.beast.buff}] 영구 버프 + ${Rd.mat}` : `[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만${Rd.min3 ? '\n🤝 동시에 밟는 발판 기믹 (발판 수 = 인원수, 최대 3 · 혼자도 가능)' : ''}${Rd.lives ? ' · 보스가 ' + (Rd.lives - 1) + '번 부활' : ''}`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
+  const lines = [Rd.id === 'r180' ? `"30년 전에 문 닫은 오정 도축장 말이야… 밤마다 쇠사슬 끄는 소리가 나. 눈먼 백정이 아직도 '소리'로 사냥을 하고 있다네.\n내 친구, 멧돼지 왕 돈돈이가 그 안에 묶여 있어. 제발… 풀어주게. 그러면 돈돈이가 자네를 등에 태울 걸세."\n\n[🤫 침묵의 도축장] Lv100 이상 (권장 Lv180) · 혼자도 가능 · 한 번에 한 팀\n🎬 1막 갈고리 복도 → 2막 냉동 창고 (돈돈의 쇠사슬 4개) → 최종막 눈먼 백정 (4페이즈)\n🤫 "쉿!" 동안 스킬을 쓰면 즉사 — 평타만! (1·2막은 움직여도 들켜요)\n🏆 탈것 [🐗 멧돼지 왕 돈돈] 이동속도 +35% · 스킬 쿨타임 -15%${(p.mounts || {}).boar ? ' ✅ 보유 중' : ''}` : Rd.temple ? `[${Rd.beast.e} ${Rd.n}] Lv${Rd.lv} 이상 · 혼자도 입장 가능\n🌀 미로 · 숨은 함정(밟으면 떨어져서 처음으로) · 수호병 · 3인 룬 퍼즐 → ${Rd.beast.n} 방\n🏆 처치 시 [${Rd.beast.buff}] 영구 버프 + ${Rd.mat}` : `[${Rd.n}] 레이드 · Lv${Rd.lv} 이상 · 한 번에 한 팀만${Rd.min3 ? '\n🤝 동시에 밟는 발판 기믹 (발판 수 = 인원수, 최대 3 · 혼자도 가능)' : ''}${Rd.lives ? ' · 보스가 ' + (Rd.lives - 1) + '번 부활' : ''}`, stTxt + (names.length ? `\n참여자(${names.length}): ${names.join(', ')}` : '')];
   const acts = [];
   if (Rd.mem.has(p.id) && Rd.st === 'lobby') acts.push({ k: 'raid', id, op: 'start', label: '⚔️ 지금 바로 출발' }, { k: 'raid', id, op: 'leave', label: '참여 취소' });
   else if (Rd.st === 'idle' || Rd.st === 'lobby') { if (p.lv >= Rd.lv || p.admin) acts.push({ k: 'raid', id, op: 'join', label: '🙋 보스 참여' }); else lines.push(`(Lv.${Rd.lv}부터 참여할 수 있어요)`); }
@@ -2154,7 +2154,7 @@ function santaAttack(Rd, t) {
 }
 
 /* ===================== 접속/메시지 ===================== */
-/* ===================== 🤫 침묵의 도축장 (Lv150↑ · 권장 180 · 라이딩 퀘스트 던전) ===================== */
+/* ===================== 🤫 침묵의 도축장 (Lv100↑ · 권장 180 · 라이딩 퀘스트 던전) ===================== */
 function abBuild() {
   const m = MAPS.raid8, W = m.w, H = m.h, t = Array.from({ length: H }, () => Array(W).fill('W'));
   const box = (x0, y0, x1, y1, ch = '.') => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) t[y][x] = ch; };
