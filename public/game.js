@@ -1006,7 +1006,8 @@ function itemDesc(it) {
   if (isEq(it)) {
     const stat = it.type === 'weapon' ? `공격력 +${power(it)} · 사거리 ${D.WB[it.b].r}${D.WB[it.b].aoe ? `<br><span style="color:#a5d8ff">🐟 휘두르면 반경 ${D.WB[it.b].aoe}칸 광역 공격!</span>` : ''}${D.WB[it.b].zsum ? '<br><span style="color:#94d82d">🧟 평타를 치면 아군 좀비 소환! (최대 3마리 · 20초 · 사냥터에서만)</span>' : ''}` : `방어력 +${power(it)}`;
     const bon = [it.atkb ? `공격 +${it.atkb}` : '', it.defb ? `방어 +${it.defb}` : '', it.hpb ? `HP +${it.hpb}` : ''].filter(Boolean).join(' · ');
-    return `${SLOTN[it.type]} · 아이템레벨 ${it.il}<br>${stat}${bon ? `<br><span style="color:#ffe066">✨ 특수 옵션: ${bon}</span>` : ''}<br><span class="small">강화 +${it.plus}→+${it.plus + 1}: 성공 ${enhRate(it.plus)}% (축복 ${Math.min(100, enhRate(it.plus) + 15)}%) · 실패 시 파괴 ${boomRate(it.plus)}% → <b style="color:${boomRate(it.plus) ? '#ff8787' : '#69db7c'}">💥 터질 확률 ${((100 - enhRate(it.plus)) * boomRate(it.plus) / 100).toFixed(1)}%</b> · ${(it.plus + 1) * 100}G</span>`;
+    const pc = it.type === 'weapon' && it.plus >= 100 ? Math.min(0.001, 0.00005 + (it.plus - 100) / 850 * 0.00055) : 0;
+    return `${SLOTN[it.type]} · 아이템레벨 ${it.il}<br>${stat}${pc ? `<br><span style="color:#ff922b">💥 보스를 때리면 1초마다 최대 체력의 ${(pc * 100).toFixed(3)}% 추가 피해 (+100강부터)</span>` : ''}${bon ? `<br><span style="color:#ffe066">✨ 특수 옵션: ${bon}</span>` : ''}<br><span class="small">강화 +${it.plus}→+${it.plus + 1}: 성공 ${enhRate(it.plus)}% (축복 ${Math.min(100, enhRate(it.plus) + 15)}%) · 실패 시 파괴 ${boomRate(it.plus)}% → <b style="color:${boomRate(it.plus) ? '#ff8787' : '#69db7c'}">💥 터질 확률 ${((100 - enhRate(it.plus)) * boomRate(it.plus) / 100).toFixed(1)}%</b> · ${(it.plus + 1) * 100}G</span>`;
   }
   if (it.type === 'scroll') return it.k === 'ward' ? '강화 실패로 터질 때 아이템을 지켜줘요 (강화 주문서와 함께 소모)' : it.k === 'bless' ? '강화 성공률 +15% (강화 주문서와 함께 소모)' : '장비를 강화해요. +3부터 실패, +4부터 실패 시 파괴 확률. 높을수록 잘 터져요!';
   if (it.type === 'potion') return { hp: 'HP 40% 회복 (Z)', mp: 'MP 40% 회복 (X)', hp2: 'HP 75% 회복 (일반 HP포션이 없으면 Z로 사용)', mp2: 'MP 75% 회복 (일반 MP포션이 없으면 X로 사용)', elixir: 'HP·MP 완전 회복' }[it.k] || '';
@@ -1266,7 +1267,7 @@ function renderAdm() {
   h += `<h4 style="margin:12px 0 4px">🗺️ 순간이동</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-go="${k}" style="color:${c}">🏠${n}마을</button>`).join('')}${D.MAPLIST.filter(m => m.id !== 'bucheon').map(m => `<button data-go="${m.id}">${esc(m.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📜 퀘스트 / NPC</h4><div class="acts"><button data-a="qnext">⏩ 현재 퀘스트 바로 달성</button><button data-a="qreset">🔄 퀘스트 초기화</button>${Object.entries(D.NPCS).map(([k, n]) => `<button data-npc="${k}">🧑 ${esc(n.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="99999" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
-  h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급</h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
+  h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급 <span class="small">강화 +<input id="admplus" type="number" min="0" max="5000" value="0" style="width:70px"></span></h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🏳️ 진영 변경</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-fac="${k}" style="color:${c}">${n}</button>`).join('')}</div>`;
   const P = $('#padm'); P.innerHTML = h;
@@ -1279,7 +1280,7 @@ function renderAdm() {
   P.querySelectorAll('[data-npc]').forEach(b => b.onclick = () => adm({ op: 'tpnpc', id: b.dataset.npc }));
   P.querySelectorAll('[data-job]').forEach(b => b.onclick = () => adm({ op: 'job', job: b.dataset.job }));
   P.querySelectorAll('[data-fac]').forEach(b => b.onclick = () => adm({ op: 'faction', f: b.dataset.fac }));
-  P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv }); sl.value = ''; });
+  P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv, plus: +($('#admplus') || {}).value || 0 }); sl.value = ''; });
   $('#gthere').onclick = () => adm({ op: 'gtnow', here: 1 });
   P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => adm({ op: 'evnow', id: b.dataset.ev }));
   P.querySelectorAll('[data-evh]').forEach(b => b.onclick = () => adm({ op: 'evnow', id: b.dataset.evh, here: 1 }));

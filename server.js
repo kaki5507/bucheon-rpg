@@ -671,6 +671,8 @@ Object.values(MAPS).forEach(m => { if (m.pool.length) for (let i = 0; i < m.cnt;
 
 /* ===================== 아이템 ===================== */
 const power = it => { const arr = it.type === 'weapon' ? WB : it.type === 'armor' ? AB : HB; const base = arr[it.b][it.type === 'weapon' ? 'a' : 'd']; return Math.round(base * (1 + it.il * 0.22) * RAR[it.r].m * (1 + it.plus * 0.1) + it.plus); };
+// +100강부터 보스에게 '최대 체력 %' 추가 피해 (1초에 1번, 무기 속도와 무관): +100 0.005% → +950 0.06% (상한 0.1%)
+const pctDmg = plus => plus < 100 ? 0 : Math.min(0.001, 0.00005 + (plus - 100) / 850 * 0.00055);
 const ADMIN_TIP = '👑 관리자 모드 (👑 버튼)';
 const isEq = it => it.type === 'weapon' || it.type === 'armor' || it.type === 'helm';
 // 등급 확률 (일반/고급/희귀/영웅/에픽). 크게 하향
@@ -874,6 +876,7 @@ function damageMob(p, mo, dmg, crit) {
     if (!p.god) { const back = Math.max(1, Math.min(Math.round(base * 0.25), Math.round(p.mhp * 0.07))); p.hp -= back; p.vdirty = 1; bc(p.map, { t: 'dm', x: p.x, y: p.y, v: '반사 ' + back, c: '#fab005' }); if (p.hp <= 0) { mo.hp -= dmg; die(p, null); return; } }
   }
   if (mo.groggy > now()) { dmg = Math.round(dmg * 1.5); crit = true; }
+  { const w = p.eq && p.eq.weapon, pc = w && mo.boss && !(p.pctAt > now()) ? pctDmg(w.plus || 0) : 0; if (pc) p.pctAt = now() + 1000, dmg += Math.round(mo.mhp * pc * (mo.groggy > now() ? 1.5 : 1)); } // 반사 계산 뒤에 더해서 반사 피해엔 안 들어감
   if (MON[mo.t].id === 'thiefcat' && Math.random() < .3 && EVS.cat.zs) { const z = EVS.cat.zs, r = Math.random(); spreadDrop(MAPS[p.map], mo.x, mo.y, [r < .7 ? mkGold(Math.round(z.g * (2 + Math.random() * 3))) : r < .9 ? mkPot('hp2', R(1, 3)) : mkScroll('enh', 1)], null); if (Math.random() < .3) bc(p.map, { t: 'mtalk', id: mo.id, m: pick(['내 택배!! 떨어뜨렸다냥!', '냐앙! 아프다냥!', '그건 내 거다냥!!']), loud: 0 }); }
   mo.hp -= dmg; mo.tgt = p.id; mo.last = p;
   bc(p.map, { t: 'dm', x: mo.x, y: mo.y, v: dmg, c: crit ? '#ffe600' : '#ffffff', cr: crit ? 1 : 0 });
@@ -1149,7 +1152,7 @@ function adminCmd(p, m) {
     case 'scroll': giveItem(p, mkScroll('enh', 50)); giveItem(p, mkScroll('ward', 20)); return ok('강화 50 / 보호 20');
     case 'pot': giveItem(p, mkPot('hp', 100)); giveItem(p, mkPot('mp', 100)); return ok('포션 100개씩');
     case 'item': { const ty = ['weapon', 'armor', 'helm'].includes(m.type) ? m.type : 'weapon', r = Math.max(0, Math.min(5, m.r | 0)), il = Math.max(1, Math.min(MAXLV, m.il | 0 || p.lv));
-      const it = r === 5 ? hiddenEquip(ty, il) : buildEquip(ty, il, r); if (r < 5 && it.r === 5) { } giveItem(p, it); return ok(itemLabel(it) + ' 지급'); }
+      const it = r === 5 ? hiddenEquip(ty, il) : buildEquip(ty, il, r); it.plus = Math.max(0, Math.min(5000, m.plus | 0)); giveItem(p, it); return ok(itemLabel(it) + ' 지급'); }
     case 'mat': { const t = MI[m.id]; if (t) giveItem(p, stackItem('mat', t.mat, t.mat, 20)); return; }
     case 'go': { if (VILLAGE[m.map]) { const v = villageSpawn(m.map); return warp(p, v.map, v.x, v.y); } const mm = MAPS[m.map]; if (!mm) return; if (mm.id === 'bucheon') { const v = villageSpawn(p.faction); return warp(p, v.map, v.x, v.y); } warp(p, mm.id, mm.spawn.x, mm.spawn.y); return; }
     case 'heal': p.hp = p.mhp; p.mp = p.mmp; p.stun = 0; p.cd = [0, 0, 0, 0]; p.vdirty = 1; return ok('완전 회복');
@@ -2115,7 +2118,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, maxPayload: 8192 });
 // 순간이동 비용: 맵 몬스터 평균 레벨 기준 (레이드/신전/무한장은 불가)
 function tpCost(m) { if (/^(raid|temple)/.test(m.id) || m.id === 'royale') return 0; const L = m.pool.length ? m.pool.reduce((a, id) => a + MI[id].lv, 0) / m.pool.length : 5; return Math.round((200 + L * L * 3) / 100) * 100; }
-const INIT = { t: 'init', LEG: { base: 500000, k: 200, n: WB_NORMAL }, TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
+const INIT = { t: 'init', PCTD: 1, LEG: { base: 500000, k: 200, n: WB_NORMAL }, TIER1_LV, TUNA: { need: TUNA_RECIPE, gold: TUNA_GOLD }, NPCS: Object.fromEntries(Object.entries(NPCS).map(([k, v]) => [k, { n: v.n, map: (Object.values(MAPS).find(m => (m.npcs || []).some(n => n.id === k)) || {}).name }])), VILLAGES: Object.fromEntries(FK.map(f => [f, VILLAGE[f].dir])), MAPLIST: Object.values(MAPS).map(m => ({ id: m.id, n: m.name, lvr: m.lvr, boss: m.boss, tc: tpCost(m) })), RAIDS: Object.fromEntries(Object.entries(RAIDS).map(([k, r]) => [k, { n: r.n, lv: r.lv }])), TITLES: Object.fromEntries(Object.entries(TITLES).map(([k, v]) => [k, { n: v.n, c: v.c }])), RECIPES: Object.fromEntries(Object.entries(RECIPES).map(([k, v]) => [k, { n: v.n, e: v.e, need: v.need, gold: v.gold, desc: v.desc }])), GBUFF: Object.fromEntries(Object.values(BEASTS).map(B => [B.gb, { e: B.e, n: B.n, buff: B.buff }])), MAXLV, MON: MON.map(m => ({ gb: m.gbeast, hw: m.hwang, guard: m.guard, zev: m.zev, pet: m.pet, raid: m.raid, big: m.big, look: m.look, skn: m.sk && m.sk.n, id: m.id, n: m.n, s: m.s, c: m.c, boss: m.boss, lv: m.lv })), RAR, WB, AB, HB, FAC, VAR, SHOP, QUESTS, MAXINV, JOBS: Object.fromEntries(Object.entries(JOBS).map(([k, j]) => [k, { n: j.n, icon: j.icon, tier: j.tier, d: j.d, sk: j.sk, hp: j.hp, atk: j.atk, mp: j.mp }])) };
 function login(ws, m) {
   const name = String(m.name || '').trim(), pw = String(m.pw || '');
   if (!/^[가-힣a-zA-Z0-9_]{2,8}$/.test(name)) return ws.send(JSON.stringify({ t: 'err', m: '이름은 2~8자 (한글/영문/숫자)' }));
