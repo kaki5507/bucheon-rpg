@@ -1188,7 +1188,7 @@ function adminCmd(p, m) {
     case 'god': p.god = !p.god; p.dirty = 1; return ok('무적 ' + (p.god ? 'ON (피해 없음, 스킬 쿨/MP 없음)' : 'OFF'));
     case 'onehit': p.onehit = !p.onehit; p.dirty = 1; return ok('한방 ' + (p.onehit ? 'ON' : 'OFF'));
     case 'fast': p.fast = !p.fast; p.dirty = 1; return ok('초고속 이동 ' + (p.fast ? 'ON' : 'OFF'));
-    case 'job': { if (!JOBS[m.job]) return; p.job = m.job; p.cd = [0, 0, 0, 0]; stats(p); p.dirty = 1; bc(p.map, { t: 'fx', k: 'lvup', x: p.x, y: p.y, c: '#ff8cff' }); return ok('직업: ' + JOBS[m.job].n); }
+    case 'job': { if (!JOBS[m.job]) return; const nm = String(m.name || '').trim(), o = nm ? [...players.values()].find(q => q.name === nm) : p; if (!o) return ok('그런 사람이 접속해 있지 않아요'); o.job = m.job; o.cd = [0, 0, 0, 0]; stats(o); o.dirty = 1; o.vdirty = 1; bc(o.map, { t: 'fx', k: 'lvup', x: o.x, y: o.y, c: '#ff8cff' }); if (o !== p) say(o, 'sys', `🌟 관리자가 직업을 [${JOBS[m.job].n}](으)로 바꿨어요`, '#ff8cff'); return ok(`${o.name} 직업: ${JOBS[m.job].n}`); }
     case 'mount': if (p.mount) p.mount = ''; else grantMount(p, 'babpuli'); p.dirty = 1; return ok('밥풀이 탑승 ' + (p.mount ? 'ON' : 'OFF'));
     case 'faction': if (FAC[m.f]) { p.faction = m.f; stats(p); p.dirty = 1; ok('진영: ' + FAC[m.f].n); } return;
     case 'qnext': { const act = Object.keys(p.q).map(Number).find(id => !QUESTS.find(q => q.id === id).rep);

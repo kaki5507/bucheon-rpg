@@ -758,7 +758,7 @@ function drawFx(g, t) {
       case 'slash': { const x2 = tc(f.x2), y2 = tc(f.y2), a = Math.atan2(y2 - y, x2 - x); g.strokeStyle = c; g.lineWidth = 4 * (1 - p) + 1; g.beginPath(); g.arc(x2, y2 - 8, 14, a - 1.6 + p * 2, a - .4 + p * 2); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); break; }
       case 'proj': { const x2 = tc(f.x2), y2 = tc(f.y2), px = x + (x2 - x) * p, py = y - 14 + (y2 - y) * p; g.fillStyle = c; g.shadowColor = c; g.shadowBlur = 10; g.beginPath(); g.arc(px, py, f.big ? 6 : 3.5, 0, 7); g.fill();
         if (f.f === 'tball') { g.font = '15px sans-serif'; g.fillText('🎾', px - 8, py + 5 - Math.sin(p * Math.PI) * 18); }
-        else if (f.f === 'football' || f.n === '프리킥' || f.n === '슈퍼골') { g.font = '14px sans-serif'; g.fillText('⚽', px - 7, py + 5); }
+        else if (f.f === 'football' || f.n === '프리킥' || f.n === '슈퍼골' || f.n === '피파 중거리 슛') { g.font = '14px sans-serif'; g.fillText('⚽', px - 7, py + 5); }
         else if (f.n === '삼각김밥') { g.font = '14px sans-serif'; g.fillText('🍙', px - 7, py + 5); } break; }
       case 'impact': {
         if (f.f === 'nuke') { const r = 10 + p * 34; g.fillStyle = '#ff922b'; g.beginPath(); g.arc(x, y - 6 - p * 30, r * .7, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.beginPath(); g.arc(x, y - 6 - p * 30, r * .45, 0, 7); g.fill(); g.fillStyle = '#868e96'; g.fillRect(x - 4, y - 6 - p * 30, 8, p * 30); g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.ellipse(x, y, r * 1.4, r * .4, 0, 0, 7); g.stroke(); g.font = 'bold 18px Jua'; g.fillStyle = '#ff5252'; g.textAlign = 'center'; g.fillText('쾅!!', x, y - 50); }
@@ -805,7 +805,7 @@ function drawFx(g, t) {
     g.restore();
   }
 }
-const ULTFX = { u_marathon: ['🏃', '👟', '🏅'], u_jaw: ['💥', '😤', '⚡'], u_concert: ['🎤', '🎵', '💖', '✨'], u_trophy: ['🏆', '🎉', '🎊'], u_nova: ['🌟', '⭐', '✨'], u_trucks: ['🚛', '🚚', '💨'], u_barbell: ['🏋️', '💪', '💥'], u_choir: ['🎶', '🐌', '🎵'], u_wave: ['🌊', '💧', '🐚'], u_worldcup: ['⚽', '🥅', '🏆'], u_convoy: ['🚛'] };
+const ULTFX = { u_marathon: ['🏃', '👟', '🏅'], u_jaw: ['💥', '😤', '⚡'], u_concert: ['🎤', '🎵', '💖', '✨'], u_trophy: ['🏆', '🎉', '🎊'], u_nova: ['🌟', '⭐', '✨'], u_trucks: ['🚛', '🚚', '💨'], u_barbell: ['🏋️', '💪', '💥'], u_choir: ['🎶', '🐌', '🎵'], u_wave: ['🌊', '💧', '🐚'], u_worldcup: ['⚽', '🥅', '🏆'], u_santa: ['🎅', '⚽', '🎁', '🎄'], u_convoy: ['🚛'] };
 function drawUlt(g, f, x, y, R0, p, t) {
   const em = ULTFX[f.f] || ['✨'], c = f.c || '#fff', R = R0 * Math.min(1, p * 2);
   g.save();
@@ -1405,7 +1405,7 @@ function renderAdm() {
   h += `<h4 style="margin:12px 0 4px">📜 퀘스트 / NPC</h4><div class="acts"><button data-a="qnext">⏩ 현재 퀘스트 바로 달성</button><button data-a="qreset">🔄 퀘스트 초기화</button>${Object.entries(D.NPCS).map(([k, n]) => `<button data-npc="${k}">🧑 ${esc(n.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">📈 레벨 / 재화</h4><div class="acts"><input id="admlv" type="number" min="1" max="99999" value="${ME.lv}" style="width:70px;padding:5px"><button id="admlvgo">레벨 설정</button><button data-a="exp">+1레벨</button><button data-a="gold">💰 +100만</button><button data-a="scroll">✦ 주문서</button><button data-a="pot">🧪 포션</button></div>`;
   h += `<h4 style="margin:12px 0 4px">⚔️ 장비 지급 <span class="small">강화 +<input id="admplus" type="number" min="0" max="5000" value="0" style="width:70px"></span></h4><div class="acts">${['weapon', 'armor', 'helm'].map(t => `<select data-ity="${t}" style="font-family:inherit;padding:5px;border-radius:8px;background:#14102a;color:#fff;border:2px solid #5b4d8a"><option value="">${SLOTN[t]}…</option>${D.RAR.map((r, i) => `<option value="${i}">${r.n}${i === 5 ? '(히든)' : ''}</option>`).join('')}</select>`).join('')}</div>`;
-  h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
+  h += `<h4 style="margin:12px 0 4px">🌟 직업 변경</h4><div class="small">닉네임을 적으면 그 사람의 직업을, 비워두면 내 직업을 바꿔요</div><input id="admjn" placeholder="대상 닉네임 (비우면 나)" style="width:180px;margin:4px 0"><div class="acts">${Object.entries(D.JOBS).map(([k, j]) => `<button data-job="${k}" class="${ME.job === k ? 'pri' : ''}">${j.icon}${esc(j.n)}</button>`).join('')}</div>`;
   h += `<h4 style="margin:12px 0 4px">🏳️ 진영 변경</h4><div class="acts">${Object.entries(FACS).map(([k, [n, c]]) => `<button data-fac="${k}" style="color:${c}">${n}</button>`).join('')}</div>`;
   const P = $('#padm'); P.innerHTML = h;
   P.querySelectorAll('[data-a]').forEach(b => b.onclick = () => adm({ op: b.dataset.a }));
@@ -1415,7 +1415,7 @@ function renderAdm() {
   P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { adm({ op: 'expev', v: +b.dataset.ev }); setTimeout(renderAdm, 300); });
   P.querySelectorAll('[data-go]').forEach(b => b.onclick = () => adm({ op: 'go', map: b.dataset.go }));
   P.querySelectorAll('[data-npc]').forEach(b => b.onclick = () => adm({ op: 'tpnpc', id: b.dataset.npc }));
-  P.querySelectorAll('[data-job]').forEach(b => b.onclick = () => adm({ op: 'job', job: b.dataset.job }));
+  P.querySelectorAll('[data-job]').forEach(b => b.onclick = () => adm({ op: 'job', job: b.dataset.job, name: ($('#admjn') || {}).value || '' }));
   P.querySelectorAll('[data-fac]').forEach(b => b.onclick = () => adm({ op: 'faction', f: b.dataset.fac }));
   P.querySelectorAll('[data-ity]').forEach(sl => sl.onchange = () => { if (sl.value !== '') adm({ op: 'item', type: sl.dataset.ity, r: +sl.value, il: ME.lv, plus: +($('#admplus') || {}).value || 0 }); sl.value = ''; });
   $('#gthere').onclick = () => adm({ op: 'gtnow', here: 1 });
