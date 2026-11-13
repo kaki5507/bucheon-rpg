@@ -2316,9 +2316,9 @@ function blink(p, t) {
   if (p.map === 'raid8') abMoved(p);
 }
 
-/* ===================== 👑 콜로세움 왕좌전 (매일 오후 8시) ===================== */
+/* ===================== 👑 콜로세움 왕좌전 (매시 정각) ===================== */
 const COLO_HOUR_UTC = 11, COLO_MS = 180000, CTX = 20, CTY = 20;
-const coloNext = (t = now()) => slotNext(t, 24, COLO_HOUR_UTC);
+const coloNext = (t = now()) => slotNext(t, 1, 0); // 매시 정각
 const COLO = { st: 'idle', at: coloNext(), all: new Set(), end: 0, startAt: 0, endAt: 0, lead: '', sit: {}, wave: 0, stingAt: 0, w5: 0, w1: 0 };
 (function coloBuild() {
   const m = MAPS.colo;
@@ -2346,7 +2346,7 @@ function coloJoin(q) {
 function coloStart(by) {
   if (COLO.st !== 'idle') { if (by) say(by, 'sys', '👑 왕좌전이 이미 진행 중이에요'); return; }
   const ps = [...players.values()].filter(q => !q.admin);
-  if (ps.length < 2) { if (by) say(by, 'sys', `👑 왕좌전은 관리자 제외 2명 이상 접속해 있어야 해요 (현재 ${ps.length}명)`); else if (ps.length) sendAll({ t: 'notice', m: '👑 오늘의 콜로세움 왕좌전은 참가자가 부족해서 열리지 않았어요 (2명 이상 필요)', c: '#adb5bd' }); return; }
+  if (ps.length < 2) { if (by) say(by, 'sys', `👑 왕좌전은 관리자 제외 2명 이상 접속해 있어야 해요 (현재 ${ps.length}명)`); else if (ps.length) sendAll({ t: 'notice', m: '👑 이번 콜로세움 왕좌전은 참가자가 부족해서 열리지 않았어요 (2명 이상 필요)', c: '#adb5bd' }); return; }
   const m = MAPS.colo, t = now(); m.t = m.orig.map(r => r.slice()); m.mobs.length = 0; m.ground.length = 0;
   Object.assign(COLO, { st: 'count', startAt: t + 10000, end: t + 10000 + COLO_MS, all: new Set(), lead: '', sit: {}, wave: 0, l30: 0, stingAt: t + 16000 });
   coloMob('scorpion', 0); for (let k = 0; k < 6; k++) coloMob('spartan', 5); for (let k = 0; k < 4; k++) coloMob('mummy', 7);
